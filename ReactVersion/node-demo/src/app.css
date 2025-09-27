@@ -1,0 +1,80 @@
+html, body, #app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #121417;
+  color: #e9edf5;
+}
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(20, 24, 32, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+.toolbar__title {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: #9da7c0;
+}
+
+.toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar button {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(80, 122, 255, 0.18), rgba(80, 122, 255, 0.06));
+  color: #f5f7ff;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.toolbar button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(120, 160, 255, 0.7);
+  box-shadow: 0 8px 20px rgba(80, 122, 255, 0.25);
+}
+
+.toolbar button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(80, 122, 255, 0.3);
+}
+
+.canvas-container {
+  position: relative;
+  flex: 1;
+  background: #11131a;
+}
+
+.canvas-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  background: radial-gradient(circle at top, rgba(70, 90, 140, 0.24), transparent 55%), #11131a;
+}
