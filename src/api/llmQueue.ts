@@ -29,7 +29,9 @@ let busy = false;
 
 export function enqueueLlmJob(options: LlmJobOptions): Promise<LlmResult> {
   return new Promise((resolve, reject) => {
+    // Park the job so calls are handled in order.
     queue.push({ options, resolve, reject });
+    // Kick the worker loop in case it is idle.
     processQueue();
   });
 }
@@ -40,8 +42,10 @@ async function processQueue() {
   try {
     while (queue.length) {
       const job = queue.shift()!;
+      // Let callers update their UI the moment we start.
       job.options.onStart?.();
       try {
+        // Run the outbound request and deliver the result to the caller.
         const result = await runJob(job.options);
         job.resolve(result);
       } catch (err) {
@@ -74,6 +78,7 @@ async function runJob(options: LlmJobOptions): Promise<LlmResult> {
     headers.Authorization = `Bearer ${API_KEY}`;
   }
 
+  // Dispatch the request to the LLM backend.
   const resp = await fetch(API_URL, {
     method: 'POST',
     headers,
@@ -96,6 +101,7 @@ async function runJob(options: LlmJobOptions): Promise<LlmResult> {
   const content = parsed?.choices?.[0]?.message?.content;
   const message = normaliseMessage(content, raw);
 
+  // Give back both the clean string and the raw payload for debugging.
   return {
     message,
     raw,
@@ -108,7 +114,7 @@ function normaliseMessage(content: any, fallbackRaw: string): string {
     return content;
   }
   if (Array.isArray(content)) {
-    // Some providers return an array of parts
+    // Some providers return an array of parts, so stitch them together.
     return content
       .map((part) => {
         if (!part) return '';
@@ -128,6 +134,7 @@ function normaliseMessage(content: any, fallbackRaw: string): string {
       return content.content;
     }
     try {
+      // Last resort: surface the object as JSON.
       return JSON.stringify(content);
     } catch {
       return String(content);
