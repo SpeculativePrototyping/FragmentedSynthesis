@@ -1,0 +1,45 @@
+
+.edit-node__editor {
+  position: relative;
+}
+
+.edit-node__textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 10px;
+  background-color: transparent;
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+  color: transparent;
+  caret-color: #0f172a;
+  position: relative;
+  z-index: 1;
+  white-space: pre-wrap;
+}
+
+.edit-node__textarea::selection {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+.edit-node__overlay {
+  position: absolute;
+  inset: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 10px;
+  pointer-events: none;
+  font: inherit;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow: auto;
+  color: #0f172a;
+  z-index: 0;
+  background-color: #fff;
+}
+
+.edit-node__overlay::-webkit-scrollbar {
+  display: none;
+}

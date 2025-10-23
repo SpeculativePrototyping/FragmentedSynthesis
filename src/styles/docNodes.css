@@ -53,3 +53,20 @@
   background-color: rgba(39, 23, 186, 0.08);
   border-radius: 12px;
 }
+
+.doc-node__header-warning {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-bottom-color: rgba(220, 38, 38, 0.35);
+}
+
+.doc-node__preview {
+  color: rgba(57, 57, 57, 0.8);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  display: block;
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+}

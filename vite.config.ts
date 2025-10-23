@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/api/llm': {
+        target: 'http://localhost:1234',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/llm/, '/v1/chat/completions'),
+      },
+    },
+  },
 })

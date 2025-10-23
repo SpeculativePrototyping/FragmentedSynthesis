@@ -41,6 +41,44 @@ export const nodeTemplates: NodeTemplate[] = [
       placeholder: 'Waiting for input…',
     },
   },
+  {
+    type: 'summary',
+    label: 'Summary Node',
+    data: {
+      label: 'Summarize',
+      length: '1-2 sentences',
+      value: '',
+      status: 'idle',
+      error: null,
+    },
+  },
+  {
+    type: 'compose',
+    label: 'Compose Node',
+    data: {
+      sectionType: 'section',
+      title: '',
+      json: '',
+      value: '',
+    },
+  },
+  {
+    type: 'edit',
+    label: 'Edit Node',
+    data: {
+      original: '',
+      value: '',
+      diff: [],
+    },
+  },
+  {
+    type: 'docOutput',
+    label: 'Document Output',
+    data: {
+      json: '',
+      value: '',
+    },
+  },
 ]
 
 /**

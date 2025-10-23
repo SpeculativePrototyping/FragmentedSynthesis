@@ -176,7 +176,7 @@ watch(
     // We still need to wait for the DOM to update
     await nextTick()
     // And we still need to tell Vue Flow to check the node's dimensions
-    updateNodeInternals?.(props.id)
+    updateNodeInternals?.([props.id])
 
     // **HERE IS THE CRITICAL ADDITION:**
     // Create a Set of all handle IDs that are currently visible on the node.
@@ -228,13 +228,12 @@ watchEffect(() => {
       <div
         v-for="row in handleRows"
         :key="row.handleId"
-        class="concat-node__input-row doc-node__row"
+        class="doc-node__row"
         :class="{
-          'concat-node__input-row--connected': row.isConnected,
           'doc-node__row--connected': row.isConnected,
         }"
       >
-        <div class="concat-node__preview" :title="row.preview || 'No input yet'">
+        <div class="doc-node__preview" :title="row.preview || 'No input yet'">
           {{ row.preview || 'Connect text...' }}
         </div>
         <Handle
@@ -242,7 +241,6 @@ watchEffect(() => {
           type="target"
           :position="Position.Left"
           :style="{
-            //  top: row.handleTop,
             left: '-12px',
             transform: 'translate(-50%, -50%)',
           }"
@@ -265,27 +263,8 @@ watchEffect(() => {
 </template>
 
 <style scoped>
-.concat-node__preview {
-  color: rgba(57, 57, 57, 0.8);
-  font-size: 0.8rem;
-  line-height: 1.2;
-  display: block; /* not inline */
-  flex: 1 1 auto; /* fill leftover space */
-  overflow: hidden;
-  white-space: nowrap; /* single-line truncation */
-  text-overflow: ellipsis;
-}
 .concat-node__inputs {
-  display: block;
-}
-
-/* each row = flex; Handle can stay absolutely positioned */
-.concat-node__input-row,
-.doc-node__row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0; /* critical */
+  /* display: block; */
 }
 
 .concat-node__footer {
