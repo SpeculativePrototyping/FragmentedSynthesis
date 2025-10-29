@@ -39,4 +39,35 @@ defineProps(['name'])
     <path fill="currentColor" d="M6 19q0 .825.588 1.413T8 21h8q.825 0 1.412-.587T18 19V7H6v12zm3-10h2v8H9v-8zm4 0h2v8h-2v-8zM5 5h14v2H5V5z"/>
   </svg>
 
+  <svg v-else-if="name === 'wand'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+    <!-- Zauberstab -->
+    <line x1="5" y1="25" x2="25" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Funken weiter entfernt und größer verteilt -->
+    <circle cx="15" cy="5" r="2" fill="currentColor"/>
+    <circle cx="20" cy="2" r="2" fill="currentColor"/>
+    <circle cx="25" cy="2" r="2" fill="currentColor"/>
+    <circle cx="28" cy="5" r="2" fill="currentColor"/>
+    <circle cx="28" cy="10" r="2" fill="currentColor"/>
+  </svg>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </template>

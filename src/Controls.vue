@@ -4,44 +4,40 @@ import type { Node } from '@vue-flow/core'
 import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
 import { findNodeTemplate, nodeTemplates } from './nodes/templates'
+import { applyDagreLayout } from './nodes/layouts'
 
-const flowKey = 'vue-flow--save-restore'
+
 
 // Grab reactive helpers from Vue Flow so we can inspect and mutate the graph and remove edges
 const { nodes, edges, setNodes, setEdges, addNodes, dimensions, toObject, fromObject} = useVueFlow()
-
 // Keep the list of templates reactive so the select updates if you edit nodeTemplates.
 const availableTemplates = computed(() => nodeTemplates)
 // Remember the template the user last chose; default to the first entry.
 const selectedNodeType = ref(availableTemplates.value[0]?.type ?? 'default')
 
 
-//function do delete one or multiple selected edges
-function onDeleteSelectedEdges() {
-  const remainingEdges = edges.value.filter(edge => !edge.selected)
-  setEdges(remainingEdges)
+//dnd for new nodes
+function onDragStart(type: string, event: DragEvent) {
+  if (!event.dataTransfer) return
+  event.dataTransfer.setData('node/type', type)
+  event.dataTransfer.effectAllowed = 'move'
 }
 
-//animated edges
-watch(edges, (newEdges) => {
-  newEdges.forEach(edge => {
-    if (edge.animated === undefined) edge.animated = true
-    if (!edge.style) edge.style = {}
-    if (!edge.markerEnd) edge.markerEnd = { type: 'arrowclosed', color: '#000000' }
-    else {
-    }
-  })
-}, { deep: true, immediate: true })
+//test function for blub
+function onAutoLayout() {
+  const newNodes = applyDagreLayout(nodes.value, edges.value, 'LR')
+  setNodes(newNodes)
+}
 
+//function to delete selected nodes or edges
+function onDeleteSelected() {
+  const remainingEdges = edges.value.filter(edge => !edge.selected)
+  setEdges(remainingEdges)
+  const remainingNodes = nodes.value.filter(node => !node.selected)
+  setNodes(remainingNodes)
+}
 
-/**
- * Save the current graph layout into localStorage.
- * Vue Flow's `toObject()` serialises nodes, edges, and viewport for us.
- */
-
-//save and load to and from file
-
-// save to json
+// function to save to json-file
 function onSaveToFile(): void {
   const dataStr = JSON.stringify(toObject(), null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
@@ -54,7 +50,7 @@ function onSaveToFile(): void {
   URL.revokeObjectURL(url)
 }
 
-// restore from JSON
+// function to restore from json-file
 function onRestoreFromFile(event: Event): void {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -72,74 +68,48 @@ function onRestoreFromFile(event: Event): void {
   reader.readAsText(file)
 }
 
-/**
- * Spawn a new node using whichever template is active in the dropdown.
- * We randomise the spawn position to give the node some breathing room.
- */
-function onAdd(): void {
-  const id = nodes.value.length + 1
-  const template = findNodeTemplate(selectedNodeType.value) ?? findNodeTemplate('default')
-
-  const width = dimensions.value?.width ?? 0
-  const height = dimensions.value?.height ?? 0
-  const baseLabel = template?.label ?? `Node ${id}`
-
-  // Copy template data so the original definition stays unchanged.
-  const data: Node['data'] =
-    template?.data && typeof template.data === 'object'
-      ? { ...template.data }
-      : { label: baseLabel }
-
-  // Guarantee that the node shows a label if the template forgot to set one.
-  if (data && typeof data === 'object' && !('label' in data)) {
-    ;(data as Record<string, unknown>).label = baseLabel
-  }
-
-  // Build the node payload expected by Vue Flow.
-  const newNode: Node = {
-    id: `${template?.type ?? 'node'}-${id}`,
-    type: template?.type,
-    position: {
-      x: Math.random() * width,
-      y: Math.random() * height,
-    },
-    data,
-    dragHandle: '.doc-node__header' //Prevents the node from moving around while resizing
-  }
-
-  addNodes([newNode])
-}
-
 </script>
+
+//HTML
 
 <template>
   <Panel position="top-left">
     <div class="panel-content">
 
          <label class="sr-only" for="node-type-select">Node type</label>
-          <select id="node-type-select" v-model="selectedNodeType">
-            <option v-for="template in availableTemplates" :key="template.type" :value="template.type">
-             {{ template.label }}
-           </option>
-          </select>
          <div class="buttons">
-          <button class="add-button" title="add node" @click="onAdd">
-            <Icon name="add" />
-          </button>
-           <button title="delete selected edges" @click="onDeleteSelectedEdges">
+           <button title="Delete selected nodes or edges" @click="onDeleteSelected">
              <Icon name="trash" />
            </button>
-          <button title="save graph as file" @click="onSaveToFile">
+          <button title="Save graph to file" @click="onSaveToFile">
             <Icon name="save" />
           </button>
-          <button title="load graph from file" class="upload-label">
+          <button title="Load graph from file" class="upload-label">
             <Icon name="upload" />
-            <input type="file" accept=".json" @click="onRestoreFromFile" />
+            <input type="file" accept=".json" @change="onRestoreFromFile" />
           </button>
-       </div>
-     </div>
+           <button title="Unchaosify" @click="onAutoLayout">
+             <Icon name="wand" />
+           </button>
+         </div>
+      <div class="drag-nodes">
+        <div
+            v-for="template in availableTemplates"
+            :key="template.type"
+            class="draggable-node"
+            draggable="true"
+            @dragstart="onDragStart(template.type, $event)"
+        >
+          {{ template.label }}
+        </div>
+      </div>
+
+    </div>
    </Panel>
 </template>
+
+
+//CSS
 
 <style scoped>
 .panel-content {
@@ -221,6 +191,26 @@ function onAdd(): void {
   width: 100%;
   height: 100%;
   pointer-events: all;
+}
+
+.drag-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+  margin-top: 8px;
+}
+
+.draggable-node {
+  padding: 6px 8px;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  font-size: 0.85rem;
+  width: 120px; /* optional: feste Breite für eine "Spalte" */
+  text-align: center; /* optional: Text zentrieren */
 }
 
 </style>
