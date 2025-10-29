@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Node, Edge, Connection } from '@vue-flow/core'
+import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
 import { VueFlow, addEdge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import SaveRestoreControls from './Controls.vue'
@@ -11,21 +11,13 @@ import SummaryNode from './components/SummaryNode.vue'
 import ComposeNode from './components/ComposeNode.vue'
 import DocOutputNode from './components/DocOutputNode.vue'
 import EditNode from './components/EditNode.vue'
+import GrammarNode from './components/GrammarNode.vue'
+import StickyNote from "@/components/StickyNote.vue";
+import {MiniMap} from "@vue-flow/minimap";
 
-// Demonstration node list so the canvas is not empty when the app starts.
-// Feel free to delete or replace entries as you build your own graph.
-const nodes = ref<Node[]>([
-  
-])
+const nodes = ref<Node[]>([])
+const edges = ref<Edge[]>([])
 
-// Simple demo edges just to show how data flows between the starter nodes.
-const edges = ref<Edge[]>([
-  
-])
-
-
-// I don think the code below works
-// ß
 /**
  * Vue Flow emits a `connect` event whenever you draw a new edge in the UI.
  * We merge the incoming connection into our edge list so it sticks around.
@@ -33,16 +25,19 @@ const edges = ref<Edge[]>([
 function onConnect(connection: Connection) {
   edges.value = addEdge(connection, edges.value) as Edge[]
 }
+
 </script>
 
-<template>
-  <div style="width: 100%; height: 600px">
-  
 
-    <VueFlow v-model:nodes="nodes" v-model:edges="edges" @connect="onConnect">
+<template>
+  <div style="width: 100%; height: 100vh">
+    <VueFlow
+        v-model:nodes="nodes"
+        v-model:edges="edges"
+        @connect="onConnect"
+    >
       <SaveRestoreControls />
-      <!-- bind your custom node types to components by using slots, slot names are always `node-<type>` -->
-     
+
       <template #node-concat="concatNodeProps">
         <ConcatNode v-bind="concatNodeProps" />
       </template>
@@ -64,15 +59,25 @@ function onConnect(connection: Connection) {
       <template #node-edit="editProps">
         <EditNode v-bind="editProps" />
       </template>
-
-      <!-- bind your custom edge type to a component by using slots, slot names are always `edge-<type>` -->
-      
+      <template #node-grammar="grammarProps">
+        <GrammarNode v-bind="grammarProps" />
+      </template>
+      <template #node-StickyNote="stickyNoteProps">
+        <StickyNote v-bind="stickyNoteProps" />
+      </template>
 
       <Background />
+
+      <!-- MiniMap -->
+      <MiniMap
+          nodeStrokeColor="#000"
+          nodeColor="#fff"
+          zoomable
+          pannable
+      />
     </VueFlow>
   </div>
 </template>
-
 
 
 <style>
@@ -83,4 +88,7 @@ function onConnect(connection: Connection) {
 
 /* import the default theme, this is optional but generally recommended */
 @import '@vue-flow/core/dist/theme-default.css';
+
+/* import default minimap theme */
+@import '@vue-flow/minimap/dist/style.css';
 </style>

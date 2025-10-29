@@ -78,7 +78,8 @@ const displayText = computed(() => {
 }
 
 .text-view-node__textarea {
-  width: 260px;
+  width: 240px;
+  min-width:240px;
   min-height: 140px;
   max-width: 480px;
   max-height: 400px;

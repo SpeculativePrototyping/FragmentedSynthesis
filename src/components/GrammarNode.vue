@@ -4,44 +4,44 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 
-const NODE_LABEL = 'Summarize'
-const LENGTH_OPTIONS = ['1 sentence', '2 sentences', '3 sentences', 'Short paragraph'] as const
-const DEFAULT_LENGTH = '1 sentences'
-const BASE_PROMPT =
-  "You are a concise academic assistant. Summarize the user's text in {length}. Output only LaTeX-safe prose (no environments), suitable for inclusion in a paragraph. Respond strictly with JSON containing a single string property named 'summary'."
+const NODE_LABEL = 'Grammar Check'
+const BASE_PROMPT = "You are a concise academic assistant." +
+                    "Correct the users spell and grammar." +
+                    "Output only LaTeX-safe prose (no environments), suitable for inclusion in a paragraph." +
+                    "Respond strictly with JSON containing a single string property named 'grammar'."
+
+
 const RESPONSE_FORMAT = {
   type: 'json_schema',
   json_schema: {
-    name: 'summary_response',
+    name: 'grammar_response',
     schema: {
       type: 'object',
       properties: {
-        summary: { type: 'string' },
+        grammar: { type: 'string' },
       },
-      required: ['summary'],
+      required: ['grammar'],
       additionalProperties: false,
     },
   },
 } as const
 
-type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
-type LengthOption = (typeof LENGTH_OPTIONS)[number]
+type GrammarStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
 
-interface SummaryNodeData {
+
+interface GrammarNodeData {
   label?: string
-  length?: LengthOption
   value?: string
-  status?: SummaryStatus
+  status?: GrammarStatus
   error?: string | null
 }
 
-const props = defineProps<NodeProps<SummaryNodeData>>()
+const props = defineProps<NodeProps<GrammarNodeData>>()
 const { edges, nodes, updateNodeData } = useVueFlow()
 
 const label = computed(() => props.data?.label ?? NODE_LABEL)
-const length = ref<LengthOption>((props.data?.length as LengthOption) ?? DEFAULT_LENGTH)
-const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
-const summary = ref(props.data?.value ?? '')
+const status = ref<GrammarStatus>((props.data?.status as GrammarStatus) ?? 'idle')
+const grammar = ref(props.data?.value ?? '')
 const error = ref<string | null>(props.data?.error ?? null)
 
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
@@ -55,7 +55,7 @@ function readNodeText(nodeId: string): string {
 }
 
 const sourceTexts = computed(() =>
-  incomingEdges.value.map((edge) => readNodeText(edge.source)).filter((text) => Boolean(text)),
+    incomingEdges.value.map((edge) => readNodeText(edge.source)).filter((text) => Boolean(text)),
 )
 
 const inputText = computed(() => sourceTexts.value.join('\n\n'))
@@ -79,14 +79,14 @@ let debounceTimer: number | undefined
 let requestToken = 0
 let lastKey = ''
 
-function pushNodeData(patch: Partial<SummaryNodeData>) {
+function pushNodeData(patch: Partial<GrammarNodeData>) {
   // Keep Vue Flow store in sync so downstream nodes see the latest values.
-  updateNodeData(props.id, { ...(props.data ?? {}), length: length.value, ...patch })
+  updateNodeData(props.id, { ...(props.data ?? {}), ...patch })
 }
 
 function resetState() {
   // Clear the node output and status when there is no text to summarise.
-  summary.value = ''
+  grammar.value = ''
   status.value = 'idle'
   error.value = null
   pushNodeData({ value: '', status: 'idle', error: null })
@@ -96,11 +96,11 @@ function schedule(force: boolean) {
   // Debounce requests so we only call the LLM once the input stabilises.
   window.clearTimeout(debounceTimer)
   debounceTimer = window.setTimeout(() => {
-    void queueSummary(force)
+    void queueGrammar(force)
   }, force ? 0 : 200)
 }
 
-async function queueSummary(force: boolean) {
+async function queueGrammar(force: boolean) {
   const text = inputText.value.trim()
 
   if (!text) {
@@ -110,24 +110,19 @@ async function queueSummary(force: boolean) {
     return
   }
 
-  const key = `${text}:::${length.value}`
-  if (!force && key === lastKey && status.value !== 'error') {
-    return
-  }
 
   const token = ++requestToken
-  lastKey = key
-  summary.value = ''
+  grammar.value = ''
   status.value = 'queued'
   error.value = null
   // Share the queued state with the graph so downstream nodes know to wait.
   pushNodeData({ value: '', status: 'queued', error: null })
 
-  const sys = BASE_PROMPT.replace('{length}', length.value)
-  const user = buildUserPrompt(text, length.value)
+  const sys = BASE_PROMPT
+  const user = text
 
   try {
-    // Enqueue the summarisation request so jobs run sequentially.
+    // Enqueue the correction request so jobs run sequentially.
     const result = await enqueueLlmJob({
       sys,
       user,
@@ -144,12 +139,12 @@ async function queueSummary(force: boolean) {
       return
     }
 
-    const summaryText = extractSummary(result.message, result.response)
-    summary.value = summaryText
+    const GrammarText = extractGrammar(result.message, result.response)
+    grammar.value = GrammarText
     status.value = 'done'
     error.value = null
     // Persist the successful result for other nodes.
-    pushNodeData({ value: summaryText, status: 'done', error: null })
+    pushNodeData({ value: GrammarText, status: 'done', error: null })
   } catch (err) {
     if (token !== requestToken) {
       return
@@ -158,30 +153,21 @@ async function queueSummary(force: boolean) {
     status.value = 'error'
     const message = err instanceof Error ? err.message : String(err)
     error.value = message
-    summary.value = ''
+    grammar.value = ''
     // Make sure consumers can react to the failure state.
     pushNodeData({ value: '', status: 'error', error: message })
   }
 }
 
 watch(
-  inputText,
-  () => {
-    // React to upstream text changes.
-    schedule(false)
-  },
-  { immediate: true },
+    inputText,
+    () => {
+      // React to upstream text changes.
+      schedule(false)
+    },
+    { immediate: true },
 )
 
-watch(
-  length,
-  () => {
-    // Persist the new length and re-run immediately for fresh output.
-    pushNodeData({ length: length.value })
-    schedule(true)
-  },
-  { immediate: false },
-)
 
 function onRetry() {
   // Manual retry bypasses the debounce.
@@ -193,26 +179,23 @@ onBeforeUnmount(() => {
   window.clearTimeout(debounceTimer)
 })
 
-function buildUserPrompt(text: string, len: string): string {
-  return `Summarize the following text.\n\nDesired length: ${len}.\n\nText:\n${text}`
-}
 
-function extractSummary(message: string, response: unknown): string {
+function extractGrammar(message: string, response: unknown): string {
   const raw = (message || '').trim()
   if (!raw) return ''
 
   const cleaned = stripCodeFences(raw)
   const parsed = tryParseJson(cleaned)
-  if (parsed && typeof parsed.summary === 'string') {
-    return parsed.summary.trim()
+  if (parsed && typeof parsed.grammar === 'string') {
+    return parsed.grammar.trim()
   }
 
-  if (parsed && parsed.result && typeof parsed.result.summary === 'string') {
-    return parsed.result.summary.trim()
+  if (parsed && parsed.result && typeof parsed.result.grammar === 'string') {
+    return parsed.result.grammar.trim()
   }
 
   const choices = (response as any)?.choices?.[0]?.message
-  const nested = choices?.parsed?.summary
+  const nested = choices?.parsed?.grammar
   if (typeof nested === 'string') {
     return nested.trim()
   }
@@ -237,39 +220,36 @@ function stripCodeFences(text: string): string {
 }
 </script>
 
+
+
+//HTML
+
+
 <template>
-  <div class="summary-node doc-node">
+  <div class="grammar-node doc-node">
     <header class="doc-node__header">
       <strong>{{ label }}</strong>
       <span class="doc-node__hint">{{ statusLabel }}</span>
     </header>
 
-    <section class="doc-node__body summary-node__body">
-      <label class="summary-node__field">
-        <span>Length</span>
-        <select v-model="length">
-          <option v-for="option in LENGTH_OPTIONS" :key="option" :value="option">
-            {{ option }}
-          </option>
-        </select>
-      </label>
+    <section class="doc-node__body grammar-node__body">
 
-      <div class="summary-node__actions">
-        <button type="button" class="summary-node__retry" @click="onRetry">Retry</button>
+      <div class="grammar-node__actions">
+        <button type="button" class="grammar-node__retry" @click="onRetry">Retry</button>
       </div>
 
       <textarea
-        class="summary-node__textarea"
-        :value="summary"
-        readonly
-        aria-label="Summary output"
-        :placeholder="status === 'idle' ? 'Summary will appear here…' : ''"
+          class="grammar-node__textarea"
+          :value="grammar"
+          readonly
+          aria-label="Grammar output"
+          :placeholder="status === 'idle' ? 'Corrected text will appear here…' : ''"
       />
 
-      <p v-if="status === 'error'" class="summary-node__status summary-node__status--error" role="alert">
+      <p v-if="status === 'error'" class="grammar-node__status grammar-node__status--error" role="alert">
         {{ error }}
       </p>
-      <p v-else-if="status !== 'done'" class="summary-node__status">
+      <p v-else-if="status !== 'done'" class="grammar-node__status">
         {{ status === 'processing' ? 'Working on it…' : status === 'queued' ? 'Queued…' : '' }}
       </p>
     </section>
@@ -279,31 +259,28 @@ function stripCodeFences(text: string): string {
   </div>
 </template>
 
+
+//CSS
+
+
 <style scoped>
-.summary-node__body {
+.grammar-node__body {
   gap: 10px;
 }
 
-.summary-node__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.85rem;
-}
-
-.summary-node__field select {
+.grammar-node__field select {
   border: 1px solid rgba(15, 23, 42, 0.2);
   border-radius: 6px;
   padding: 4px 6px;
   font: inherit;
 }
 
-.summary-node__actions {
+.grammar-node__actions {
   display: flex;
   justify-content: flex-end;
 }
 
-.summary-node__retry {
+.grammar-node__retry {
   border: 1px solid rgba(15, 23, 42, 0.2);
   border-radius: 6px;
   background: white;
@@ -312,16 +289,13 @@ function stripCodeFences(text: string): string {
   cursor: pointer;
 }
 
-.summary-node__retry:hover {
+.grammar-node__retry:hover {
   background: rgba(99, 102, 241, 0.08);
 }
 
-.summary-node__textarea {
-  width: 240px;
-  min-width:240px;
-  min-height: 140px;
-  max-width: 480px;
-  max-height: 400px;
+.grammar-node__textarea {
+  width: 260px;
+  min-height: 120px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
@@ -329,16 +303,16 @@ function stripCodeFences(text: string): string {
   color: #0f172a;
   font: inherit;
   line-height: 1.45;
-  resize: both;
+  resize: vertical;
 }
 
-.summary-node__status {
+.grammar-node__status {
   color: rgba(15, 23, 42, 0.65);
   font-size: 0.85rem;
   min-height: 1.25rem;
 }
 
-.summary-node__status--error {
+.grammar-node__status--error {
   color: #dc2626;
 }
 </style>

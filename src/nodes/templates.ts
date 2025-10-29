@@ -28,14 +28,14 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'textArea', // THias is important to find the prod...
-    label: 'TextAreaNode',
+    label: 'TextArea Node',
     data: {
       label: 'Text Area',
     },
   },
   {
     type: 'textView',
-    label: 'TextViewNode',
+    label: 'TextView Node',
     data: {
       label: 'Text View',
       placeholder: 'Waiting for input…',
@@ -47,6 +47,16 @@ export const nodeTemplates: NodeTemplate[] = [
     data: {
       label: 'Summarize',
       length: '1-2 sentences',
+      value: '',
+      status: 'idle',
+      error: null,
+    },
+  },
+  {
+    type: 'grammar',
+    label: 'Grammar Node',
+    data: {
+      label: 'Grammar Checker',
       value: '',
       status: 'idle',
       error: null,
@@ -77,6 +87,13 @@ export const nodeTemplates: NodeTemplate[] = [
     data: {
       json: '',
       value: '',
+    },
+  },
+  {
+    type: 'StickyNote',
+    label: 'Sticky Note',
+    data: {
+      label: 'Sticky Note',
     },
   },
 ]

@@ -20,4 +20,23 @@ defineProps(['name'])
   <svg v-else-if="name === 'add'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path fill="currentColor" d="M11 13H5v-2h6V5h2v6h6v2h-6v6h-2z" />
   </svg>
+
+  <svg v-else-if="name === 'folder'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path
+        fill="currentColor"
+        d="M10 4l2 2h8q.825 0 1.413.588T22 8v10q0 .825-.587 1.413T20 20H4q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h6z"
+    />
+  </svg>
+
+  <svg v-else-if="name === 'upload'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path
+        fill="currentColor"
+        d="M5 20q-.825 0-1.412-.587T3 18v-3h2v3h14v-3h2v3q0 .825-.587 1.413T19 20zM12 4l4 4l-1.4 1.4l-1.6-1.55V15h-2V7.85L9.4 9.4L8 8z"
+    />
+  </svg>
+
+  <svg v-else-if="name === 'trash'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 19q0 .825.588 1.413T8 21h8q.825 0 1.412-.587T18 19V7H6v12zm3-10h2v8H9v-8zm4 0h2v8h-2v-8zM5 5h14v2H5V5z"/>
+  </svg>
+
 </template>

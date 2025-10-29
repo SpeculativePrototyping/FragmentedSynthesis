@@ -214,9 +214,7 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
 </template>
 
 <style scoped>
-.edit-node {
-  width: 320px;
-}
+
 
 .edit-node__body {
   gap: 12px;
@@ -230,15 +228,18 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
 }
 
 .edit-node__textarea {
-  width: 100%;
-  min-height: 160px;
+  width: 240px;
+  min-width:240px;
+  min-height: 140px;
+  max-width: 480px;
+  max-height: 400px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.15);
   border-radius: 10px;
   background-color: #fff;
   font: inherit;
   line-height: 1.45;
-  resize: vertical;
+  resize: both;
 }
 
 .edit-node__actions {
