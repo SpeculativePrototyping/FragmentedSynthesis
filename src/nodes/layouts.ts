@@ -10,7 +10,7 @@ export function applyDagreLayout(nodes: Node[], edges: Edge[], direction: 'TB' |
     g.setGraph({ rankdir: direction })
     g.setDefaultEdgeLabel(() => ({}))
 
-    // filter out stickynodes
+    // filter out stickynotes
     const layoutNodes = nodes.filter(node => node.type !== 'StickyNote')
 
     // set layoutnodes to base size
