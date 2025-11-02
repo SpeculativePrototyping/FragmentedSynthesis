@@ -1,49 +1,59 @@
 import type { Node } from '@vue-flow/core'
 
-/**
- * Describes a node option that can be spawned from the controls panel.
- * Add a new entry here (and an accompanying import) whenever you create a new node type.
- */
+//describes the structure of a node template that can be dragged from the control pabel
+//every node needs: an entry in nodeTemplates, an accompanying import, and an added template in app.vue
 export interface NodeTemplate {
-  /** Node type string passed to Vue Flow when the node is created. */
+
   type: NonNullable<Node['type']>
-  /** Friendly name shown in the dropdown so you know which one you are spawning. */
   label: string
-  /** Optional data payload merged into the new node. Use this for node-specific settings. */
+  category: 'text' | 'llm' | 'utility'
   data?: Node['data']
+
 }
 
-/**
- * Built-in options that ship with the example.
- * You can add new templates or tweak the existing ones by editing this array.
- */
+// Nodes in the drag and drop menu appear in the same order they do here:
+
 export const nodeTemplates: NodeTemplate[] = [
   {
-    type: 'concat',
-    label: 'Concat Node',
+    type: 'textArea',       // tells vueflow what component to load
+    label: 'TextArea Node', // readable label for what the node is called in the drag and drop menu
+    category: 'text',
     data: {
-      label: 'Concat',
-      concatenated: '',
-    },
-  },
-  {
-    type: 'textArea', // This is important to find the prod...
-    label: 'TextArea Node',
-    data: {
-      label: 'Text Area',
+      label: 'Text Area',   // label the actual node in the UI gets
     },
   },
   {
     type: 'textView',
     label: 'TextView Node',
+    category: 'text',
     data: {
       label: 'Text View',
       placeholder: 'This node displays incoming text. Waiting for input…',
     },
   },
   {
+    type: 'edit',
+    label: 'Edit Node',
+    category: 'text',
+    data: {
+      original: '',
+      value: '',
+      diff: [],
+    },
+  },
+  {
+    type: 'concat',
+    label: 'Concat Node',
+    category: 'text',
+    data: {
+      label: 'Concat',
+      concatenated: '',
+    },
+  },
+  {
     type: 'summary',
     label: 'Summary Node',
+    category: 'llm',
     data: {
       label: 'Summarize',
       length: '1-2 sentences',
@@ -55,6 +65,7 @@ export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'grammar',
     label: 'Grammar Node',
+    category: 'llm',
     data: {
       label: 'Grammar Checker',
       value: '',
@@ -65,6 +76,7 @@ export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'compose',
     label: 'Compose Node',
+    category: 'text',
     data: {
       sectionType: 'section',
       title: '',
@@ -73,35 +85,25 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'edit',
-    label: 'Edit Node',
-    data: {
-      original: '',
-      value: '',
-      diff: [],
-    },
-  },
-  {
     type: 'docOutput',
     label: 'Document Output',
+    category: 'text',
     data: {
       json: '',
       value: '',
     },
   },
   {
-    type: 'StickyNote',
-    label: 'Sticky Note',
+    type: 'stickyNote',
+    label: 'StickyNote',
+    category: 'utility',
     data: {
       label: 'Sticky Note',
     },
   },
 ]
 
-/**
- * Utility that finds a template by node type.
- * This keeps the lookup logic in one place so the component stays easy to follow.
- */
+//function to help find the right component according to the type of a node
 export function findNodeTemplate(type: string): NodeTemplate | undefined {
   return nodeTemplates.find((template) => template.type === type)
 }

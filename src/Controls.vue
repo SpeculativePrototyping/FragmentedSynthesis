@@ -15,6 +15,7 @@ const availableTemplates = computed(() => nodeTemplates)
 // Remember the template the user last chose; default to the first entry.
 const selectedNodeType = ref(availableTemplates.value[0]?.type ?? 'default')
 
+const showLLM = ref(true)
 
 //dnd for new nodes
 function onDragStart(type: string, event: DragEvent) {
@@ -23,7 +24,7 @@ function onDragStart(type: string, event: DragEvent) {
   event.dataTransfer.effectAllowed = 'move'
 }
 
-//test function for blub
+//test function for autolayout
 function onAutoLayout() {
   const newNodes = applyDagreLayout(nodes.value, edges.value, 'LR')
   setNodes(newNodes)
@@ -93,13 +94,57 @@ function onRestoreFromFile(event: Event): void {
              <Icon name="wand" />
            </button>
          </div>
-      <div title="Drag and drop nodes you would like to add over to the canvas" class="drag-nodes">
+      <div class="drag-nodes">
+        <!-- Toggle-Switch für LLM Nodes -->
+        <div class="toggle-switch">
+          <label>
+            <input type="checkbox" v-model="showLLM" />
+            <span class="slider"></span>
+          </label>
+          <span
+              class="toggle-label"
+              title="Enables the use of LLM-base nodes. Disabling this mode will not remove already implemented nodes.">
+            Unethical mode
+          </span>
+        </div>
+        <!-- Text Nodes -->
+        <h4 class="drag-category">Text Nodes</h4>
         <div
-            v-for="template in availableTemplates"
+            v-for="template in availableTemplates.filter(t => t.category === 'text')"
             :key="template.type"
             class="draggable-node"
             draggable="true"
             @dragstart="onDragStart(template.type, $event)"
+            title="Drag and drop nodes you would like to add over to the canvas"
+        >
+          {{ template.label }}
+        </div>
+        <!-- Utility Nodes -->
+        <h4 class="drag-category">Utility Nodes</h4>
+        <div
+            v-for="template in availableTemplates.filter(t => t.category === 'utility')"
+            :key="template.type"
+            class="draggable-node"
+            draggable="true"
+            @dragstart="onDragStart(template.type, $event)"
+            title="Drag and drop nodes you would like to add over to the canvas"
+        >
+          {{ template.label }}
+        </div>
+        <!-- LLM Nodes -->
+        <h4
+            class="drag-category"
+            v-if="showLLM">
+          LLM-based Nodes
+        </h4>
+        <div
+            v-for="template in availableTemplates.filter(t => t.category === 'llm')"
+            :key="template.type"
+            class="draggable-node"
+            draggable="true"
+            @dragstart="onDragStart(template.type, $event)"
+            v-if="showLLM"
+            title="Drag and drop nodes you would like to add over to the canvas"
         >
           {{ template.label }}
         </div>
@@ -212,6 +257,76 @@ function onRestoreFromFile(event: Event): void {
   font-size: 0.85rem;
   width: 120px; /* optional: feste Breite für eine "Spalte" */
   text-align: center; /* optional: Text zentrieren */
+}
+
+.drag-category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgb(255, 255, 255);
+  margin-top: 10px;
+  margin-bottom: 4px;
+  padding-left: 2px;
+  border-bottom: 1px solid rgb(255, 255, 255);
+}
+
+/* Animated Toggle-Switch experimental */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.toggle-switch label {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch label input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 12px;
+  transition: 0.2s;
+}
+
+.toggle-switch .slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #22ff00; /* passt zum Fokus/Buttons */
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(16px);
+}
+
+.toggle-switch .toggle-label {
+  font-size: 0.85rem;
+  color: #ffffff;
 }
 
 </style>

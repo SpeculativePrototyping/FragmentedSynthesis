@@ -116,7 +116,7 @@ function onDrop(event: DragEvent) {
       <template #node-grammar="grammarProps">
         <GrammarNode v-bind="grammarProps" />
       </template>
-      <template #node-StickyNote="stickyNoteProps">
+      <template #node-stickyNote="stickyNoteProps">
         <StickyNote v-bind="stickyNoteProps" />
       </template>
 
