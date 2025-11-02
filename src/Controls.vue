@@ -108,7 +108,11 @@ function onRestoreFromFile(event: Event): void {
           </span>
         </div>
         <!-- Text Nodes -->
-        <h4 class="drag-category">Text Nodes</h4>
+        <h4
+            class="drag-category"
+        >
+          Text Nodes
+        </h4>
         <div
             v-for="template in availableTemplates.filter(t => t.category === 'text')"
             :key="template.type"
@@ -120,7 +124,11 @@ function onRestoreFromFile(event: Event): void {
           {{ template.label }}
         </div>
         <!-- Utility Nodes -->
-        <h4 class="drag-category">Utility Nodes</h4>
+        <h4
+            class="drag-category"
+        >
+          Utility Nodes
+        </h4>
         <div
             v-for="template in availableTemplates.filter(t => t.category === 'utility')"
             :key="template.type"
@@ -134,7 +142,8 @@ function onRestoreFromFile(event: Event): void {
         <!-- LLM Nodes -->
         <h4
             class="drag-category"
-            v-if="showLLM">
+            v-if="showLLM"
+        >
           LLM-based Nodes
         </h4>
         <div
@@ -149,11 +158,9 @@ function onRestoreFromFile(event: Event): void {
           {{ template.label }}
         </div>
       </div>
-
     </div>
    </Panel>
 </template>
-
 
 //CSS
 
@@ -317,7 +324,7 @@ function onRestoreFromFile(event: Event): void {
 }
 
 .toggle-switch input:checked + .slider {
-  background-color: #22ff00; /* passt zum Fokus/Buttons */
+  background-color: #22ff00;
 }
 
 .toggle-switch input:checked + .slider::before {
