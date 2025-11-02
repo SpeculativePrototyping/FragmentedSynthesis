@@ -75,10 +75,11 @@ function onRestoreFromFile(event: Event): void {
 <template>
   <Panel position="top-left">
     <div class="panel-content">
-
          <label class="sr-only" for="node-type-select">Node type</label>
          <div class="buttons">
-           <button title="Delete selected nodes or edges" @click="onDeleteSelected">
+           <button
+               title="Delete selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL."
+               @click="onDeleteSelected">
              <Icon name="trash" />
            </button>
           <button title="Save graph to file" @click="onSaveToFile">
@@ -88,11 +89,11 @@ function onRestoreFromFile(event: Event): void {
             <Icon name="upload" />
             <input type="file" accept=".json" @change="onRestoreFromFile" />
           </button>
-           <button title="Unchaosify" @click="onAutoLayout">
+           <button title="Unchaosify - This will automatically sort your elements according to the flow of the content." @click="onAutoLayout">
              <Icon name="wand" />
            </button>
          </div>
-      <div class="drag-nodes">
+      <div title="Drag and drop nodes you would like to add over to the canvas" class="drag-nodes">
         <div
             v-for="template in availableTemplates"
             :key="template.type"

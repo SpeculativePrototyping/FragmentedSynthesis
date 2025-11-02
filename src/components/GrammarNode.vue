@@ -243,7 +243,7 @@ function stripCodeFences(text: string): string {
           :value="grammar"
           readonly
           aria-label="Grammar output"
-          :placeholder="status === 'idle' ? 'Corrected text will appear here…' : ''"
+          :placeholder="status === 'idle' ? 'This node can correct your grammar and spelling. Corrected text will appear here…' : ''"
       />
 
       <p v-if="status === 'error'" class="grammar-node__status grammar-node__status--error" role="alert">

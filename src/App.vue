@@ -41,7 +41,7 @@ watch(edges, (newEdges) => {
   })
 }, { deep: true, immediate: true })
 
-//function to take over chose type from controls.vue and drop node on the canvas
+//function to take over chosen type from controls.vue and drop node on the canvas
 function onDrop(event: DragEvent) {
   const type = event.dataTransfer?.getData('node/type')
   if (!type) return

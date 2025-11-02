@@ -192,7 +192,7 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
           v-model="editedText"
           class="edit-node__textarea"
           rows="8"
-          placeholder="Start typing…"
+          placeholder="With this node, you can edit incoming text from any other node. Waiting for input…"
         ></textarea>
       </label>
 

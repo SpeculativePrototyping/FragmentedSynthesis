@@ -263,7 +263,7 @@ function stripCodeFences(text: string): string {
         :value="summary"
         readonly
         aria-label="Summary output"
-        :placeholder="status === 'idle' ? 'Summary will appear here…' : ''"
+        :placeholder="status === 'idle' ? 'This node can summarize incoming text for you. Summary will appear here…' : ''"
       />
 
       <p v-if="status === 'error'" class="summary-node__status summary-node__status--error" role="alert">

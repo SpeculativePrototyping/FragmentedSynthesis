@@ -27,7 +27,7 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'textArea', // THias is important to find the prod...
+    type: 'textArea', // This is important to find the prod...
     label: 'TextArea Node',
     data: {
       label: 'Text Area',
@@ -38,7 +38,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'TextView Node',
     data: {
       label: 'Text View',
-      placeholder: 'Waiting for input…',
+      placeholder: 'This node displays incoming text. Waiting for input…',
     },
   },
   {

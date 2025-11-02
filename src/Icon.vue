@@ -51,23 +51,4 @@ defineProps(['name'])
     <circle cx="28" cy="10" r="2" fill="currentColor"/>
   </svg>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </template>
