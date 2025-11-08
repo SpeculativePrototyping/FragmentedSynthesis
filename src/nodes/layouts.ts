@@ -11,7 +11,7 @@ export function applyDagreLayout(nodes: Node[], edges: Edge[], direction: 'TB' |
     g.setDefaultEdgeLabel(() => ({}))
 
     // filter out stickynotes
-    const layoutNodes = nodes.filter(node => node.type !== 'StickyNote')
+    const layoutNodes = nodes.filter(node => node.type !== 'stickyNote')
 
     // set layoutnodes to base size
     layoutNodes.forEach(node => {
@@ -27,7 +27,7 @@ export function applyDagreLayout(nodes: Node[], edges: Edge[], direction: 'TB' |
     dagre.layout(g)
 
     return nodes.map(node => {
-        if (node.type === 'StickyNote') return node
+        if (node.type === 'stickyNote') return node
         const { x, y } = g.node(node.id)
         return {
             ...node,

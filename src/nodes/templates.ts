@@ -16,10 +16,10 @@ export interface NodeTemplate {
 export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'textArea',       // tells vueflow what component to load
-    label: 'TextArea Node', // readable label for what the node is called in the drag and drop menu
+    label: 'TextInput Node', // readable label for what the node is called in the drag and drop menu
     category: 'text',
     data: {
-      label: 'Text Area',   // label the actual node in the UI gets
+      label: 'Text Input',   // label the actual node in the UI gets
     },
   },
   {
