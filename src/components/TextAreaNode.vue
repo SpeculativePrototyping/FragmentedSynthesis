@@ -10,11 +10,13 @@ interface TextNodeData {
   placeholder?: string
 }
 
+
 const props = defineProps<NodeProps<TextNodeData>>()
 const { updateNodeData, nodes, edges } = useVueFlow()
 const isCompact = ref(false)
 const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
+
 
 const NODE_PROMPT = `You are a concise academic assistant. Summarize the user's text in 1 extremely short sentence.
 Output only LaTeX-safe prose (no environments), suitable for inclusion in a paragraph.
@@ -32,6 +34,7 @@ const RESPONSE_FORMAT = {
     },
   },
 } as const
+
 
 let requestToken = 0;
 
@@ -142,9 +145,8 @@ watch(text, (v) => {
 }
 
 .text-node__textarea {
-  width: 240px;
-  min-width: 240px;
-  min-height: 140px;
+  min-width: 400px;
+  min-height: 240px;
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);
   border-radius: 10px;
