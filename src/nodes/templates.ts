@@ -19,7 +19,12 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'TextInput Node', // readable label for what the node is called in the drag and drop menu
     category: 'text',
     data: {
+      value: '',
       label: 'Text Input',   // label the actual node in the UI gets
+      placeholder: '',
+      citations: [] as string[],
+      status: 'idle',
+      error: null,
     },
   },
   {
@@ -99,6 +104,14 @@ export const nodeTemplates: NodeTemplate[] = [
     category: 'utility',
     data: {
       label: 'Sticky Note',
+    },
+  },
+  {
+    type: 'referenceTracker',
+    label: 'Reference Tracker',
+    category: 'utility',
+    data: {
+      citations: [] as string[],
     },
   },
 ]

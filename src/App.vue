@@ -17,6 +17,7 @@ import DocOutputNode from './components/DocOutputNode.vue'
 import EditNode from './components/EditNode.vue'
 import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
+import ReferenceTrackerNode from "@/components/ReferenceTrackerNode.vue";
 
 //reactive lists of the nodes and edges
 const nodes = ref<Node[]>([])
@@ -118,6 +119,9 @@ function onDrop(event: DragEvent) {
       </template>
       <template #node-stickyNote="stickyNoteProps">
         <StickyNote v-bind="stickyNoteProps" />
+      </template>
+      <template #node-referenceTracker="ReferenceTrackerProps">
+        <ReferenceTrackerNode v-bind="ReferenceTrackerProps" />
       </template>
 
       <Background />

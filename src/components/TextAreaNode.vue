@@ -4,10 +4,16 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 
+type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
+
+
 interface TextNodeData {
   value?: string
   label?: string
   placeholder?: string
+  citations?: string[]
+  status?: SummaryStatus
+  error?: string | null
 }
 
 
@@ -16,6 +22,23 @@ const { updateNodeData, nodes, edges } = useVueFlow()
 const isCompact = ref(false)
 const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
+const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
+
+
+const statusLabel = computed(() => {
+  switch (status.value) {
+    case 'queued':
+      return 'Status: queued…'
+    case 'processing':
+      return 'Status: processing…'
+    case 'done':
+      return 'Status: done'
+    case 'error':
+      return 'Status: error'
+    default:
+      return 'Status: idle'
+  }
+})
 
 
 const NODE_PROMPT = `You are a concise academic assistant. Summarize the user's text in 1 extremely short sentence.
@@ -35,18 +58,19 @@ const RESPONSE_FORMAT = {
   },
 } as const
 
-
 let requestToken = 0;
 
 async function generateSummary() {
   const txt = text.value.trim()
   if (!txt) {
     summary.value = ''
+    status.value = 'idle'
     return
   }
 
   const token = ++requestToken
   summary.value = ''
+  status.value ="queued"
 
   try {
     const result = await enqueueLlmJob({
@@ -64,8 +88,10 @@ async function generateSummary() {
     })()
 
     summary.value = parsed?.summary?.trim() ?? msg.trim()
+    status.value = "done"
   } catch {
     summary.value = ''
+    status.value = "error"
   }
 }
 
@@ -73,6 +99,11 @@ async function generateSummary() {
 watch(isCompact, v => {
   if (v) generateSummary()
 })
+
+watch(isCompact, v => {
+  if (!v) status.value = "idle"
+})
+
 
 // Debounced push to Vue Flow state so downstream nodes can read `data.value`
 let timer: number | undefined
@@ -83,9 +114,27 @@ watch(text, (v) => {
   }, 150)
 })
 
+// --- Citation Functions ---
+function addCitation() {
+  const citations = props.data.citations ? [...props.data.citations] : []
+  citations.push('')
+  updateNodeData(props.id, { ...props.data, citations })
+}
+
+function removeCitation(index: number) {
+  const citations = props.data.citations ? [...props.data.citations] : []
+  citations.splice(index, 1)
+  updateNodeData(props.id, { ...props.data, citations })
+}
+
+function updateCitation(index: number, value: string) {
+  const citations = props.data.citations ? [...props.data.citations] : []
+  citations[index] = value
+  updateNodeData(props.id, { ...props.data, citations })
+}
+
 
 </script>
-
 
 <template>
   <div class="text-node doc-node node-wrapper" >
@@ -104,6 +153,7 @@ watch(text, (v) => {
 
     <header class="doc-node__header">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
+      <span class="doc-node__hint">{{ statusLabel }}</span>
     </header>
 
     <section class="doc-node__body">
@@ -125,8 +175,19 @@ watch(text, (v) => {
       <div v-else class="compact-summary">
         {{ summary }}
       </div>
-
     </section>
+
+    <!-- Citations -->
+    <div v-if="!isCompact" class="text-node__citations">
+      <div v-for="(c, i) in props.data.citations ?? []" :key="i" class="citation-item">
+        <input type="text":value="c" @input="e => updateCitation(i, e.target.value)" />
+        <button type="button" @click="removeCitation(i)">❌</button>
+      </div>
+    </div>
+
+    <div v-if="!isCompact" class="add-wrapper">
+    <button type="button" class="add" @click="addCitation">+ Add Source (APA)</button>
+    </div>
 
     <Handle id="output" type="source" :position="Position.Right" />
   </div>
@@ -137,12 +198,6 @@ watch(text, (v) => {
 
 .node-wrapper {
   position: relative;
-}
-
-.doc-node__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .text-node__textarea {
@@ -240,6 +295,66 @@ watch(text, (v) => {
 .toggle-label {
   font-size: 0.75rem;
   color: #000;
+}
+
+.text-node__citations {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.citation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Abstand zwischen Input und Button */
+  margin-bottom: 6px;
+  width: 100%; /* volle Breite wie das darüber liegende Element */
+}
+
+.citation-item input {
+  flex: 1; /* Input nimmt den verbleibenden Platz ein */
+  padding: 10px 12px;
+  border: 1px solid rgba(15,23,42,.15);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  width: 100%;
+}
+
+.citation-item input:focus {
+  outline: 2px solid rgba(99,102,241,.45);
+  border-color: rgba(99,102,241,.45);
+}
+
+.citation-item button {
+  flex: 0 0 auto; /* Button behält seine natürliche Breite */
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+.citation-item button:hover {
+  background: #eee;
+}
+
+.add-wrapper {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.add {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+.add:hover {
+  background: #eee;
 }
 
 </style>
