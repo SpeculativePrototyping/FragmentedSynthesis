@@ -56,6 +56,7 @@ const displayText = computed(() => {
     <section class="doc-node__body text-view-node__body">
       <textarea
         class="text-view-node__textarea"
+        @wheel.stop
         :value="displayText"
         readonly
         spellcheck="false"
@@ -78,11 +79,8 @@ const displayText = computed(() => {
 }
 
 .text-view-node__textarea {
-  width: 240px;
-  min-width:240px;
-  min-height: 140px;
-  max-width: 480px;
-  max-height: 400px;
+  min-width:400px;
+  min-height: 240px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;

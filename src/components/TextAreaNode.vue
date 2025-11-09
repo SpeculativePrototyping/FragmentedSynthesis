@@ -109,16 +109,17 @@ watch(text, (v) => {
     <section class="doc-node__body">
       <textarea
           v-if="!isCompact"
-        v-model="text"
-        rows="6"
-        class="text-node__textarea"
-        :placeholder="props.data?.placeholder ?? 'This node is for text input. Type here and connect it to other nodes...'"
-        spellcheck="true"
-        autocapitalize="sentences"
-        autocomplete="on"
-        data-gramm="true"
-        data-gramm_editor="true"
-        aria-label="Text node editor"
+          v-model="text"
+          @wheel.stop
+          rows="6"
+          class="text-node__textarea"
+          :placeholder="props.data?.placeholder ?? 'This node is for text input. Type here and connect it to other nodes...'"
+          spellcheck="true"
+          autocapitalize="sentences"
+          autocomplete="on"
+          data-gramm="true"
+          data-gramm_editor="true"
+          aria-label="Text node editor"
       />
 
       <div v-else class="compact-summary">
