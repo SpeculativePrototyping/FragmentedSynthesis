@@ -328,7 +328,8 @@ function onExport() {
 .doc-output__outline {
   min-width: 400px;
   min-height: 400px;
-  height: 600px;
+  width: 400px;
+  height: 400px;
   overflow: auto;
   padding: 12px 14px;
   border: 1px solid rgba(15,23,42,0.12);
