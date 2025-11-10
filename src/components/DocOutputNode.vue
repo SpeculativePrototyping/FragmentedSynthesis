@@ -44,7 +44,7 @@ function edgeToDoc(edge?: Edge): DocElement | undefined {
     try {
       return JSON.parse(rawJson) as DocElement
     } catch {
-      // fall through to value handling
+      // fall through
     }
   }
 
@@ -57,11 +57,11 @@ function edgeToDoc(edge?: Edge): DocElement | undefined {
 }
 
 const topLevelDocs = computed(() =>
-  incomingEdges.value
-    .slice()
-    .sort((a, b) => parseHandleIndex(a.targetHandle) - parseHandleIndex(b.targetHandle))
-    .map((edge) => edgeToDoc(edge))
-    .filter((doc): doc is DocElement => Boolean(doc)),
+    incomingEdges.value
+        .slice()
+        .sort((a, b) => parseHandleIndex(a.targetHandle) - parseHandleIndex(b.targetHandle))
+        .map((edge) => edgeToDoc(edge))
+        .filter((doc): doc is DocElement => Boolean(doc)),
 )
 
 interface HandleRow {
@@ -92,7 +92,7 @@ const handleRows = computed<HandleRow[]>(() => {
   const rows: HandleRow[] = []
   for (let index = 0; index < totalRows; index += 1) {
     const matchingEdge = incomingEdges.value.find(
-      (edge) => parseHandleIndex(edge.targetHandle) === index,
+        (edge) => parseHandleIndex(edge.targetHandle) === index,
     )
     rows.push({
       handleId: `doc-${index}`,
@@ -105,30 +105,11 @@ const handleRows = computed<HandleRow[]>(() => {
   return rows
 })
 
-watch(
-  handleRows,
-  async (rows) => {
-    await nextTick()
-    updateNodeInternals?.([props.id])
-
-    const validHandles = new Set(rows.map((row) => row.handleId))
-    const stale = incomingEdges.value.filter((edge) => {
-      const handleId = edge.targetHandle ?? ''
-      return !validHandles.has(handleId)
-    })
-
-    if (stale.length) {
-      removeEdges(stale)
-    }
-  },
-  { deep: true, immediate: true },
-)
-
 interface OutlineItem {
   id: string
   label: string
   depth: number
-  type: DocElement['kind']
+  type: DocElement['kind'] | 'bibliography' | 'reference'
 }
 
 function buildOutline(doc: DocElement, depth: number, acc: OutlineItem[]): void {
@@ -159,8 +140,64 @@ const outlineItems = computed(() => {
   return items
 })
 
+// Bibliographie
+const bibliographyItems = computed<OutlineItem[]>(() => {
+  const refEdges = edges.value.filter(e => e.target === props.id)
+  const items: OutlineItem[] = []
+
+  if (!refEdges.length) return items
+
+  // Bibliographie selbst
+  items.push({
+    id: 'bibliography-root',
+    label: 'Bibliography',
+    depth: 0,
+    type: 'bibliography'
+  })
+
+  // Einträge
+  refEdges.forEach(edge => {
+    const sourceNode = nodes.value.find(n => n.id === edge.source)
+    if (!sourceNode?.data?.allCitations) return
+
+// Einträge
+    sourceNode.data.allCitations.forEach((c, index) => {
+      items.push({
+        id: `${sourceNode.id}-ref-${index}`,
+        label: c.citation + (c.count > 1 ? ` (${c.count}× cited)` : ''),
+        depth: 1,
+        type: 'reference'
+      })
+    })
+
+  })
+
+  return items
+})
+
+const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
+
+watch(
+    handleRows,
+    async (rows) => {
+      await nextTick()
+      updateNodeInternals?.([props.id])
+
+      const validHandles = new Set(rows.map((row) => row.handleId))
+      const stale = incomingEdges.value.filter((edge) => {
+        const handleId = edge.targetHandle ?? ''
+        return !validHandles.has(handleId)
+      })
+
+      if (stale.length) {
+        removeEdges(stale)
+      }
+    },
+    { deep: true, immediate: true },
+)
+
 const outlineText = computed(() =>
-  outlineItems.value.map((item) => `${'  '.repeat(item.depth)}${item.label}`).join('\n'),
+    outlineItems.value.map((item) => `${'  '.repeat(item.depth)}${item.label}`).join('\n'),
 )
 
 const latexSource = computed(() => {
@@ -175,23 +212,13 @@ let lastJson = ''
 watchEffect(() => {
   const docs = topLevelDocs.value
   const json = JSON.stringify(docs)
-  if (json === lastJson && props.data?.json === json) {
-    return
-  }
-
+  if (json === lastJson && props.data?.json === json) return
   lastJson = json
-  updateNodeData(props.id, {
-    ...props.data,
-    json,
-    value: outlineText.value,
-  })
+  updateNodeData(props.id, { ...props.data, json, value: outlineText.value })
 })
 
 function downloadLatex() {
-  if (!latexSource.value) {
-    return
-  }
-
+  if (!latexSource.value) return
   const blob = new Blob([latexSource.value], { type: 'text/x-tex' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -204,11 +231,7 @@ function downloadLatex() {
 }
 
 function onExport() {
-  if (!latexSource.value) {
-    console.info('Nothing to export yet.')
-    return
-  }
-
+  if (!latexSource.value) return
   downloadLatex()
 }
 </script>
@@ -223,34 +246,55 @@ function onExport() {
     <section class="doc-node__body doc-output__body">
       <div class="doc-output__handles" aria-hidden="true">
         <Handle
-          v-for="row in handleRows"
-          :key="row.handleId"
-          :id="row.handleId"
-          type="target"
-          :position="Position.Left"
-          :style="{ top: row.handleTop, left: '-12px', transform: 'translate(-50%, -50%)' }"
+            v-for="row in handleRows"
+            :key="row.handleId"
+            :id="row.handleId"
+            type="target"
+            :position="Position.Left"
+            :style="{ top: row.handleTop, left: '-12px', transform: 'translate(-50%, -50%)' }"
         />
       </div>
 
       <div class="doc-output__outline" role="tree">
-        <div v-if="!outlineItems.length" class="doc-output__empty">Attach sections or paragraphs to preview.</div>
+        <div v-if="!outlineItems.length && !bibliographyItems.length" class="doc-output__empty">
+          Attach sections, paragraphs, or citations to preview.
+        </div>
+
         <div
-          v-for="item in outlineItems"
-          :key="item.id"
-          class="doc-output__item"
-          :class="{
+            v-for="item in outlineItemsWithBibliography"
+            :key="item.id"
+            class="doc-output__item"
+            :class="{
             'doc-output__item--section': item.type === 'section',
             'doc-output__item--paragraph': item.type === 'paragraph',
+            'doc-output__item--bibliography': item.type === 'bibliography',
             'doc-output__item--nested': item.depth > 0,
+            'doc-output__item--reference': item.type === 'reference',
+
           }"
-          :style="{ '--outline-depth': item.depth }"
-          role="treeitem"
-          :aria-level="item.depth + 1"
+            :style="{ '--outline-depth': item.depth }"
+            role="treeitem"
+            :aria-level="item.depth + 1"
         >
           <span class="doc-output__marker" />
-          <span class="doc-output__label" :class="{ 'doc-output__label--muted': item.type === 'paragraph' }">
+          <span class="doc-output__level-label">
+  {{ item.type === 'section'
+              ? ['Section','Subsection','Subsubsection'][item.depth] || 'Section'
+              : item.type === 'paragraph'
+                  ? 'Paragraph'
+                  : item.type === 'bibliography'
+                      ? 'Bibliography'
+                      : item.type === 'reference'
+                          ? 'Reference'
+                          : '' }}
+</span>
+          <span class="doc-output__label" :class="{ 'doc-output__label--muted': item.type === 'paragraph' && item.depth === 1 }">
             {{ item.label }}
           </span>
+          <div v-if="item.type === 'section'" class="doc-output__level-controls">
+            <button class="doc-output__level-btn" title="Level runter (←)">←</button>
+            <button class="doc-output__level-btn" title="Level rauf (→)">→</button>
+          </div>
         </div>
       </div>
 
@@ -263,9 +307,8 @@ function onExport() {
 </template>
 
 <style scoped>
+
 .doc-output {
-  width: 340px;
-  min-height: 320px;
 }
 
 .doc-output__body {
@@ -280,25 +323,21 @@ function onExport() {
 }
 
 .doc-output__handles :deep(.vue-flow__handle) {
-  pointer-events: auto;
-}
+  pointer-events: auto; }
 
 .doc-output__outline {
-  min-height: 200px;
-  max-height: 360px;
+  min-width: 400px;
+  min-height: 400px;
+  height: 600px;
   overflow: auto;
   padding: 12px 14px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(15,23,42,0.12);
   border-radius: 10px;
   background-color: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.doc-output__empty {
-  color: rgba(15, 23, 42, 0.55);
-  font-size: 0.9rem;
+  resize: both;
 }
 
 .doc-output__item {
@@ -318,19 +357,23 @@ function onExport() {
   left: calc(var(--outline-depth) * 20px - 8px);
   top: 0;
   bottom: 0;
-  border-left: 1px solid rgba(15, 23, 42, 0.12);
+  border-left: 1px solid rgba(15,23,42,0.12);
 }
 
 .doc-output__marker {
   width: 8px;
   height: 8px;
   border-radius: 2px;
-  background-color: rgba(79, 70, 229, 0.6);
   flex-shrink: 0;
+  background-color: rgba(79,70,229,0.6);
 }
 
 .doc-output__item--paragraph .doc-output__marker {
-  background-color: rgba(45, 212, 191, 0.6);
+  background-color: rgba(45,212,191,0.6);
+}
+
+.doc-output__item--bibliography .doc-output__marker {
+  background-color: #ff0000;
 }
 
 .doc-output__label {
@@ -340,14 +383,25 @@ function onExport() {
   text-overflow: ellipsis;
 }
 
+.doc-output__level-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5b21b6;
+  margin-right: 6px;
+}
+
+.doc-output__item--reference .doc-output__marker {
+  background-color: #facc15; /* gelb wie Bibliographie */
+}
+
 .doc-output__label--muted {
-  color: rgba(15, 23, 42, 0.65);
+  color: rgba(15,23,42,0.65);
   font-style: italic;
 }
 
 .doc-output__export {
   align-self: flex-end;
-  border: 1px solid rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(15,23,42,0.2);
   border-radius: 6px;
   background: white;
   padding: 6px 12px;
@@ -356,6 +410,26 @@ function onExport() {
 }
 
 .doc-output__export:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(99,102,241,0.08);
+}
+
+.doc-output__level-controls {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.doc-output__level-btn {
+  border: none;
+  background: rgba(79,70,229,0.1);
+  color: #4f46e5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 0.75rem;
+}
+.doc-output__level-btn:hover {
+  background: rgba(79,70,229,0.2);
 }
 </style>

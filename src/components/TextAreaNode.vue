@@ -202,7 +202,8 @@ function updateCitation(index: number, value: string) {
 
 .text-node__textarea {
   min-width: 400px;
-  min-height: 240px;
+  min-height: 100px;
+  height: 100px;
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);
   border-radius: 10px;
@@ -346,7 +347,6 @@ function updateCitation(index: number, value: string) {
 .add {
   width: 100%;
   height: 50px;
-  margin-top: 6px;
   border-radius: 10px;
   border: 1px solid #ccc;
   background: #f7f7f7;

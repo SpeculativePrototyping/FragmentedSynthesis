@@ -1,30 +1,61 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 
 interface ReferenceTrackerData {
   label?: string
+  allCitations?: { citation: string; count: number }[]
+  citationsPerNode?: Record<string, string[]>
 }
 
 const props = defineProps<NodeProps<ReferenceTrackerData>>()
-const { nodes, edges } = useVueFlow()
+const { nodes, edges, updateNodeData } = useVueFlow()
 
-
-const allCitations = computed(() => {
-  const sources: string[] = []
-
+// Map: nodeId -> citations[]
+const citationsByNode = computed(() => {
+  const map = new Map<string, string[]>()
   const incomingEdges = edges.value.filter(edge => edge.target === props.id)
 
   incomingEdges.forEach(edge => {
     const sourceNode = nodes.value.find(n => n.id === edge.source)
     if (sourceNode?.type === 'textArea' && sourceNode.data?.citations) {
-      sources.push(...sourceNode.data.citations)
+      // ensure we store a copy (avoid accidental mutation)
+      map.set(sourceNode.id, [...(sourceNode.data.citations as string[])])
     }
   })
 
-  return Array.from(new Set(sources))
+  return map
 })
+
+// combined list without duplicates, with counter
+const allCitations = computed(() => {
+  const countMap = new Map<string, number>()
+
+  citationsByNode.value.forEach(citations => {
+    citations.forEach(c => {
+      if (!c) return
+      countMap.set(c, (countMap.get(c) ?? 0) + 1)
+    })
+  })
+
+  return Array.from(countMap.entries()).map(([citation, count]) => ({
+    citation,
+    count
+  }))
+})
+
+// export data to node.data so other nodes (docOutputNode) can read it from the graph
+watch([allCitations, citationsByNode], () => {
+  const payload = {
+    ...props.data,
+    allCitations: allCitations.value,
+    // Object.fromEntries works with Map
+    citationsPerNode: Object.fromEntries(citationsByNode.value)
+  }
+
+  updateNodeData(props.id, payload)
+}, { immediate: true })
 </script>
 
 <template>
@@ -36,11 +67,16 @@ const allCitations = computed(() => {
     <section class="text-node__body citations-list">
       <div v-if="allCitations.length === 0">No sources yet…</div>
       <ul v-else>
-        <li v-for="(c, i) in allCitations" :key="i">{{ i + 1 }}. {{ c }}</li>
+        <li v-for="(item, i) in allCitations" :key="i">
+          {{ i + 1 }}. {{ item.citation }}
+          <span v-if="item.count > 1">({{ item.count }}× cited)</span>
+        </li>
       </ul>
     </section>
 
+    <!-- input left, output right -->
     <Handle id="input" type="target" :position="Position.Left" />
+    <Handle id="output" type="source" :position="Position.Right" />
   </div>
 </template>
 
@@ -72,7 +108,7 @@ const allCitations = computed(() => {
   overflow-y: auto;
   font-family: inherit;
   font-size: 0.9rem;
-  line-height: 1.0;
+  line-height: 1.2;
   resize: both;
 }
 
@@ -85,5 +121,6 @@ const allCitations = computed(() => {
 .citations-list li {
   margin-bottom: 12px;
   text-align: left;
+  word-break: break-word; /* Zeilenumbruch bei langen Quellen */
 }
 </style>

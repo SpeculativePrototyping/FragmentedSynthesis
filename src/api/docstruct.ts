@@ -12,7 +12,11 @@ export type SectionElement = BaseElement & {
   kind: "section";
   level: 1 | 2 | 3 | 4 | 5 | 6;
 };
-export type ParagraphElement = BaseElement & { kind: "paragraph" };
+export type ParagraphElement = BaseElement & {
+  kind: "paragraph"
+  sourceNodeId?: string;
+  citations?: string[];
+};
 export type FigureElement = BaseElement & {
   kind: "figure";
   src: string;

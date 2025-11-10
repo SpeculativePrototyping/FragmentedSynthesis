@@ -111,7 +111,8 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Reference Tracker',
     category: 'utility',
     data: {
-      citations: [] as string[],
+      allCitations: [] as { citation: string; count: number }[],
+      citationsPerNode: {} as Record<string, string[]>,
     },
   },
 ]
