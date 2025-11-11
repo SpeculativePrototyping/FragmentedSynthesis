@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
-import type { NodeProps } from '@vue-flow/core'
+import type { NodeProps, Edge } from '@vue-flow/core'
 
 interface TextViewNodeData {
   value?: string
@@ -12,38 +12,46 @@ interface TextViewNodeData {
 const props = defineProps<NodeProps<TextViewNodeData>>()
 const { edges, nodes } = useVueFlow()
 
-const heading = computed(() => props.data?.label ?? 'Text Preview')
+const heading = computed(() => props.data?.label ?? 'Debug Node')
 const placeholder = computed(() => props.data?.placeholder ?? 'Waiting for input…')
 
-const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
+// Alle eingehenden Edges
+const incomingEdges = computed(() =>
+    edges.value.filter((edge) => edge.target === props.id)
+)
 
-const sourceText = computed(() => {
-  const first = incomingEdges.value[0]
-  if (!first) {
-    return ''
-  }
+// Hilfsfunktion zum Formatieren von Bibliographien
+function formatBibliography(bib: any[]): string {
+  return bib
+      .map((e, i) => {
+        const authors = e.fields?.author?.split(/ and /i).map((a: string) => a.trim()).join('; ') ?? ''
+        const year = e.fields?.year ?? 'n.d.'
+        const title = e.fields?.title ?? '(no title)'
+        return `${i + 1}. ${authors} (${year}). ${title}`
+      })
+      .join('\n')
+}
 
-  const sourceNode = nodes.value.find((node) => node.id === first.source)
-  const payload = sourceNode?.data as Record<string, unknown> | undefined
-  if (!payload) {
-    return ''
-  }
-
-  const raw = (payload.value ?? payload.label ?? '') as string
-  return typeof raw === 'string' ? raw : ''
-})
-
+// Anzeige-Text zusammenbauen
 const displayText = computed(() => {
-  if (sourceText.value) {
-    return sourceText.value
-  }
+  return incomingEdges.value
+      .map((edge) => {
+        const sourceNode = nodes.value.find((n) => n.id === edge.source)
+        if (!sourceNode?.data) return `--- from ${edge.source} ---\n(no data)\n`
 
-  const fallback = props.data?.value
-  if (fallback === undefined || fallback === null) {
-    return ''
-  }
+        const payload = sourceNode.data as Record<string, unknown>
+        const parts: string[] = []
 
-  return String(fallback)
+        // Label / value
+        if (payload.label) parts.push(String(payload.label))
+        if (payload.value) parts.push(String(payload.value))
+
+        // Bibliographie, falls vorhanden
+        if (payload.bibliography) parts.push(formatBibliography(payload.bibliography as any[]))
+
+        return `--- from ${sourceNode.id} ---\n${parts.join('\n')}`
+      })
+      .join('\n\n')
 })
 </script>
 
@@ -55,13 +63,13 @@ const displayText = computed(() => {
 
     <section class="doc-node__body text-view-node__body">
       <textarea
-        class="text-view-node__textarea"
-        @wheel.stop
-        :value="displayText"
-        readonly
-        spellcheck="false"
-        :placeholder="placeholder"
-        aria-label="Text preview"
+          class="text-view-node__textarea"
+          @wheel.stop
+          :value="displayText"
+          readonly
+          spellcheck="false"
+          :placeholder="placeholder"
+          aria-label="Debug Node output"
       />
     </section>
 
@@ -79,7 +87,7 @@ const displayText = computed(() => {
 }
 
 .text-view-node__textarea {
-  min-width:400px;
+  min-width: 400px;
   min-height: 240px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);

@@ -5,13 +5,15 @@ import type { Edge, NodeProps } from '@vue-flow/core'
 import type { DocElement, ParagraphElement } from '../api/docstruct'
 import { renderToLatex } from '../api/docstruct'
 import '../styles/docNodes.css'
+import type {BibEntry} from "@/App.vue";
 
 interface DocOutputNodeData {
   json?: string
   value?: string
+  bibliography?: BibEntry[]
 }
 
-const props = defineProps<NodeProps<DocOutputNodeData>>()
+const props = defineProps<NodeProps<DocOutputNodeData> & { bibliography?: BibEntry[] }>()
 const { nodes, edges, updateNodeInternals, removeEdges, updateNodeData } = useVueFlow()
 
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
@@ -140,14 +142,11 @@ const outlineItems = computed(() => {
   return items
 })
 
-// Bibliographie
 const bibliographyItems = computed<OutlineItem[]>(() => {
-  const refEdges = edges.value.filter(e => e.target === props.id)
   const items: OutlineItem[] = []
+  const bib = props.bibliography ?? []
+  if (!bib.length) return items
 
-  if (!refEdges.length) return items
-
-  // Bibliographie selbst
   items.push({
     id: 'bibliography-root',
     label: 'Bibliography',
@@ -155,25 +154,27 @@ const bibliographyItems = computed<OutlineItem[]>(() => {
     type: 'bibliography'
   })
 
-  // Einträge
-  refEdges.forEach(edge => {
-    const sourceNode = nodes.value.find(n => n.id === edge.source)
-    if (!sourceNode?.data?.allCitations) return
+  bib.forEach((entry, index) => {
+    const authors = entry.fields?.author?.split(/ and /i).map(a => a.trim()).join('; ') ?? ''
+    const year = entry.fields?.year ?? 'n.d.'
+    const title = entry.fields?.title ?? '(no title)'
 
-// Einträge
-    sourceNode.data.allCitations.forEach((c, index) => {
-      items.push({
-        id: `${sourceNode.id}-ref-${index}`,
-        label: c.citation + (c.count > 1 ? ` (${c.count}× cited)` : ''),
-        depth: 1,
-        type: 'reference'
-      })
+    items.push({
+      id: `bib-${index}`,
+      label: `${authors} (${year}). ${title}`,
+      depth: 1,
+      type: 'reference'
     })
-
   })
 
   return items
 })
+
+// Trigger Node update, damit UI neu rendert, wenn sich bibliography ändert
+watch(() => props.bibliography, () => {
+  updateNodeData(props.id, { ...props.data })
+}, { deep: true })
+
 
 const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
 
@@ -201,11 +202,17 @@ const outlineText = computed(() =>
 )
 
 const latexSource = computed(() => {
-  if (!topLevelDocs.value.length) {
+  if (!topLevelDocs.value.length && !(props.bibliography?.length ?? 0)) {
     return ''
   }
-  return renderToLatex(topLevelDocs.value, { includeDocument: true })
+  return renderToLatex(topLevelDocs.value, {
+    includeDocument: true,
+    bibliography: props.bibliography,
+    bibFilename: 'references.bib', // <-- hier auf die herunterladbare .bib verweisen
+  })
 })
+
+
 
 let lastJson = ''
 
@@ -234,6 +241,29 @@ function onExport() {
   if (!latexSource.value) return
   downloadLatex()
 }
+
+function downloadBib() {
+  const bib = props.bibliography ?? []
+  if (!bib.length) return
+
+  // alle raw-Einträge zusammenfügen
+  const content = bib.map(entry => entry.raw?.trim() ?? '').join('\n\n')
+  if (!content) return
+
+  const blob = new Blob([content], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'references.bib'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+
+
+
 </script>
 
 <template>
@@ -278,7 +308,7 @@ function onExport() {
         >
           <span class="doc-output__marker" />
           <span class="doc-output__level-label">
-  {{ item.type === 'section'
+            {{ item.type === 'section'
               ? ['Section','Subsection','Subsubsection'][item.depth] || 'Section'
               : item.type === 'paragraph'
                   ? 'Paragraph'
@@ -287,7 +317,7 @@ function onExport() {
                       : item.type === 'reference'
                           ? 'Reference'
                           : '' }}
-</span>
+          </span>
           <span class="doc-output__label" :class="{ 'doc-output__label--muted': item.type === 'paragraph' && item.depth === 1 }">
             {{ item.label }}
           </span>
@@ -301,6 +331,12 @@ function onExport() {
       <button type="button" class="doc-output__export" :disabled="!latexSource" @click="onExport">
         Export to LaTeX
       </button>
+      <button type="button" class="doc-output__export"
+              :disabled="!(props.bibliography?.length)"
+              @click="downloadBib">
+        Export .bib
+      </button>
+
     </section>
     <Handle id="out" type="source" :position="Position.Right" />
   </div>

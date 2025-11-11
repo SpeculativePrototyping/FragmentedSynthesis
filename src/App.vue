@@ -19,12 +19,24 @@ import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import ReferenceTrackerNode from "@/components/ReferenceTrackerNode.vue";
 
+export interface BibEntry {
+  id: string
+  type: string
+  fields: Record<string, string>
+  raw?: string   // <-- der rohe BibTeX-Block
+}
+
 //reactive lists of the nodes and edges
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
+const bibliography = ref<BibEntry[]>([])  // <- global bibliography
 
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 let nodeCounter = 0
+
+const updateBibliography = (newBib: BibEntry[]) => {
+  bibliography.value = newBib
+}
 
 
 function onConnect(connection: Connection) {
@@ -97,7 +109,11 @@ function onDrop(event: DragEvent) {
         <ConcatNode v-bind="concatNodeProps" />
       </template>
       <template #node-textArea="textAreaProps">
-        <TextAreaNode v-bind="textAreaProps" />
+        <TextAreaNode
+            v-bind="textAreaProps"
+            :bibliography="bibliography"
+            :updateBibliography="updateBibliography"
+        />
       </template>
       <template #node-textView="textViewProps">
         <TextViewNode v-bind="textViewProps" />
@@ -109,7 +125,10 @@ function onDrop(event: DragEvent) {
         <ComposeNode v-bind="composeProps" />
       </template>
       <template #node-docOutput="docOutputProps">
-        <DocOutputNode v-bind="docOutputProps" />
+        <DocOutputNode
+            v-bind="docOutputProps"
+            :bibliography="bibliography"
+        />
       </template>
       <template #node-edit="editProps">
         <EditNode v-bind="editProps" />
@@ -120,8 +139,13 @@ function onDrop(event: DragEvent) {
       <template #node-stickyNote="stickyNoteProps">
         <StickyNote v-bind="stickyNoteProps" />
       </template>
-      <template #node-referenceTracker="ReferenceTrackerProps">
-        <ReferenceTrackerNode v-bind="ReferenceTrackerProps" />
+      <template #node-referenceTracker="{ id, data, ...rest }">
+        <ReferenceTrackerNode
+            :label="data?.label"
+            :bibliography="bibliography"
+            :updateBibliography="updateBibliography"
+            v-bind="rest"
+        />
       </template>
 
       <Background />

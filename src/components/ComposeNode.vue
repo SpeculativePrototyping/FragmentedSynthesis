@@ -28,6 +28,8 @@ function asParagraph(edge?: Edge): ParagraphElement | undefined {
   const payload = sourceNode.data as Record<string, unknown>
 
   const value = payload.value
+  const citations = payload.citations as string[] | undefined
+
   if (typeof value === 'string' && value.trim()) {
     return {
       id: sourceNode.id,
@@ -35,10 +37,12 @@ function asParagraph(edge?: Edge): ParagraphElement | undefined {
       title: undefined,
       body: value,
       children: [],
+      citations,
     }
   }
   return undefined
 }
+
 
 // Paragraphen sammeln
 const childParagraphs = computed(() =>

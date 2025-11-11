@@ -1,3 +1,4 @@
+import type {BibEntry} from "@/App.vue";
 
 export type NodeID = string;
 
@@ -115,11 +116,19 @@ const SECTION_COMMAND_BY_LEVEL: Record<number, string> = {
 
 export interface LatexRenderOptions {
   includeDocument?: boolean;
+  bibliography?: BibEntry[];
+}
+
+
+export interface LatexRenderOptions {
+  includeDocument?: boolean;
+  bibliography?: BibEntry[];
+  bibFilename?: string; // optional: Name der .bib-Datei
 }
 
 export function renderToLatex(
-  doc: DocElement | DocElement[],
-  options: LatexRenderOptions = {},
+    doc: DocElement | DocElement[],
+    options: LatexRenderOptions = {}
 ): string {
   const nodes = Array.isArray(doc) ? doc : [doc];
 
@@ -129,43 +138,25 @@ export function renderToLatex(
       const command = SECTION_COMMAND_BY_LEVEL[section.level] ?? SECTION_COMMAND_BY_LEVEL[4];
       const self = [`\\${command}{${heading}}`];
 
-      if (section.body) {
-        self.push(escLaTeX(section.body));
-      }
+      if (section.body) self.push(escLaTeX(section.body));
 
       if (section.children.length) {
         const rendered = section.children.map((child) => ctx.render(child, ctx)).filter(Boolean);
-        if (rendered.length) {
-          self.push(rendered.join("\n\n"));
-        }
+        if (rendered.length) self.push(rendered.join("\n\n"));
       }
 
       return self.join("\n\n");
     },
     paragraph(paragraph: ParagraphElement) {
       const parts: string[] = [];
-
-      if (paragraph.title) {
-        parts.push(`\\textbf{${escLaTeX(paragraph.title)}}`);
-      }
-
-      if (paragraph.body) {
-        parts.push(escLaTeX(paragraph.body));
-      }
-
+      if (paragraph.title) parts.push(`\\textbf{${escLaTeX(paragraph.title)}}`);
+      if (paragraph.body) parts.push(escLaTeX(paragraph.body));
       return parts.join("\n\n");
     },
     figure(figure: FigureElement) {
       const lines: string[] = ["\\begin{figure}", "  \\centering"];
-
-      if (figure.src) {
-        lines.push(`  \\includegraphics{${escLaTeX(figure.src)}}`);
-      }
-
-      if (figure.caption) {
-        lines.push(`  \\caption{${escLaTeX(figure.caption)}}`);
-      }
-
+      if (figure.src) lines.push(`  \\includegraphics{${escLaTeX(figure.src)}}`);
+      if (figure.caption) lines.push(`  \\caption{${escLaTeX(figure.caption)}}`);
       lines.push("\\end{figure}");
       return lines.join("\n");
     },
@@ -173,8 +164,15 @@ export function renderToLatex(
 
   const body = nodes.map((node) => render(node, renderer)).filter(Boolean).join("\n\n");
 
+  // Bibliographie nur noch als Verweis auf externe .bib-Datei
+  let bibBlock = '';
+  if (options.bibliography?.length && options.bibFilename) {
+    const bibFileWithoutExt = options.bibFilename.replace(/\.bib$/, '');
+    bibBlock = `\\bibliographystyle{plain}\n\\bibliography{${bibFileWithoutExt}}`;
+  }
+
   if (!options.includeDocument) {
-    return body;
+    return [body, bibBlock].filter(Boolean).join("\n\n");
   }
 
   return [
@@ -182,8 +180,12 @@ export function renderToLatex(
     "\\usepackage{graphicx}",
     "\\begin{document}",
     body,
-    "\\end{document}",
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+    bibBlock,
+    "\\end{document}"
+  ].filter(Boolean).join("\n\n");
 }
+
+
+
+
+

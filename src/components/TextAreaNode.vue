@@ -4,8 +4,14 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 
+
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
 
+interface BibEntry {
+  id: string
+  type: string
+  fields: Record<string, string>
+}
 
 interface TextNodeData {
   value?: string
@@ -16,13 +22,33 @@ interface TextNodeData {
   error?: string | null
 }
 
+interface TextNodeProps extends NodeProps<TextNodeData> {
+  bibliography: BibEntry[]           // zentrale Bibliographie
+  updateBibliography?: (newBib: BibEntry[]) => void
+}
 
-const props = defineProps<NodeProps<TextNodeData>>()
+const props = defineProps<TextNodeProps>()
 const { updateNodeData, nodes, edges } = useVueFlow()
 const isCompact = ref(false)
 const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
 const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
+const availableSources = computed(() => props.bibliography ?? [])
+
+
+const searchQuery = ref('')
+const showSearch = ref(false)
+
+const filteredSources = computed(() => {
+  if (!searchQuery.value) return availableSources.value
+  const query = searchQuery.value.toLowerCase()
+  return availableSources.value.filter(entry =>
+      (entry.fields.author ?? '').toLowerCase().includes(query) ||
+      (entry.fields.title ?? '').toLowerCase().includes(query) ||
+      entry.id.toLowerCase().includes(query)
+  )
+})
+
 
 
 const statusLabel = computed(() => {
@@ -95,6 +121,23 @@ async function generateSummary() {
   }
 }
 
+function addCitationByKey(key: string) {
+  const citations = props.data.citations ? [...props.data.citations] : []
+  if (!citations.includes(key)) {
+    citations.push(key)
+    updateNodeData(props.id, { ...props.data, citations })
+  }
+  searchQuery.value = ''
+  showSearch.value = false
+}
+
+
+function removeCitation(key: string) {
+  const citations = props.data.citations ? [...props.data.citations] : []
+  updateNodeData(props.id, { ...props.data, citations: citations.filter(c => c !== key) })
+}
+
+
 // --- Watchers ---
 watch(isCompact, v => {
   if (v) generateSummary()
@@ -103,6 +146,25 @@ watch(isCompact, v => {
 watch(isCompact, v => {
   if (!v) status.value = "idle"
 })
+
+watch(
+    () => props.bibliography,
+    (newBib) => {
+      if (!props.data.citations) return
+
+      const validCitations = props.data.citations.filter(key =>
+          newBib.some(entry => entry.id === key)
+      )
+
+      if (validCitations.length !== props.data.citations.length) {
+        // Update the node data only if something changed
+        updateNodeData(props.id, { ...props.data, citations: validCitations })
+      }
+    },
+    { deep: true }
+)
+
+
 
 
 // Debounced push to Vue Flow state so downstream nodes can read `data.value`
@@ -113,25 +175,6 @@ watch(text, (v) => {
     updateNodeData(props.id, { ...props.data, value: v })
   }, 150)
 })
-
-// --- Citation Functions ---
-function addCitation() {
-  const citations = props.data.citations ? [...props.data.citations] : []
-  citations.push('')
-  updateNodeData(props.id, { ...props.data, citations })
-}
-
-function removeCitation(index: number) {
-  const citations = props.data.citations ? [...props.data.citations] : []
-  citations.splice(index, 1)
-  updateNodeData(props.id, { ...props.data, citations })
-}
-
-function updateCitation(index: number, value: string) {
-  const citations = props.data.citations ? [...props.data.citations] : []
-  citations[index] = value
-  updateNodeData(props.id, { ...props.data, citations })
-}
 
 
 </script>
@@ -175,33 +218,65 @@ function updateCitation(index: number, value: string) {
       <div v-else class="compact-summary">
         {{ summary }}
       </div>
-    </section>
 
-    <!-- Citations -->
-    <div v-if="!isCompact" class="text-node__citations">
-      <div v-for="(c, i) in props.data.citations ?? []" :key="i" class="citation-item">
-        <input type="text":value="c" @input="e => updateCitation(i, e.target.value)" />
-        <button type="button" @click="removeCitation(i)">❌</button>
+      <div v-if="!isCompact" class="citations-ui">
+        <div class="selected-citations">
+    <span
+        v-for="key in props.data.citations ?? []"
+        :key="key"
+        class="citation-tag"
+    >
+      {{ key }}
+      <button @click="removeCitation(key)">×</button>
+    </span>
+        </div>
+        <button @click="showSearch = !showSearch" class="citation-add-btn">
+          + Add Reference
+        </button>
+        <div v-if="showSearch" class="citation-search">
+          <input
+              v-model="searchQuery"
+              class="citation-search-input"
+              placeholder="Search references..."
+          />
+          <ul class="citation-search-list" @wheel.stop>
+            <li v-for="entry in filteredSources" :key="entry.id" @click="addCitationByKey(entry.id)">
+              <span class="key">{{ entry.id }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-
-    <div v-if="!isCompact" class="add-wrapper">
-    <button type="button" class="add" @click="addCitation">+ Add Source (APA)</button>
-    </div>
-
+    </section>
     <Handle id="output" type="source" :position="Position.Right" />
   </div>
 </template>
 
+
 <style scoped>
-.text-node { overflow: visible; }
+
+.text-node {
+  overflow: visible;
+}
 
 .node-wrapper {
-  position: relative;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  resize: none;
+  min-height: 0;
+  width: 650px;
+  height: 100%;
+}
+
+.doc-node__body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .text-node__textarea {
-  min-width: 400px;
+  width: 600px;
+  margin: 0 auto;
   min-height: 100px;
   height: 100px;
   padding: 10px 12px;
@@ -210,7 +285,7 @@ function updateCitation(index: number, value: string) {
   background: #fff;
   font: inherit;
   line-height: 1.45;
-  resize: both;
+  resize: vertical;
 }
 
 .text-node__textarea:focus {
@@ -219,7 +294,7 @@ function updateCitation(index: number, value: string) {
 }
 
 .compact-summary {
-  width: 400px;
+  width: 600px;
   max-height: 240px;
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);
@@ -298,21 +373,7 @@ function updateCitation(index: number, value: string) {
   color: #000;
 }
 
-.text-node__citations {
-  padding: 10px 12px;
-  border-radius: 10px;
-}
-
-.citation-item {
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Abstand zwischen Input und Button */
-  margin-bottom: 6px;
-  width: 100%; /* volle Breite wie das darüber liegende Element */
-}
-
 .citation-item input {
-  flex: 1; /* Input nimmt den verbleibenden Platz ein */
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);
   border-radius: 10px;
@@ -327,7 +388,6 @@ function updateCitation(index: number, value: string) {
 }
 
 .citation-item button {
-  flex: 0 0 auto; /* Button behält seine natürliche Breite */
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid rgba(15,23,42,.15);
@@ -339,22 +399,98 @@ function updateCitation(index: number, value: string) {
   background: #eee;
 }
 
-.add-wrapper {
-  padding: 10px 12px;
-  border-radius: 10px;
+.citations-ui {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+
+  box-sizing: border-box;
+  margin: 0 auto;
 }
 
-.add {
-  width: 100%;
-  height: 50px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background: #f7f7f7;
+.selected-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.citation-tag {
+  background: #e0e7ff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.citation-tag button {
+  border: none;
+  background: transparent;
   cursor: pointer;
 }
 
-.add:hover {
+.citation-add-btn {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  padding: 8px;
+  cursor: pointer;
+
+}
+
+.citation-add-btn:hover {
   background: #eee;
 }
+
+.citation-search-input {
+  width: 100%;
+  height: 35px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(15,23,42,.15);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.citation-search-list {
+  max-height: 160px;
+  min-height: 35px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.15);
+  border-radius: 6px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.citation-search-list li {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  width: 100%;            /* Li nimmt volle Breite */
+  cursor: pointer;
+  padding: 6px;
+  box-sizing: border-box; /* Padding wird in Breite gerechnet */
+}
+
+.citation-search-list li:hover {
+  background: #eee;
+}
+
+.citation-search-list li span.key {
+  font-weight: bold;
+  flex-shrink: 0;         /* Key behält seine natürliche Größe */
+}
+
+.citation-search-list li span.title {
+  flex: 1;                /* Titel nimmt restliche Breite */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 
 </style>

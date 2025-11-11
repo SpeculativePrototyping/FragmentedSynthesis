@@ -1,4 +1,6 @@
 import type { Node } from '@vue-flow/core'
+import type { BibEntry } from '@/App.vue'   // Pfad anpassen
+
 
 //describes the structure of a node template that can be dragged from the control pabel
 //every node needs: an entry in nodeTemplates, an accompanying import, and an added template in app.vue
@@ -49,7 +51,7 @@ export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'concat',
     label: 'Concat Node',
-    category: 'text',
+    category: 'disabled',
     data: {
       label: 'Concat',
       concatenated: '',
@@ -94,6 +96,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Document Output',
     category: 'text',
     data: {
+      bibliography: [] as BibEntry[],
       json: '',
       value: '',
     },
@@ -111,10 +114,12 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Reference Tracker',
     category: 'utility',
     data: {
-      allCitations: [] as { citation: string; count: number }[],
-      citationsPerNode: {} as Record<string, string[]>,
+      label: 'Reference Tracker',
+      bibliography: [] as BibEntry[],          // optional default empty, Props aus App.vue überschreiben
+      updateBibliography: () => {},           // wird durch Props ersetzt
     },
-  },
+  }
+
 ]
 
 //function to help find the right component according to the type of a node
