@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import {ref, watch, watchEffect} from 'vue'
+import {inject, type Ref, ref, watch, watchEffect} from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
-
-
 
 
 interface BibEntry {
@@ -12,13 +10,15 @@ interface BibEntry {
   fields: Record<string, string>
 }
 
-
 // Props kommen jetzt direkt von App.vue
 const props = defineProps<{
   label?: string
   bibliography: BibEntry[]
   updateBibliography: (newBib: BibEntry[]) => void
 }>()
+
+const TLDR = inject<Ref<boolean>>('TLDR') // injected reactive TLDR state
+
 
 // ======= BibTeX Import =======
 const rawBibtexInput = ref('')
@@ -137,7 +137,7 @@ function removeReference(key: string) {
 }
 
 .text-node__body {
-  min-height: 350px;
+  min-height: 400px;
   max-height: 1000px;
   width: 400px;
   padding: 10px 12px;
