@@ -2,8 +2,8 @@ import type { Node, Edge } from '@vue-flow/core'
 // @ts-ignore
 import dagre from 'dagre'
 
-const BASE_WIDTH = 450
-const BASE_HEIGHT = 240
+const BASE_WIDTH = 650
+const BASE_HEIGHT = 150
 
 export function applyDagreLayout(nodes: Node[], edges: Edge[], direction: 'TB' | 'LR' = 'LR'): Node[] {
     const g = new dagre.graphlib.Graph()

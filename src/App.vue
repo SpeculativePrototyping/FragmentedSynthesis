@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, provide } from 'vue'
 import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
 import { VueFlow, addEdge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -30,6 +30,8 @@ export interface BibEntry {
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
 const bibliography = ref<BibEntry[]>([])  // <- global bibliography
+const TLDR = ref(false) // <- for shrinking some nodes
+provide('TLDR', TLDR)
 
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 let nodeCounter = 0

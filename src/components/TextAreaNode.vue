@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, inject } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
@@ -34,6 +34,7 @@ const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
 const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
 const availableSources = computed(() => props.bibliography ?? [])
+const TLDR = inject('TLDR')
 
 
 const searchQuery = ref('')
@@ -164,7 +165,11 @@ watch(
     { deep: true }
 )
 
-
+watch(TLDR, (val) => {
+  if (typeof val === 'boolean') {
+    isCompact.value = val
+  }
+})
 
 
 // Debounced push to Vue Flow state so downstream nodes can read `data.value`

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch} from 'vue'
+import { computed, ref, watch, inject} from 'vue'
 import type { Node } from '@vue-flow/core'
 import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
@@ -16,6 +16,8 @@ const availableTemplates = computed(() => nodeTemplates)
 const selectedNodeType = ref(availableTemplates.value[0]?.type ?? 'default')
 
 const showLLM = ref(true)
+
+const TLDR = inject('TLDR') // <- referencing global state
 
 //dnd for new nodes
 function onDragStart(type: string, event: DragEvent) {
@@ -90,7 +92,7 @@ function onRestoreFromFile(event: Event): void {
             <Icon name="upload" />
             <input type="file" accept=".json" @change="onRestoreFromFile" />
           </button>
-           <button title="Unchaosify - This will automatically sort your elements according to the flow of the content." @click="onAutoLayout">
+           <button title="Unchaosify - This will automatically sort your elements according to the flow of the content." @click="onAutoLayout" >
              <Icon name="wand" />
            </button>
          </div>
@@ -107,6 +109,18 @@ function onRestoreFromFile(event: Event): void {
             Unethical mode
           </span>
         </div>
+        <div class="toggle-switch">
+          <label>
+            <input type="checkbox" v-model="TLDR" />
+            <span class="slider"></span>
+          </label>
+          <span
+              class="toggle-label"
+              title="Enables or disables TLDR mode for all nodes">
+    TLDR Mode
+  </span>
+        </div>
+
         <!-- Text Nodes -->
         <h4
             class="drag-category"
