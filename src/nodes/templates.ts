@@ -8,7 +8,7 @@ export interface NodeTemplate {
 
   type: NonNullable<Node['type']>
   label: string
-  category: 'text' | 'llm' | 'utility | disabled'
+  category: 'text' | 'llm' | 'utility' | 'disabled'
   data?: Node['data']
 
 }
