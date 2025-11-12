@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import {ref, watch, inject, type Ref} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 
@@ -11,9 +11,9 @@ interface StickyNoteData {
 
 const props = defineProps<NodeProps<StickyNoteData>>()
 const { updateNodeData } = useVueFlow()
-
-
 const text = ref<string>(String(props.data?.value ?? ''))
+
+const TLDR = inject<Ref<boolean>>('TLDR') // injected reactive TLDR state
 
 // Debounced push to Vue Flow state so downstream nodes can read `data.value`
 let timer: number | undefined

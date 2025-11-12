@@ -18,6 +18,7 @@ import EditNode from './components/EditNode.vue'
 import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import ReferenceTrackerNode from "@/components/ReferenceTrackerNode.vue";
+import FigureNode from "@/components/FigureNode.vue";
 
 export interface BibEntry {
   id: string
@@ -149,6 +150,14 @@ function onDrop(event: DragEvent) {
             v-bind="rest"
         />
       </template>
+      <template #node-figure="figureProps">
+        <FigureNode
+            v-bind="figureProps"
+            :bibliography="bibliography"
+            :updateBibliography="updateBibliography"
+        />
+      </template>
+
 
       <Background />
 

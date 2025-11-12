@@ -42,9 +42,15 @@ const displayText = computed(() => {
         const payload = sourceNode.data as Record<string, unknown>
         const parts: string[] = []
 
-        // Label / value
-        if (payload.label) parts.push(String(payload.label))
-        if (payload.value) parts.push(String(payload.value))
+        // Basisinformationen
+        if (payload.label) parts.push(`Label: ${payload.label}`)
+        if (payload.value) parts.push(`Value: ${payload.value}`)
+
+        // Figure-spezifische Felder
+        if (payload.latexLabel) parts.push(`LaTeX: ${payload.latexLabel}`)
+        if (payload.citations) parts.push(`Citations: ${(payload.citations as string[]).join(', ')}`)
+        if (payload.imageName) parts.push(`Image Name: ${payload.imageName}`)
+        if (payload.image) parts.push(`Image Base64: ${payload.image}`) // hier Base64
 
         // Bibliographie, falls vorhanden
         if (payload.bibliography) parts.push(formatBibliography(payload.bibliography as any[]))

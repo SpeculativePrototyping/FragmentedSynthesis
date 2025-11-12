@@ -93,7 +93,7 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'docOutput',
-    label: 'Document Output',
+    label: 'Document Output Node',
     category: 'text',
     data: {
       bibliography: [] as BibEntry[],
@@ -111,13 +111,23 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'referenceTracker',
-    label: 'Reference Tracker',
+    label: 'Reference Tracker Node',
     category: 'utility',
     data: {
       label: 'Reference Tracker',
       bibliography: [] as BibEntry[],          // optional default empty, Props aus App.vue überschreiben
       updateBibliography: () => {},           // wird durch Props ersetzt
     },
+  },
+  {
+    type: 'figure',       // Vue Flow Component Type
+    label: 'Figure Node',     // Name im Drag & Drop Menü
+    category: 'text',         // oder 'utility'
+    data: {
+      label: 'Figure',
+      image: '' as string,      // Base64-String des Bildes
+      citations: [] as string[], // Ausgewählte Referenzen
+    }
   }
 
 ]

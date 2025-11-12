@@ -125,7 +125,7 @@ function onRestoreFromFile(event: Event): void {
         <h4
             class="drag-category"
         >
-          Text Nodes
+          Content Nodes
         </h4>
         <div
             v-for="template in availableTemplates.filter(t => t.category === 'text')"
