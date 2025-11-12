@@ -220,19 +220,18 @@ watch(isCompact, v => {
 watch(
     () => props.bibliography,
     (newBib) => {
-      if (!props.data.citations) return
+      if (!props.data.citations) return;
 
-      const validCitations = props.data.citations.filter(key =>
-          newBib.some(entry => entry.id === key)
-      )
+      const invalidCitations = props.data.citations.filter(
+          key => !newBib.some(entry => entry.id === key)
+      );
 
-      if (validCitations.length !== props.data.citations.length) {
-        // Update the node data only if something changed
-        updateNodeData(props.id, { ...props.data, citations: validCitations })
-      }
+      // Alle ungültigen Zitate entfernen
+      invalidCitations.forEach(key => removeCitation(key));
     },
     { deep: true }
-)
+);
+
 
 watch(TLDR, (val) => {
   if (typeof val === 'boolean') {
