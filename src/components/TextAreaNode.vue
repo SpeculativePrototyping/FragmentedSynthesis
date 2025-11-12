@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, inject } from 'vue'
+import {ref, watch, computed, inject, nextTick} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
@@ -35,6 +35,8 @@ const summary = ref("")
 const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
 const availableSources = computed(() => props.bibliography ?? [])
 const TLDR = inject('TLDR')
+const textAreaRef = ref<HTMLTextAreaElement | null>(null)
+const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
 
 
 const searchQuery = ref('')
@@ -123,19 +125,86 @@ async function generateSummary() {
 }
 
 function addCitationByKey(key: string) {
+  const textarea = textAreaRef.value
+  const citationText = `~\\cite{${key}}`
+  const { start, end } = cursorPos.value
+
+  // Falls keine gespeicherte Position -> an Ende anhängen
+  if (!textarea || start === undefined) {
+    text.value += citationText
+  } else {
+    const before = text.value.slice(0, start)
+    const after = text.value.slice(end)
+    text.value = before + citationText + after
+    // Cursorposition aktualisieren
+    nextTick(() => {
+      textarea.focus()
+      textarea.selectionStart = textarea.selectionEnd = start + citationText.length
+    })
+  }
+
+  // Citations-Array aktualisieren
   const citations = props.data.citations ? [...props.data.citations] : []
   if (!citations.includes(key)) {
     citations.push(key)
     updateNodeData(props.id, { ...props.data, citations })
   }
+
   searchQuery.value = ''
   showSearch.value = false
 }
 
 
+
 function removeCitation(key: string) {
+  // 1️⃣ Aktualisiere das citations-Array
   const citations = props.data.citations ? [...props.data.citations] : []
-  updateNodeData(props.id, { ...props.data, citations: citations.filter(c => c !== key) })
+  const newCitations = citations.filter(c => c !== key)
+
+  // 2️⃣ Entferne alle ~\cite{key} aus dem Text
+  const regex = new RegExp(`~\\\\cite\\{${key}\\}`, 'g')
+  const newText = text.value.replace(regex, '')
+
+  // Optional: überflüssige Leerzeichen bereinigen
+  text.value = newText.replace(/\s{2,}/g, ' ').trim()
+
+  // 3️⃣ Update Node-Daten
+  updateNodeData(props.id, { ...props.data, citations: newCitations, value: text.value })
+}
+
+
+function updateCursorPosition() {
+  const el = textAreaRef.value
+  if (el) {
+    cursorPos.value = {
+      start: el.selectionStart,
+      end: el.selectionEnd,
+    }
+  }
+}
+
+function reinsertCitation(key: string) {
+  const textarea = textAreaRef.value
+  const citationText = `~\\cite{${key}}`
+  const { start, end } = cursorPos.value
+
+  if (!textarea || start === undefined) {
+    // Falls keine Cursorposition -> ans Ende
+    text.value += citationText
+  } else {
+    const before = text.value.slice(0, start)
+    const after = text.value.slice(end)
+    text.value = before + citationText + after
+
+    // Cursor nach dem eingefügten Zitat positionieren
+    nextTick(() => {
+      textarea.focus()
+      textarea.selectionStart = textarea.selectionEnd = start + citationText.length
+    })
+  }
+
+  // keine Änderung am citations-Array nötig, da Key schon existiert
+  updateNodeData(props.id, { ...props.data, value: text.value })
 }
 
 
@@ -206,6 +275,7 @@ watch(text, (v) => {
 
     <section class="doc-node__body">
       <textarea
+          ref="textAreaRef"
           v-if="!isCompact"
           v-model="text"
           @wheel.stop
@@ -218,6 +288,9 @@ watch(text, (v) => {
           data-gramm="true"
           data-gramm_editor="true"
           aria-label="Text node editor"
+          @select="updateCursorPosition"
+          @keyup="updateCursorPosition"
+          @click="updateCursorPosition"
       />
 
       <div v-else class="compact-summary">
@@ -226,17 +299,20 @@ watch(text, (v) => {
 
       <div v-if="!isCompact" class="citations-ui">
         <div class="selected-citations">
-    <span
-        v-for="key in props.data.citations ?? []"
-        :key="key"
-        class="citation-tag"
-    >
-      {{ key }}
-      <button @click="removeCitation(key)">×</button>
-    </span>
+<span
+    v-for="key in props.data.citations ?? []"
+    :key="key"
+    class="citation-tag"
+>
+  <span @click="reinsertCitation(key)" style="cursor: pointer;">
+    {{ key }}
+  </span>
+  <button @click="removeCitation(key)">×</button>
+</span>
+
         </div>
         <button @click="showSearch = !showSearch" class="citation-add-btn">
-          + Add Reference
+          + Add New Reference
         </button>
         <div v-if="showSearch" class="citation-search">
           <input

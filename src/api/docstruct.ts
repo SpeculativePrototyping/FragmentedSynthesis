@@ -114,6 +114,14 @@ const SECTION_COMMAND_BY_LEVEL: Record<number, string> = {
   5: "subparagraph",
 };
 
+const escLaTeXPreserveCites = (s = "") => {
+  return s.replace(/~\\cite\{[^}]+\}|([#$%&_{}])/g, (match, group1) => {
+    // Wenn es ein \cite ist, nicht escapen
+    if (match.startsWith("~\\cite{")) return match;
+    return "\\" + group1;
+  });
+};
+
 export interface LatexRenderOptions {
   includeDocument?: boolean;
   bibliography?: BibEntry[];
@@ -150,7 +158,7 @@ export function renderToLatex(
     paragraph(paragraph: ParagraphElement) {
       const parts: string[] = [];
       if (paragraph.title) parts.push(`\\textbf{${escLaTeX(paragraph.title)}}`);
-      if (paragraph.body) parts.push(escLaTeX(paragraph.body));
+      if (paragraph.body) parts.push(escLaTeXPreserveCites(paragraph.body));
       return parts.join("\n\n");
     },
     figure(figure: FigureElement) {
