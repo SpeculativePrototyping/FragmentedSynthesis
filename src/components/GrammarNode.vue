@@ -18,8 +18,6 @@ const BASE_PROMPT =
     "Now process the following input and respond strictly with JSON containing one string property 'grammar'."
 
 
-
-
 const RESPONSE_FORMAT = {
   type: 'json_schema',
   json_schema: {

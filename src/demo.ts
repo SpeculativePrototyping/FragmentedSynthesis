@@ -1,4 +1,4 @@
-import { ref, watch, nextTick } from 'vue'
+import { ref, nextTick } from 'vue'
 import type { Ref } from 'vue'
 import type { Node } from '@vue-flow/core'
 import type { VueFlowStore } from '@vue-flow/core'
@@ -40,10 +40,9 @@ export function useDemo({
         setNodes([node]) // immer nur diesen Node anzeigen
     }
 
-    // Steps definieren
+    // Steps definieren – exakt so wie von dir
     const steps: (() => void)[] = [
         () => {
-            // Step 0: Node in der Mitte
             spawnStepNode(
                 dimensions.value!.width / 2,
                 dimensions.value!.height / 2,
@@ -51,7 +50,6 @@ export function useDemo({
             )
         },
         () => {
-            // Step 1: Node links bei Controlbar
             spawnStepNode(
                 200,
                 100,
@@ -66,10 +64,9 @@ export function useDemo({
             )
         },
         () => {
-            // Step 2: Weitere Erklärung
             spawnStepNode(
                 200,
-                300,
+                400,
                 'Down here, you can drag nodes you would like to use onto the canvas.' +
                 '\nYou already know what the StickyNote is for.' +
                 '\n\nBy the way, that thing in the bottom right corner is a minimap. It shows an overview and marks selected elements in red.' +
@@ -78,27 +75,18 @@ export function useDemo({
             )
         },
         () => {
-            //Step3: Interaktives Beispiel
             if (!dimensions.value) return
 
-            // Koordinaten der Nodes
-            const x1 = 300
-            const y1 = 50
-            const x2 = 300
-            const y2 = 600
-            const xCompose = 1000
-            const yCompose = 300
-            const xGuide = 600
-            const yGuide = 100
-            const xGuide2 = 600
-            const yGuide2 = 3000
-            const xDoc = 900
-            const yDoc = 300
+            const x1 = 300, y1 = 50
+            const x2 = 300, y2 = 600
+            const xCompose = 1000, yCompose = 300
+            const xGuide = 600, yGuide = 100
+            const xGuide2 = 600, yGuide2 = 3000
+            const xDoc = 900, yDoc = 300
 
-            // Erstelle die Nodes
             const textNode1: Node = {
                 id: 'text-input-1',
-                type: 'textArea', // Typ anpassen an deine Node-Definition
+                type: 'textArea',
                 position: screenToFlowCoordinate({ x: x1, y: y1 }),
                 data: { label: 'Text Input', value: 'This is a paragraph.' },
                 dragHandle: '.doc-node__header'
@@ -135,12 +123,12 @@ export function useDemo({
                 data: {
                     label: 'Steve',
                     value: 'Looks like i am in the way! Well not only me. Why don\'t you drag me to the side and zoom out a little?' +
-                            '\nJust use your mousewheel. You should also resize me to read the rest of the instructions. Or you can scroll.' +
-                            '\nWhen you\'re done with that, sort out the mess, and make connections from the Text Input Nodes to the Compose Node.' +
-                            '\nWhile you\'re at it: Connect the Compose Node to the Document Output Node.' +
-                            '\nOh, and give your section a title.' +
-                            '\nThose are the basics. Find Peter using the MiniMap, he\'ll show you the rest!' +
-                            '\nDon\'t forget to delete me please. I\'m tired.'
+                        '\nJust use your mousewheel. You should also resize me to read the rest of the instructions. Or you can scroll.' +
+                        '\nWhen you\'re done with that, sort out the mess, and make connections from the Text Input Nodes to the Compose Node.' +
+                        '\nWhile you\'re at it: Connect the Compose Node to the Document Output Node.' +
+                        '\nOh, and give your section a title.' +
+                        '\nThose are the basics. Find Peter using the MiniMap, he\'ll show you the rest!' +
+                        '\nDon\'t forget to delete me please. I\'m tired.'
                 },
                 dragHandle: '.doc-node__header'
             }
@@ -152,12 +140,12 @@ export function useDemo({
                 data: {
                     label: 'Peter',
                     value: 'Hey man! What you also need to know:' +
-                            '\nThe Text View Node can display what the other nodes spit out. Drag one over here if you want to try it.' +
-                            '\nThe Reference Tracker keeps track of your Bibliography. It\'s also wireless. Magic.' +
-                            '\nI mean, it does not show the flow of your content so all the connections to and from it would be in the way, so..' +
-                            '\nAfter you\'ve put in a reference, you can add citations anywhere in your paragraphs. You\'ll figure that out on your own.' +
-                            '\nHere\'s a reference if you want to try it out:' +
-                            '\n\n@article{asnicar2024machine,\n' +
+                        '\nThe Text View Node can display what the other nodes spit out. Drag one over here if you want to try it.' +
+                        '\nThe Reference Tracker keeps track of your Bibliography. It\'s also wireless. Magic.' +
+                        '\nI mean, it does not show the flow of your content so all the connections to and from it would be in the way, so..' +
+                        '\nAfter you\'ve put in a reference, you can add citations anywhere in your paragraphs. You\'ll figure that out on your own.' +
+                        '\nHere\'s a reference if you want to try it out:' +
+                        '\n\n@article{asnicar2024machine,\n' +
                         '  title={Machine learning for microbiologists},\n' +
                         '  author={Asnicar, Francesco and Thomas, Andrew Maltez and Passerini, Andrea and Waldron, Levi and Segata, Nicola},\n' +
                         '  journal={Nature Reviews Microbiology},\n' +
@@ -167,59 +155,40 @@ export function useDemo({
                         '  year={2024},\n' +
                         '  publisher={Nature Publishing Group UK London}\n' +
                         '}' +
-                            '\n\nThe other node-types are.. cough. Not ready for primetime yet.' +
-                            '\nWhen you\'re done playing around, delete me and the others to end the tutorial.'
-
-
+                        '\n\nThe other node-types are.. cough. Not ready for primetime yet.' +
+                        '\nWhen you\'re done playing around, delete me and the others to end the tutorial.'
                 },
                 dragHandle: '.doc-node__header'
             }
 
-            // Setze alle Nodes gleichzeitig
-            setNodes([textNode1, textNode2, composeNode, docNode,  tourGuideNode, tourGuideNode2])
+            setNodes([textNode1, textNode2, composeNode, docNode, tourGuideNode, tourGuideNode2])
         }
-
     ]
 
-    // Startet einen Step und plant automatisch den nächsten nach 5 Sekunden
-    function startStep(stepIndex: number) {
+    // Führt einen Step aus
+    function executeStep(stepIndex: number) {
         const step = steps[stepIndex]
         if (!step || !demoActive.value) return
-
-        step() // Node anzeigen
-
-        // Nächsten Step planen
-        if (stepIndex + 1 < steps.length) {
-            setTimeout(() => {
-                if (!demoActive.value) return
-                currentStep.value = stepIndex + 1
-                startStep(currentStep.value)
-            }, 8000)
-        } else {
-            // Letzter Step – nach 5 Sekunden Demo beenden
-            setTimeout(() => {
-                demoActive.value = false
-            }, 8000)
-        }
+        step()
     }
-
-    watch(demoActive, (active) => {
-        if (active) {
-            nextTick(() => {
-                startStep(currentStep.value)
-            })
-        }
-    })
 
     function startDemo() {
         demoActive.value = true
         currentStep.value = 0
-        startStep(currentStep.value)
+        executeStep(currentStep.value)
     }
 
     function skipDemo() {
         demoActive.value = false
+        setNodes([])
     }
 
-    return { startDemo, skipDemo }
+    function nextStep() {
+        if (currentStep.value + 1 < steps.length) {
+            currentStep.value++
+            executeStep(currentStep.value)
+        }
+    }
+
+    return { startDemo, skipDemo, nextStep }
 }

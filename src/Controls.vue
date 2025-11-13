@@ -76,9 +76,9 @@ function onRestoreFromFile(event: Event): void {
 }
 
 //Demo-Mode hier einschalten!!!
-const showIntro = ref(false) //Demo-Mode ein/ausschalten!!!
+const showIntro = ref(true) //Demo-Mode ein/ausschalten!!!
 
-const { startDemo, skipDemo } = useDemo({
+const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
   nodes,
   setNodes,
@@ -115,6 +115,12 @@ function handleSkipDemo() {
         <button class="skip-button" @click="handleSkipDemo">🚫 Nah</button>
       </div>
     </div>
+  </div>
+
+  <!-- BOTTOM DEMO CONTROLS -->
+  <div v-if="demoActive" class="demo-controls">
+    <button class="next-step-btn" @click="nextStep">➡️ Next Step</button>
+    <button class="end-demo-btn" @click="skipDemo">🛑 End Demo</button>
   </div>
 
   <Panel position="top-left">
@@ -526,6 +532,47 @@ function handleSkipDemo() {
   to {
     opacity: 1;
   }
+}
+
+/* BOTTOM DEMO CONTROL BAR */
+.demo-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  background: rgba(25, 25, 25, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+}
+
+.demo-controls button {
+  background: #00bfff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-controls button:hover {
+  background: #1ec8ff;
+  transform: translateY(-2px);
+}
+
+.demo-controls .end-demo-btn {
+  background: #ff4b4b;
+}
+
+.demo-controls .end-demo-btn:hover {
+  background: #ff6666;
 }
 
 
