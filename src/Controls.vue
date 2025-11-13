@@ -112,7 +112,7 @@ function handleSkipDemo() {
       <p>I'll show you around and help you get started!</p>
       <div class="demo-buttons">
         <button class="start-button" @click="handleStartDemo">🎬 Sure</button>
-        <button class="skip-button" @click="handleSkipDemo">🚫 Nah</button>
+        <button class="skip-button" @click="handleSkipDemo">🚫 Nope</button>
       </div>
     </div>
   </div>
