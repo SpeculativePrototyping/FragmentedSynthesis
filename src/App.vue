@@ -19,6 +19,8 @@ import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import ReferenceTrackerNode from "@/components/ReferenceTrackerNode.vue";
 import FigureNode from "@/components/FigureNode.vue";
+import TourGuideNode from './components/TourGuideNode.vue'
+
 
 export interface BibEntry {
   id: string
@@ -34,7 +36,11 @@ const bibliography = ref<BibEntry[]>([])  // <- global bibliography
 const TLDR = ref(false) // <- for shrinking some nodes
 provide('TLDR', TLDR)
 
+const demoActive = ref(false)
+provide('demoActive', demoActive)
+
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
+
 let nodeCounter = 0
 
 const updateBibliography = (newBib: BibEntry[]) => {
@@ -157,6 +163,9 @@ function onDrop(event: DragEvent) {
             :updateBibliography="updateBibliography"
         />
       </template>
+      <template #node-tourGuide="tourGuideProps">
+        <TourGuideNode v-bind="tourGuideProps" />
+      </template>
 
 
       <Background />
@@ -166,6 +175,7 @@ function onDrop(event: DragEvent) {
           pannable
       />
     </VueFlow>
+
   </div>
 </template>
 

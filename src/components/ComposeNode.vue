@@ -121,7 +121,7 @@ watch([incomingEdges, title], () => {
 
     <section class="doc-node__body compose__form">
       <label>
-        Title
+        Section Title
         <input v-model="title" type="text" placeholder="Title" />
       </label>
     </section>

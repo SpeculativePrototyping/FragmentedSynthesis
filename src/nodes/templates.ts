@@ -128,7 +128,18 @@ export const nodeTemplates: NodeTemplate[] = [
       image: '' as string,      // Base64-String des Bildes
       citations: [] as string[], // Ausgewählte Referenzen
     }
+  },
+  {
+    type: 'tourGuide',       // Vue Flow Component Type
+    label: 'Tour Guide',     // Name im Drag & Drop Menü
+    category: 'disabled',     // Utility, weil es nur für die Tour gedacht ist
+    data: {
+      value: '',
+      label: 'Steve',
+      placeholder: 'This is your friendly tour guide!',
+    },
   }
+
 
 ]
 

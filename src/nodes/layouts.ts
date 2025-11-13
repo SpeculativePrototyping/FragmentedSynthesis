@@ -11,7 +11,7 @@ const SIZE_BY_TYPE: Record<string, { width: number; height: number }> = {
     textView:        { width: 300, height: 250 },
     edit:            { width: 250, height: 250 },
     summary:         { width: 220, height: 260 },
-    grammar:         { width: 230, height: 210 },
+    grammar:         { width: 300, height: 220 },
     compose:         { width: 300, height: 300 },
     docOutput:       { width: 600, height: 600 },
     referenceTracker:{ width: 300, height: 500 },

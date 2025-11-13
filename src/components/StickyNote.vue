@@ -33,6 +33,7 @@ watch(text, (v) => {
 
     <section class="doc-node__body">
       <textarea
+          @wheel.stop
           v-model="text"
           rows="6"
           class="text-node__textarea"

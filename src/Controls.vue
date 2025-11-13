@@ -5,11 +5,15 @@ import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
 import { findNodeTemplate, nodeTemplates } from './nodes/templates'
 import { applyDagreLayout } from './nodes/layouts'
+import type { Ref } from 'vue'
+import { useDemo } from './demo'
 
+
+const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 
 
 // Grab reactive helpers from Vue Flow so we can inspect and mutate the graph and remove edges
-const { nodes, edges, setNodes, setEdges, addNodes, dimensions, toObject, fromObject} = useVueFlow()
+const { nodes, edges, setNodes, setEdges, screenToFlowCoordinate, addNodes, dimensions, toObject, fromObject} = useVueFlow()
 // Keep the list of templates reactive so the select updates if you edit nodeTemplates.
 const availableTemplates = computed(() => nodeTemplates)
 // Remember the template the user last chose; default to the first entry.
@@ -71,11 +75,48 @@ function onRestoreFromFile(event: Event): void {
   reader.readAsText(file)
 }
 
+//Demo-Mode hier einschalten!!!
+const showIntro = ref(false) //Demo-Mode ein/ausschalten!!!
+
+const { startDemo, skipDemo } = useDemo({
+  demoActive,
+  nodes,
+  setNodes,
+  setEdges,
+  addNodes,
+  screenToFlowCoordinate,
+  dimensions
+})
+
+
+function handleStartDemo() {
+  showIntro.value = false
+  startDemo()
+}
+
+function handleSkipDemo() {
+  showIntro.value = false
+  skipDemo()
+}
+
 </script>
 
 //HTML
 
 <template>
+
+  <!-- Overlay oben drüber -->
+  <div v-if="showIntro" class="demo-overlay">
+    <div class="demo-box">
+      <h1>👋 Hey there! Looks like you're new here. Want a quick tour?</h1>
+      <p>I'll show you around and help you get started!</p>
+      <div class="demo-buttons">
+        <button class="start-button" @click="handleStartDemo">🎬 Sure</button>
+        <button class="skip-button" @click="handleSkipDemo">🚫 Nah</button>
+      </div>
+    </div>
+  </div>
+
   <Panel position="top-left">
     <div class="panel-content">
          <label class="sr-only" for="node-type-select">Node type</label>
@@ -349,5 +390,143 @@ function onRestoreFromFile(event: Event): void {
   font-size: 0.85rem;
   color: #ffffff;
 }
+
+/* Rainbow-vomit demo mode */
+
+.demo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.demo-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 15, 15, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.demo-box {
+  background: rgba(30, 30, 30, 0.95);
+  color: white;
+  padding: 2rem 3rem;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 600px;
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-box::before {
+  pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(
+      90deg,
+      red,
+      orange,
+      yellow,
+      lime,
+      cyan,
+      blue,
+      magenta,
+      red
+  );
+  background-size: 400%;
+  animation: rainbowBorder 3s linear infinite;
+  -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.demo-box h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.demo-box p {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.demo-buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.start-button,
+.skip-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.start-button {
+  background: linear-gradient(90deg, #00ff88, #0088ff);
+  color: black;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+}
+
+.skip-button {
+  background: #444;
+  color: white;
+}
+
+.skip-button:hover {
+  transform: scale(1.05);
+  background: #666;
+}
+
+@keyframes rainbowBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 400% 50%;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 
 </style>

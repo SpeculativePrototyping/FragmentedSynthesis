@@ -5,10 +5,19 @@ import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 
 const NODE_LABEL = 'Grammar Check'
-const BASE_PROMPT = "You are a concise academic assistant." +
-                    "Correct the users spell and grammar." +
-                    "Output only LaTeX-safe prose (no environments), suitable for inclusion in a paragraph." +
-                    "Respond strictly with JSON containing a single string property named 'grammar'."
+const BASE_PROMPT =
+    "You are a concise academic writing assistant.\n\n" +
+    "Task: Correct grammar and spelling ONLY in plain English text. " +
+    "You must preserve LaTeX markup exactly as written, including backslashes, braces, and math delimiters. " +
+    "Do not remove, alter, or move any text that starts with a backslash (\\) or appears inside { } if it is part of a LaTeX command. " +
+    "Do not alter citation commands like \\cite{...}, or any inline or block math ($...$, $$...$$).\n\n" +
+    "If you need to fix grammar near LaTeX, change only the words around it.\n\n" +
+    "Examples:\n" +
+    "Input: According to ~\\cite{smith2020}, this have been tested.\n" +
+    "Output JSON: {\"grammar\": \"According to ~\\cite{smith2020}, this has been tested.\"}\n\n" +
+    "Now process the following input and respond strictly with JSON containing one string property 'grammar'."
+
+
 
 
 const RESPONSE_FORMAT = {
