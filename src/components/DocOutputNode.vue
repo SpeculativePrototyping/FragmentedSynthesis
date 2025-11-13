@@ -322,8 +322,8 @@ function downloadBib() {
             {{ item.label }}
           </span>
           <div v-if="item.type === 'section'" class="doc-output__level-controls">
-            <button class="doc-output__level-btn" title="Level runter (←)">←</button>
-            <button class="doc-output__level-btn" title="Level rauf (→)">→</button>
+            <button class="doc-output__level-btn" title="Promote this section">←</button>
+            <button class="doc-output__level-btn" title="Demote this section">→</button>
           </div>
         </div>
       </div>

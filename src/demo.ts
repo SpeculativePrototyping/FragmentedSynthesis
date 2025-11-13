@@ -46,7 +46,7 @@ export function useDemo({
             spawnStepNode(
                 dimensions.value!.width / 2,
                 dimensions.value!.height / 2,
-                '👋 Hey! I am Steve the StickyNote.\nYou can place StickyNotes anywhere on the canvas as reminders, notes, or scratchpaper. Just drag one of my friends out of the control bar to your left!'
+                '👋 Hey! I am Steve the StickyNote.\nYou can place StickyNotes anywhere on the canvas as reminders, notes, or scratchpaper. Just drag one of my friends out of the control bar to your left! You can drag all the nodes around by the bar on the top (Where my face is).'
             )
         },
         () => {
@@ -123,7 +123,7 @@ export function useDemo({
                 data: {
                     label: 'Steve',
                     value: 'Looks like i am in the way! Well not only me. Why don\'t you drag me to the side and zoom out a little?' +
-                        '\nJust use your mousewheel. You should also resize me to read the rest of the instructions. Or you can scroll.' +
+                        '\nJust use your mousewheel outside a node. You should also resize me to read the rest of the instructions. Or you can scroll.' +
                         '\nWhen you\'re done with that, sort out the mess, and make connections from the Text Input Nodes to the Compose Node.' +
                         '\nWhile you\'re at it: Connect the Compose Node to the Document Output Node.' +
                         '\nOh, and give your section a title.' +
@@ -139,10 +139,10 @@ export function useDemo({
                 position: screenToFlowCoordinate({ x: xGuide2, y: yGuide2 }),
                 data: {
                     label: 'Peter',
-                    value: 'Hey man! What you also need to know:' +
+                    value: 'Hey man! I\'m Peter the Post-It. What you also need to know:' +
                         '\nThe Text View Node can display what the other nodes spit out. Drag one over here if you want to try it.' +
-                        '\nThe Reference Tracker keeps track of your Bibliography. It\'s also wireless. Magic.' +
-                        '\nI mean, it does not show the flow of your content so all the connections to and from it would be in the way, so..' +
+                        '\nThe Reference Tracker keeps track of your bibliography. It\'s also wireless. Magic.' +
+                        '\nIt does not show the flow of your content and all the connections to and from it would be in the way, so..' +
                         '\nAfter you\'ve put in a reference, you can add citations anywhere in your paragraphs. You\'ll figure that out on your own.' +
                         '\nHere\'s a reference if you want to try it out:' +
                         '\n\n@article{asnicar2024machine,\n' +
@@ -156,7 +156,7 @@ export function useDemo({
                         '  publisher={Nature Publishing Group UK London}\n' +
                         '}' +
                         '\n\nThe other node-types are.. cough. Not ready for primetime yet.' +
-                        '\nWhen you\'re done playing around, delete me and the others to end the tutorial.'
+                        '\nWhen you\'re done playing around, delete me and the others or just end the demo.'
                 },
                 dragHandle: '.doc-node__header'
             }
