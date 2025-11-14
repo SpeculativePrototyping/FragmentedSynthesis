@@ -37,8 +37,6 @@ const availableSources = computed(() => props.bibliography ?? [])
 const TLDR = inject('TLDR')
 const textAreaRef = ref<HTMLTextAreaElement | null>(null)
 const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
-
-
 const searchQuery = ref('')
 const showSearch = ref(false)
 
@@ -51,7 +49,6 @@ const filteredSources = computed(() => {
       entry.id.toLowerCase().includes(query)
   )
 })
-
 
 
 const statusLabel = computed(() => {
@@ -189,7 +186,6 @@ function reinsertCitation(key: string) {
   const { start, end } = cursorPos.value
 
   if (!textarea || start === undefined) {
-    // Falls keine Cursorposition -> ans Ende
     text.value += citationText
   } else {
     const before = text.value.slice(0, start)
@@ -202,8 +198,6 @@ function reinsertCitation(key: string) {
       textarea.selectionStart = textarea.selectionEnd = start + citationText.length
     })
   }
-
-  // keine Änderung am citations-Array nötig, da Key schon existiert
   updateNodeData(props.id, { ...props.data, value: text.value })
 }
 
@@ -231,7 +225,6 @@ watch(
     },
     { deep: true }
 );
-
 
 watch(TLDR, (val) => {
   if (typeof val === 'boolean') {
@@ -550,10 +543,10 @@ watch(text, (v) => {
   display: flex;
   flex-direction: row;
   gap: 6px;
-  width: 100%;            /* Li nimmt volle Breite */
+  width: 100%;
   cursor: pointer;
   padding: 6px;
-  box-sizing: border-box; /* Padding wird in Breite gerechnet */
+  box-sizing: border-box;
 }
 
 .citation-search-list li:hover {
@@ -562,11 +555,11 @@ watch(text, (v) => {
 
 .citation-search-list li span.key {
   font-weight: bold;
-  flex-shrink: 0;         /* Key behält seine natürliche Größe */
+  flex-shrink: 0;
 }
 
 .citation-search-list li span.title {
-  flex: 1;                /* Titel nimmt restliche Breite */
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

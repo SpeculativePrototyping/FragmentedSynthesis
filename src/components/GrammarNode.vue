@@ -4,43 +4,31 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 
+
 const NODE_LABEL = 'Grammar Check'
 const BASE_PROMPT =
-    "You are a concise academic writing assistant.\n\n" +
-    "Task: Correct grammar and spelling ONLY in plain English text. " +
-    "You must preserve LaTeX markup exactly as written, including backslashes, braces, and math delimiters. " +
-    "Do not remove, alter, or move any text that starts with a backslash (\\) or appears inside { } if it is part of a LaTeX command. " +
-    "Do not alter citation commands like \\cite{...}, or any inline or block math ($...$, $$...$$).\n\n" +
-    "If you need to fix grammar near LaTeX, change only the words around it.\n\n" +
-    "Examples:\n" +
-    "Input: According to ~\\cite{smith2020}, this have been tested.\n" +
-    "Output JSON: {\"grammar\": \"According to ~\\cite{smith2020}, this has been tested.\"}\n\n" +
-    "Now process the following input and respond strictly with JSON containing one string property 'grammar'."
-
+    'You are a concise academic writing assistant.' +
+    'Task: Correct grammar and spelling in a single sentence.' +
+    'Do NOT change word order, add new content, or remove existing content.' +
+    'Fix only grammatical and spelling mistakes.' +
+    'Now process the following input and respond strictly with JSON containing one string property grammar.'
 
 const RESPONSE_FORMAT = {
   type: 'json_schema',
   json_schema: {
     name: 'grammar_response',
-    schema: {
-      type: 'object',
-      properties: {
-        grammar: { type: 'string' },
-      },
-      required: ['grammar'],
-      additionalProperties: false,
-    },
+    schema: { type: 'object', properties: { grammar: { type: 'string' } }, required: ['grammar'], additionalProperties: false },
   },
 } as const
 
 type GrammarStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
-
 
 interface GrammarNodeData {
   label?: string
   value?: string
   status?: GrammarStatus
   error?: string | null
+  citations?: string[]
 }
 
 const props = defineProps<NodeProps<GrammarNodeData>>()
@@ -53,54 +41,148 @@ const error = ref<string | null>(props.data?.error ?? null)
 
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 
+
 function readNodeText(nodeId: string): string {
-  const sourceNode = nodes.value.find((node) => node.id === nodeId)
+  const sourceNode = nodes.value.find(n => n.id === nodeId)
   if (!sourceNode?.data) return ''
-  const candidate = sourceNode.data as Record<string, unknown>
-  const raw = (candidate.value ?? candidate.label ?? '') as string
-  return typeof raw === 'string' ? raw : String(raw ?? '')
+  return (sourceNode.data as GrammarNodeData).value ?? ''
 }
 
+function readNodeCitations(nodeId: string): string[] {
+  const sourceNode = nodes.value.find(n => n.id === nodeId)
+  if (!sourceNode?.data) return []
+  return (sourceNode.data as GrammarNodeData).citations ?? []
+}
+
+
 const sourceTexts = computed(() =>
-    incomingEdges.value.map((edge) => readNodeText(edge.source)).filter((text) => Boolean(text)),
+    incomingEdges.value
+        .map(edge => readNodeText(edge.source))  // hier weiterhin readNodeText
+        .filter(text => Boolean(text))
+)
+
+const inputCitations = computed(() =>
+    incomingEdges.value.flatMap(edge => readNodeCitations(edge.source))
 )
 
 const inputText = computed(() => sourceTexts.value.join('\n\n'))
 
 const statusLabel = computed(() => {
   switch (status.value) {
-    case 'queued':
-      return 'Status: queued…'
-    case 'processing':
-      return 'Status: processing…'
-    case 'done':
-      return 'Status: done'
-    case 'error':
-      return 'Status: error'
-    default:
-      return 'Status: idle'
+    case 'queued': return 'Status: queued…'
+    case 'processing': return 'Status: processing…'
+    case 'done': return 'Status: done'
+    case 'error': return 'Status: error'
+    default: return 'Status: idle'
   }
 })
 
 let debounceTimer: number | undefined
 let requestToken = 0
-let lastKey = ''
 
 function pushNodeData(patch: Partial<GrammarNodeData>) {
-  // Keep Vue Flow store in sync so downstream nodes see the latest values.
   updateNodeData(props.id, { ...(props.data ?? {}), ...patch })
 }
 
 function resetState() {
-  // Clear the node output and status when there is no text to summarise.
   grammar.value = ''
   status.value = 'idle'
   error.value = null
   pushNodeData({ value: '', status: 'idle', error: null })
 }
 
+// -------------------------
+//  LaTeX & Sentence Utilities
+// -------------------------
+
+// Patterns für LaTeX-Elemente (einfach erweiterbar)
+const LATEX_PATTERNS = [
+  /~\\cite\{[^}]+\}/g,       // citations
+  /\$[^$]+\$/g,               // inline math
+  /\$\$[\s\S]+?\$\$/g,        // block math
+  /\\[a-zA-Z]+\{[^}]*\}/g     // generische LaTeX-Kommandos
+]
+
+// Zerlegt Text in LaTeX- und Texttokens
+function tokenizeLaTeX(text: string) {
+  const tokens: { type: 'text' | 'latex'; value: string }[] = []
+  let lastIndex = 0
+  const combined = new RegExp(LATEX_PATTERNS.map(r => r.source).join('|'), 'g')
+  let match
+  while ((match = combined.exec(text)) !== null) {
+    const before = text.slice(lastIndex, match.index)
+    if (before.trim()) tokens.push({ type: 'text', value: before })
+    tokens.push({ type: 'latex', value: match[0] })
+    lastIndex = combined.lastIndex
+  }
+  const after = text.slice(lastIndex)
+  if (after.trim()) tokens.push({ type: 'text', value: after })
+  return tokens
+}
+
+// Zerlegt Texttokens in einzelne Sätze
+function splitSentences(tokens: { type: 'text' | 'latex'; value: string }[]) {
+  const result: { type: 'sentence' | 'latex'; value: string }[] = []
+
+  for (const t of tokens) {
+    if (t.type === 'latex') {
+      result.push({ type: 'latex', value: t.value }) // explizit 'latex'
+    } else {
+      const sentences = t.value.split(/(?<=[.?!])\s+/)
+      for (const s of sentences) {
+        if (s.trim()) result.push({ type: 'sentence', value: s.trim() })
+      }
+    }
+  }
+
+  return result
+}
+
+
+// LLM nur auf Sätze anwenden, LaTeX unverändert lassen
+async function correctSentences(
+    tokens: { type: 'sentence' | 'latex'; value: string }[]
+): Promise<{ type: 'sentence' | 'latex'; value: string }[]> {
+  const output: { type: 'sentence' | 'latex'; value: string }[] = []
+
+  for (const t of tokens) {
+    if (t.type === 'sentence') {
+      const result = await enqueueLlmJob({
+        sys: BASE_PROMPT,
+        user: t.value,
+        responseFormat: RESPONSE_FORMAT,
+        onStart: () => {}
+      })
+
+      let corrected = ''
+      try {
+        const parsed = JSON.parse(result.message || '{}')
+        corrected = parsed.grammar?.trim() ?? t.value
+      } catch {
+        corrected = t.value
+      }
+
+      output.push({ type: 'sentence', value: corrected })
+    } else {
+      // LaTeX unverändert weitergeben
+      output.push({ type: 'latex', value: t.value })
+    }
+  }
+
+  return output
+}
+
+
+// Alles wieder zusammenfügen
+function rebuildText(tokens: { type: 'sentence' | 'latex'; value: string }[]) {
+  return tokens.map(t => t.value).join(' ')
+}
+
+// -------------------------
+//  Scheduler / Queue
+// -------------------------
+
 function schedule(force: boolean) {
-  // Debounce requests so we only call the LLM once the input stabilises.
   window.clearTimeout(debounceTimer)
   debounceTimer = window.setTimeout(() => {
     void queueGrammar(force)
@@ -109,123 +191,47 @@ function schedule(force: boolean) {
 
 async function queueGrammar(force: boolean) {
   const text = inputText.value.trim()
-
-  if (!text) {
-    requestToken += 1
-    lastKey = ''
-    resetState()
-    return
-  }
-
+  if (!text) { requestToken++; resetState(); return }
 
   const token = ++requestToken
   grammar.value = ''
   status.value = 'queued'
   error.value = null
-  // Share the queued state with the graph so downstream nodes know to wait.
-  pushNodeData({ value: '', status: 'queued', error: null })
-
-  const sys = BASE_PROMPT
-  const user = text
+  pushNodeData({ value: '', status: 'queued', error: null, citations: inputCitations.value })
 
   try {
-    // Enqueue the correction request so jobs run sequentially.
-    const result = await enqueueLlmJob({
-      sys,
-      user,
-      responseFormat: RESPONSE_FORMAT,
-      onStart: () => {
-        if (token !== requestToken) return
-        status.value = 'processing'
-        // Flag the node as active while the request is in flight.
-        pushNodeData({ status: 'processing' })
-      },
-    })
+    const latexTokens = tokenizeLaTeX(text)
+    const sentenceTokens = splitSentences(latexTokens)
+    const correctedTokens = await correctSentences(sentenceTokens)
+    const correctedText = rebuildText(correctedTokens)
 
-    if (token !== requestToken) {
-      return
-    }
-
-    const GrammarText = extractGrammar(result.message, result.response)
-    grammar.value = GrammarText
+    grammar.value = correctedText
     status.value = 'done'
     error.value = null
-    // Persist the successful result for other nodes.
-    pushNodeData({ value: GrammarText, status: 'done', error: null })
+    pushNodeData({
+      value: correctedText,
+      status: 'done',
+      error: null,
+      citations: inputCitations.value // <- hier kommen jetzt die BibTeX-Marker
+    })
   } catch (err) {
-    if (token !== requestToken) {
-      return
-    }
-
     status.value = 'error'
     const message = err instanceof Error ? err.message : String(err)
     error.value = message
     grammar.value = ''
-    // Make sure consumers can react to the failure state.
-    pushNodeData({ value: '', status: 'error', error: message })
+    pushNodeData({ value: '', status: 'error', error: message, citations: inputCitations.value })
   }
 }
 
-watch(
-    inputText,
-    () => {
-      // React to upstream text changes.
-      schedule(false)
-    },
-    { immediate: true },
-)
 
+watch(inputText, () => schedule(false), { immediate: true })
 
-function onRetry() {
-  // Manual retry bypasses the debounce.
-  schedule(true)
-}
+function onRetry() { schedule(true) }
 
-onBeforeUnmount(() => {
-  // Prevent stray timers from firing after the node is removed.
-  window.clearTimeout(debounceTimer)
-})
-
-
-function extractGrammar(message: string, response: unknown): string {
-  const raw = (message || '').trim()
-  if (!raw) return ''
-
-  const cleaned = stripCodeFences(raw)
-  const parsed = tryParseJson(cleaned)
-  if (parsed && typeof parsed.grammar === 'string') {
-    return parsed.grammar.trim()
-  }
-
-  if (parsed && parsed.result && typeof parsed.result.grammar === 'string') {
-    return parsed.result.grammar.trim()
-  }
-
-  const choices = (response as any)?.choices?.[0]?.message
-  const nested = choices?.parsed?.grammar
-  if (typeof nested === 'string') {
-    return nested.trim()
-  }
-
-  return cleaned
-}
-
-function tryParseJson(source: string): any {
-  try {
-    return JSON.parse(source)
-  } catch {
-    return undefined
-  }
-}
-
-function stripCodeFences(text: string): string {
-  const fenceMatch = text.match(/^```[a-zA-Z0-9]*\n([\s\S]*?)```$/)
-  if (fenceMatch && fenceMatch[1]) {
-    return fenceMatch[1].trim()
-  }
-  return text
-}
+onBeforeUnmount(() => window.clearTimeout(debounceTimer))
 </script>
+
+
 
 
 
