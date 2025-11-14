@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue'
+import {ref, computed, watch, inject, type Ref} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 
@@ -24,6 +24,8 @@ interface FigureNodeProps extends NodeProps<FigureNodeData> {
 
 const props = defineProps<FigureNodeProps>()
 const { updateNodeData } = useVueFlow()
+const imageCache = inject<Ref<Record<string, string>>>('imageCache')
+
 
 // Zentral: Alle Bibliographie-Einträge
 const availableSources = computed(() => props.bibliography ?? [])
@@ -73,15 +75,27 @@ function addCitationByKey(key: string) {
   const citations = props.data.citations ? [...props.data.citations] : []
   if (!citations.includes(key)) {
     citations.push(key)
+
+    // Zitat ans Ende der Bildbeschreibung anhängen
+    const newLatexLabel = latexLabel.value
+        ? `${latexLabel.value} ~\\cite{${key}}`
+        : `~\\cite{${key}}`
+
+    latexLabel.value = newLatexLabel
     syncDataDownstream({ citations })
   }
+
   searchQuery.value = ''
   showSearch.value = false
 }
 
 function removeCitation(key: string) {
   const citations = props.data.citations ? [...props.data.citations] : []
-  syncDataDownstream({ citations: citations.filter(c => c !== key) })
+  const newCitations = citations.filter(c => c !== key)
+
+  // Entferne alle Vorkommen von ~\cite{key} aus latexLabel
+  latexLabel.value = latexLabel.value.replace(new RegExp(`~\\\\cite\\{${key}\\}`, 'g'), '').trim()
+  syncDataDownstream({ citations: newCitations })
 }
 
 // Bibliography-Update Watcher
@@ -101,21 +115,33 @@ watch(
     { deep: true }
 )
 
+watch(latexLabel, () => {
+  syncDataDownstream()
+})
+
 // File upload
 function onFileChange(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  if (!file) return
+  if (!file || !imageCache) return
 
   const reader = new FileReader()
   reader.onload = () => {
+    // zufälligen eindeutigen Namen erzeugen
+    const randomName = `${crypto.randomUUID()}.${file.name.split('.').pop()}`
+
+    // Base64 zentral speichern
+    imageCache.value[randomName] = reader.result as string
+
+    // Node nur den generierten Namen speichern
     syncDataDownstream({
-      image: reader.result as string,
-      imageName: file.name
+      imageName: randomName,
+      image: undefined // Base64 nicht im Node-State
     })
   }
   reader.readAsDataURL(file)
 }
+
 </script>
 
 
@@ -145,10 +171,11 @@ function onFileChange(event: Event) {
       />
 
       <!-- Bildvorschau / kompakte Ansicht -->
-      <div v-if="props.data?.image && !isCompact" class="image-preview">
-        <img :src="props.data.image" alt="Uploaded figure" />
+      <div v-if="props.data?.imageName && !isCompact" class="image-preview">
+        <img :src="imageCache?.[props.data.imageName]" alt="Uploaded figure" />
         <p>{{ props.data.imageName }}</p>
       </div>
+
 
       <div v-else-if="isCompact">
         <p>{{ props.data?.imageName ?? 'No file selected' }}</p>
@@ -157,7 +184,7 @@ function onFileChange(event: Event) {
       <input
           type="text"
           v-model="latexLabel"
-          placeholder="Figure designation"
+          placeholder="Figure name and references:"
           class="figure-node__label-input"
       />
 

@@ -3,6 +3,7 @@ import {ref, watch, computed, inject, nextTick} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
+import { NodeToolbar } from '@vue-flow/node-toolbar'
 
 
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
@@ -246,6 +247,10 @@ watch(text, (v) => {
 </script>
 
 <template>
+
+  <NodeToolbar>
+  </NodeToolbar>
+
   <div class="text-node doc-node node-wrapper" >
 
     <div class="node-hover-toggle">

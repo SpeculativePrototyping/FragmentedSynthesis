@@ -7,6 +7,7 @@ import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
 import {MiniMap} from "@vue-flow/minimap";
 
+
 //Import every node-component:
 import ConcatNode from './components/ConcatNode.vue'
 import TextAreaNode from './components/TextAreaNode.vue'
@@ -29,7 +30,6 @@ export interface BibEntry {
   raw?: string   // <-- der rohe BibTeX-Block
 }
 
-//reactive lists of the nodes and edges
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
 const bibliography = ref<BibEntry[]>([])  // <- global bibliography
@@ -39,7 +39,14 @@ provide('TLDR', TLDR)
 const demoActive = ref(false)
 provide('demoActive', demoActive)
 
+//global image save for performance reasons
+type ImageCache = Record<string, string>
+const imageCache = ref<ImageCache>({})
+provide('imageCache', imageCache)
+
+
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
+const { updateEdge, addEdges } = useVueFlow()
 
 let nodeCounter = 0
 
@@ -47,12 +54,10 @@ const updateBibliography = (newBib: BibEntry[]) => {
   bibliography.value = newBib
 }
 
-
 function onConnect(connection: Connection) {
   edges.value = addEdge(connection, edges.value) as Edge[]
 }
 
-//animated edges with arrows and flow-direction
 watch(edges, (newEdges) => {
   newEdges.forEach(edge => {
     if (edge.animated === undefined) edge.animated = true
@@ -101,6 +106,11 @@ function onDrop(event: DragEvent) {
   addNodes([newNode])
 }
 
+
+function onEdgeUpdate({ edge, connection }) {
+  updateEdge(edge, connection)
+}
+
 </script>
 
 <template>
@@ -111,6 +121,8 @@ function onDrop(event: DragEvent) {
         @connect="onConnect"
         @drop ="onDrop"
         @dragover.prevent
+        :edgesUpdatable="true"
+        @edge-update="onEdgeUpdate"
     >
       <SaveRestoreControls />
 
