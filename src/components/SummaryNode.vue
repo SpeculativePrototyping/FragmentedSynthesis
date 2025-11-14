@@ -33,6 +33,7 @@ interface SummaryNodeData {
   value?: string
   status?: SummaryStatus
   error?: string | null
+  citations?: string[]
 }
 
 const props = defineProps<NodeProps<SummaryNodeData>>()
@@ -46,12 +47,22 @@ const error = ref<string | null>(props.data?.error ?? null)
 
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 
+const inputCitations = computed(() =>
+    incomingEdges.value.flatMap(edge => readNodeCitations(edge.source))
+)
+
 function readNodeText(nodeId: string): string {
   const sourceNode = nodes.value.find((node) => node.id === nodeId)
   if (!sourceNode?.data) return ''
   const candidate = sourceNode.data as Record<string, unknown>
   const raw = (candidate.value ?? candidate.label ?? '') as string
   return typeof raw === 'string' ? raw : String(raw ?? '')
+}
+
+function readNodeCitations(nodeId: string): string[] {
+  const sourceNode = nodes.value.find((node) => node.id === nodeId)
+  if (!sourceNode?.data) return []
+  return (sourceNode.data as any).citations ?? []
 }
 
 const sourceTexts = computed(() =>
@@ -149,7 +160,7 @@ async function queueSummary(force: boolean) {
     status.value = 'done'
     error.value = null
     // Persist the successful result for other nodes.
-    pushNodeData({ value: summaryText, status: 'done', error: null })
+    pushNodeData({ value: summaryText, status: 'done', error: null, citations: inputCitations.value })
   } catch (err) {
     if (token !== requestToken) {
       return
@@ -160,7 +171,8 @@ async function queueSummary(force: boolean) {
     error.value = message
     summary.value = ''
     // Make sure consumers can react to the failure state.
-    pushNodeData({ value: '', status: 'error', error: message })
+    pushNodeData({ value: '', status: 'error', error: message, citations: inputCitations.value })
+
   }
 }
 
@@ -259,11 +271,12 @@ function stripCodeFences(text: string): string {
       </div>
 
       <textarea
-        class="summary-node__textarea"
-        :value="summary"
-        readonly
-        aria-label="Summary output"
-        :placeholder="status === 'idle' ? 'This node can summarize incoming text for you. Summary will appear here…' : ''"
+          @wheel.stop
+          class="summary-node__textarea"
+          :value="summary"
+          readonly
+          aria-label="Summary output"
+          :placeholder="status === 'idle' ? 'This node can summarize incoming text for you. You can choose from a variety of options. Citations will be removed in the process. You can re-add citations using the Edit Node.' : ''"
       />
 
       <p v-if="status === 'error'" class="summary-node__status summary-node__status--error" role="alert">
@@ -317,11 +330,12 @@ function stripCodeFences(text: string): string {
 }
 
 .summary-node__textarea {
-  width: 240px;
-  min-width:240px;
-  min-height: 140px;
+  width: 260px;
+  height: 180px;
+  min-width:260px;
+  min-height: 180px;
   max-width: 480px;
-  max-height: 400px;
+  max-height: 480px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;

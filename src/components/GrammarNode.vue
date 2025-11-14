@@ -223,8 +223,15 @@ async function queueGrammar(force: boolean) {
   }
 }
 
+let lastInputText = inputText.value
 
-watch(inputText, () => schedule(false), { immediate: true })
+
+watch(inputText, (newText) => {
+  if (newText !== lastInputText) {
+    lastInputText = newText
+    schedule(false)
+  }
+}, { immediate: true })
 
 function onRetry() { schedule(true) }
 
@@ -252,11 +259,12 @@ onBeforeUnmount(() => window.clearTimeout(debounceTimer))
       </div>
 
       <textarea
+          @wheel.stop
           class="grammar-node__textarea"
           :value="grammar"
           readonly
           aria-label="Grammar output"
-          :placeholder="status === 'idle' ? 'This node can correct your grammar and spelling. Corrected text will appear here…' : ''"
+          :placeholder="status === 'idle' ? 'This node can correct your grammar and spelling. It will retain all of your inserted citations and does not change the word order, add new content or remove any existing content.' : ''"
       />
 
       <p v-if="status === 'error'" class="grammar-node__status grammar-node__status--error" role="alert">
@@ -308,7 +316,11 @@ onBeforeUnmount(() => window.clearTimeout(debounceTimer))
 
 .grammar-node__textarea {
   width: 260px;
-  min-height: 120px;
+  height: 180px;
+  min-width:260px;
+  min-height: 180px;
+  max-width: 480px;
+  max-height: 480px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
@@ -316,7 +328,7 @@ onBeforeUnmount(() => window.clearTimeout(debounceTimer))
   color: #0f172a;
   font: inherit;
   line-height: 1.45;
-  resize: vertical;
+  resize: both;
 }
 
 .grammar-node__status {

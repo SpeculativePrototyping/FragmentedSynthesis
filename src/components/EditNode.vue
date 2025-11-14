@@ -13,6 +13,7 @@ interface EditNodeData {
   original?: string
   value?: string
   diff?: DiffSegment[]
+  citations?: string[]
 }
 
 const props = defineProps<NodeProps<EditNodeData>>()
@@ -27,6 +28,11 @@ let lastSnapshot = ''
 
 // Edit node only supports a single input edge; grab it reactively
 const incomingEdge = computed(() => edges.value.find((edge) => edge.target === props.id))
+const incomingCitations = computed(() => {
+  const edge = incomingEdge.value
+  if (!edge) return []
+  return readNodeCitations(edge.source)
+})
 
 /**
  * Reads text from whichever node is connected to the input handle.
@@ -39,22 +45,32 @@ function readNodeText(nodeId: string): string {
   return typeof candidate === 'string' ? candidate : ''
 }
 
+function readNodeCitations(nodeId: string): string[] {
+  const source = nodes.value.find((node) => node.id === nodeId)
+  if (!source?.data) return []
+  const data = source.data as Record<string, unknown>
+
+  const c = data.citations
+  return Array.isArray(c) ? c as string[] : []
+}
+
+
 // Whenever the incoming edge changes we sync the "original" starting text
 watch(
-  () => incomingEdge.value,
-  (edge) => {
-    const text = edge ? readNodeText(edge.source) : ''
-    if (text === originalText.value) return
+    () => incomingEdge.value,
+    (edge) => {
+      const text = edge ? readNodeText(edge.source) : ''
+      if (text === originalText.value) return
 
-    originalText.value = text
-    if (!hasManualEdit.value) {
-      editedText.value = text
-      conflict.value = false
-    } else {
-      conflict.value = true
-    }
-  },
-  { immediate: true },
+      originalText.value = text
+      if (!hasManualEdit.value) {
+        editedText.value = text
+        conflict.value = false
+      } else {
+        conflict.value = true
+      }
+    },
+    { immediate: true },
 )
 
 // Track whether the user has made changes relative to the original snapshot
@@ -67,10 +83,10 @@ watch(editedText, () => {
 const diffSegments = computed(() => diffTokens(originalText.value, editedText.value))
 
 const additions = computed(() =>
-  diffSegments.value.reduce((total, segment) => (segment.type === 'insert' ? total + segment.text.length : total), 0),
+    diffSegments.value.reduce((total, segment) => (segment.type === 'insert' ? total + segment.text.length : total), 0),
 )
 const deletions = computed(() =>
-  diffSegments.value.reduce((total, segment) => (segment.type === 'delete' ? total + segment.text.length : total), 0),
+    diffSegments.value.reduce((total, segment) => (segment.type === 'delete' ? total + segment.text.length : total), 0),
 )
 
 // Push the node data to Vue Flow once it actually changed (prevents update loops)
@@ -79,6 +95,7 @@ watchEffect(() => {
     original: originalText.value,
     value: editedText.value,
     diff: diffSegments.value,
+    citations: incomingCitations.value,
   }
   const serialised = JSON.stringify(snapshot)
   if (serialised === lastSnapshot) return
@@ -88,14 +105,14 @@ watchEffect(() => {
 
 // Defensive cleanup in case someone wires up the wrong handle id
 watch(
-  () => incomingEdge.value,
-  async (edge) => {
-    await updateNodeInternals?.([props.id])
-    if (edge && edge.targetHandle !== 'input') {
-      removeEdges([edge])
-    }
-  },
-  { immediate: true },
+    () => incomingEdge.value,
+    async (edge) => {
+      await updateNodeInternals?.([props.id])
+      if (edge && edge.targetHandle !== 'input') {
+        removeEdges([edge])
+      }
+    },
+    { immediate: true },
 )
 
 function resetEdits() {
@@ -189,10 +206,10 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
       <label class="edit-node__label">
         <span>Text</span>
         <textarea
-          v-model="editedText"
-          class="edit-node__textarea"
-          rows="8"
-          placeholder="With this node, you can edit incoming text from any other node. Waiting for input…"
+            v-model="editedText"
+            class="edit-node__textarea"
+            rows="8"
+            placeholder="With this node, you can edit incoming text and citations from any other node or add citations to summarized text."
         ></textarea>
       </label>
 
@@ -228,11 +245,12 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
 }
 
 .edit-node__textarea {
-  width: 240px;
-  min-width:240px;
-  min-height: 140px;
+  width: 260px;
+  height: 180px;
+  min-width:260px;
+  min-height: 180px;
   max-width: 480px;
-  max-height: 400px;
+  max-height: 480px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.15);
   border-radius: 10px;

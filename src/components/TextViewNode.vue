@@ -93,8 +93,12 @@ const displayText = computed(() => {
 }
 
 .text-view-node__textarea {
-  min-width: 400px;
-  min-height: 240px;
+  width: 260px;
+  height: 180px;
+  min-width:260px;
+  min-height: 180px;
+  max-width: 480px;
+  max-height: 480px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
