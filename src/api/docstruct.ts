@@ -161,8 +161,7 @@ export function renderToLatex(
     },
     paragraph(paragraph: ParagraphElement) {
       const parts: string[] = [];
-      if (paragraph.title) parts.push(`\\textbf{${escLaTeX(paragraph.title)}}`);
-      if (paragraph.body) parts.push(escLaTeXPreserveCites(paragraph.body));
+      parts.push(`\\paragraph{${escLaTeX(paragraph.body ?? '')}}`);
       return parts.join("\n\n");
     },
     figure(figure: FigureElement) {
