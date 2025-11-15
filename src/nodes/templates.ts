@@ -138,6 +138,15 @@ export const nodeTemplates: NodeTemplate[] = [
       label: 'Steve',
       placeholder: 'This is your friendly tour guide!',
     },
+  },
+  {
+    type: 'figureTracker',      // VueFlow Component Type
+    label: 'Figure Tracker Node', // Name im Drag & Drop Menü
+    category: 'utility',          // Utility Node
+    data: {
+      label: 'Figure Tracker',    // Default Label
+      // keine weiteren Props nötig, imageCache wird injectet
+    }
   }
 
 

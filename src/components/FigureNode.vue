@@ -15,6 +15,7 @@ interface FigureNodeData {
   image?: string      // Base64
   imageName?: string  // Filename
   latexLabel?: string // Figure-Name for LaTeX
+  refLabel?: string
 }
 
 interface FigureNodeProps extends NodeProps<FigureNodeData> {
@@ -24,7 +25,20 @@ interface FigureNodeProps extends NodeProps<FigureNodeData> {
 
 const props = defineProps<FigureNodeProps>()
 const { updateNodeData } = useVueFlow()
-const imageCache = inject<Ref<Record<string, string>>>('imageCache')
+const refLabel = computed(() => {
+  if (!latexLabel.value) return ''
+  return latexLabel.value.split(/~\\cite\{/)?.[0]?.trim() ?? '' // Alles vor dem ersten ~\cite{...} als Label
+})
+
+interface ImageCacheEntry {
+  base64: string
+  refLabel: string
+}
+
+type ImageCache = Record<string, ImageCacheEntry>
+
+const imageCache = inject<Ref<ImageCache>>('imageCache')
+
 
 
 // Zentral: Alle Bibliographie-Einträge
@@ -50,14 +64,10 @@ function syncDataDownstream(updated: Partial<FigureNodeData> = {}) {
     image: props.data.image,
     imageName: props.data.imageName,
     latexLabel: latexLabel.value,
+    refLabel: latexLabel.value?.split(/~\\cite\{/)?.[0]?.trim() ?? '',
     ...updated
   })
 }
-
-// Watcher für latexLabel
-watch(latexLabel, () => {
-  syncDataDownstream()
-})
 
 // Filter für Suchfunktion
 const filteredSources = computed(() => {
@@ -117,7 +127,14 @@ watch(
 
 watch(latexLabel, () => {
   syncDataDownstream()
+
+  // 🆕 globalen Cache aktuell halten
+  if (props.data?.imageName && imageCache?.value[props.data.imageName]) {
+    imageCache.value[props.data.imageName].refLabel =
+        latexLabel.value.split(/~\\cite\{/)?.[0]?.trim() ?? ''
+  }
 })
+
 
 // File upload
 function onFileChange(event: Event) {
@@ -131,7 +148,10 @@ function onFileChange(event: Event) {
     const randomName = `${crypto.randomUUID()}.${file.name.split('.').pop()}`
 
     // Base64 zentral speichern
-    imageCache.value[randomName] = reader.result as string
+    imageCache.value[randomName] = {
+      base64: reader.result as string,
+      refLabel: latexLabel.value.split(/~\\cite\{/)?.[0]?.trim() ?? ''
+    }
 
     // Node nur den generierten Namen speichern
     syncDataDownstream({
@@ -172,7 +192,7 @@ function onFileChange(event: Event) {
 
       <!-- Bildvorschau / kompakte Ansicht -->
       <div v-if="props.data?.imageName && !isCompact" class="image-preview">
-        <img :src="imageCache?.[props.data.imageName]" alt="Uploaded figure" />
+        <img :src="imageCache?.[props.data.imageName]?.base64" alt="Uploaded figure" />
         <p>{{ props.data.imageName }}</p>
       </div>
 

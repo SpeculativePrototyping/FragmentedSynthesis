@@ -138,7 +138,7 @@ function removeReference(key: string) {
 
 .text-node__body {
   min-height: 400px;
-  max-height: 1000px;
+  max-height: 600px;
   width: 400px;
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);

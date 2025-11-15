@@ -20,8 +20,11 @@ export type ParagraphElement = BaseElement & {
 };
 export type FigureElement = BaseElement & {
   kind: "figure";
-  src: string;
-  caption?: string;
+  imageName: string;       // referenziert globalen Cache
+  latexLabel: string;      // Caption für LaTeX
+  label?: string;        // interner eindeutiger LaTeX-Label
+  citations?: string[];    // optional
+  refLabel?: string;
 };
 export type DocElement = SectionElement | ParagraphElement | FigureElement;
 
@@ -57,18 +60,19 @@ export const mkParagraph = (id: NodeID, init: Partial<BaseElement> = {}): Paragr
 });
 
 export const mkFigure = (
-  id: NodeID,
-  src = '',
-  caption = '',
-  init: Partial<BaseElement> = {},
+    id: NodeID,
+    imageName = '',
+    latexLabel = '',
+    init: Partial<BaseElement> = {},
 ): FigureElement => ({
   kind: 'figure',
   id,
-  src,
-  caption,
+  imageName,
+  latexLabel,
+  citations: [],
   title: init.title,
   body: init.body,
-  children: [], // figures don’t have children in this model
+  children: [], // Figures haben keine Kinder
 });
 
 
@@ -162,9 +166,10 @@ export function renderToLatex(
       return parts.join("\n\n");
     },
     figure(figure: FigureElement) {
-      const lines: string[] = ["\\begin{figure}", "  \\centering"];
-      if (figure.src) lines.push(`  \\includegraphics{${escLaTeX(figure.src)}}`);
-      if (figure.caption) lines.push(`  \\caption{${escLaTeX(figure.caption)}}`);
+      const lines: string[] = ["\\begin{figure}[h]", "  \\centering"];
+      if (figure.imageName) {lines.push(`  \\includegraphics[width=\\linewidth,keepaspectratio]{${escLaTeX(figure.imageName)}}`);}
+      if (figure.latexLabel) lines.push(`  \\caption{${escLaTeXPreserveCites(figure.latexLabel)}}`);
+      if (figure.refLabel) lines.push(`  \\label{${figure.refLabel}}`);
       lines.push("\\end{figure}");
       return lines.join("\n");
     },
@@ -186,6 +191,7 @@ export function renderToLatex(
   return [
     "\\documentclass{article}",
     "\\usepackage{graphicx}",
+    "\\usepackage{hyperref}",
     "\\begin{document}",
     body,
     bibBlock,

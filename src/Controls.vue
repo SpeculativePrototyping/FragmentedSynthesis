@@ -23,6 +23,9 @@ const showLLM = ref(true)
 
 const TLDR = inject('TLDR') // <- referencing global state
 
+const imageCache = inject<Ref<Record<string, string>>>('imageCache')
+
+
 //dnd for new nodes
 function onDragStart(type: string, event: DragEvent) {
   if (!event.dataTransfer) return
@@ -46,7 +49,18 @@ function onDeleteSelected() {
 
 // function to save to json-file
 function onSaveToFile(): void {
-  const dataStr = JSON.stringify(toObject(), null, 2)
+  // Kopie von toObject() erstellen
+  const exportData = JSON.parse(JSON.stringify(toObject()))
+
+  // Alle Nodes durchgehen
+  exportData.nodes.forEach((node: any) => {
+    if (node.data?.imageName && imageCache?.value[node.data.imageName]) {
+      // Base64 ins JSON einfügen
+      node.data.image = imageCache.value[node.data.imageName]
+    }
+  })
+
+  const dataStr = JSON.stringify(exportData, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
 
@@ -67,6 +81,17 @@ function onRestoreFromFile(event: Event): void {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result as string)
+
+      // Alle Nodes durchgehen
+      data.nodes.forEach((node: any) => {
+        if (node.data?.image && node.data.imageName && imageCache) {
+          // Base64 wieder in den Cache schreiben
+          imageCache.value[node.data.imageName] = node.data.image
+          // Node-State leicht halten
+          node.data.image = undefined
+        }
+      })
+
       fromObject(data)
     } catch (err) {
       console.error('read error', err)
@@ -74,6 +99,7 @@ function onRestoreFromFile(event: Event): void {
   }
   reader.readAsText(file)
 }
+
 
 //Demo-Mode hier einschalten!!!
 const showIntro = ref(true) //Demo-Mode ein/ausschalten!!!

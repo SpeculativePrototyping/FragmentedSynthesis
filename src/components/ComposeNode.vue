@@ -2,8 +2,10 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps, Edge } from '@vue-flow/core'
-import type { ParagraphElement, SectionElement, DocElement } from '../api/docstruct'
+import type { ParagraphElement, SectionElement, FigureElement, DocElement } from '../api/docstruct'
 import '../styles/docNodes.css'
+import type { ComputedRef } from 'vue'
+
 
 interface ComposeNodeData {
   title?: string
@@ -44,12 +46,53 @@ function asParagraph(edge?: Edge): ParagraphElement | undefined {
 }
 
 
+function asFigure(edge?: Edge): FigureElement | undefined {
+  if (!edge) return undefined
+  const sourceNode = nodes.value.find(n => n.id === edge.source)
+  if (!sourceNode?.data) return undefined
+  const payload = sourceNode.data as Record<string, unknown>
+
+  const imageName = payload.imageName as string | undefined
+  const latexLabel = payload.latexLabel as string | undefined
+  const refLabel = payload.refLabel as string | undefined        // <- richtig
+  const citations = payload.citations as string[] | undefined  // <-- übernehmen
+
+  if (typeof imageName === 'string' && imageName.trim()) {
+    return {
+      id: sourceNode.id,
+      kind: 'figure',
+      imageName: imageName.trim(),
+      latexLabel: latexLabel?.trim() ?? '',
+      refLabel: refLabel ?? '',
+      children: [],
+      citations: citations ?? [],
+    }
+  }
+  return undefined
+}
+
+
+
+
 // Paragraphen sammeln
 const childParagraphs = computed(() =>
     incomingEdges.value
         .map(edge => asParagraph(edge))
         .filter((p): p is ParagraphElement => !!p)
 )
+
+const childElements = computed<DocElement[]>(() => {
+  const elements: DocElement[] = []
+
+  for (const edge of incomingEdges.value) {
+    const para = asParagraph(edge)
+    if (para) elements.push(para)
+    const fig = asFigure(edge)
+    if (fig) elements.push(fig)
+  }
+
+  return elements
+})
 
 // JSON-Payload für DocOutput
 const docPayload = computed<SectionElement>(() => ({
@@ -58,7 +101,7 @@ const docPayload = computed<SectionElement>(() => ({
   level: 1,
   title: title.value || undefined,
   body: undefined,
-  children: childParagraphs.value,
+  children: childElements.value, // <- jetzt hier die neuen Kinder
 }))
 
 // HandleRows für Template
@@ -66,35 +109,45 @@ interface HandleRow {
   handleId: string
   connected: boolean
   preview: string
+  type: 'paragraph' | 'figure'
 }
 
 const handleRows = computed<HandleRow[]>(() => {
   const rows: HandleRow[] = []
 
-  // Alle existierenden Edges abbilden
   incomingEdges.value.forEach((edge, index) => {
     const paragraph = asParagraph(edge)
-    rows.push({
-      handleId: `child-${index}`,
-      connected: true,
-      preview: paragraph?.body?.split(/\s+/).slice(0, 6).join(' ') ?? '',
-    })
+    const figure = asFigure(edge)
+
+    if (paragraph) {
+      rows.push({
+        handleId: `child-${index}`,
+        connected: true,
+        preview: paragraph.body?.split(/\s+/).slice(0, 6).join(' ') ?? '',
+        type: 'paragraph',
+      })
+    } else if (figure) {
+      rows.push({
+        handleId: `child-${index}`,
+        connected: true,
+        preview: figure.latexLabel ?? '',
+        type: 'figure',
+      })
+    }
   })
 
-  // Immer ein zusätzlicher leerer Handle am Ende
+  // zusätzlicher leerer Handle
   rows.push({
     handleId: `child-${rows.length}`,
     connected: false,
     preview: '',
+    type: 'paragraph',
   })
 
   return rows
 })
 
 
-
-
-// NodeData aktualisieren
 let lastJson = ''
 watch([incomingEdges, title], () => {
   const json = JSON.stringify(docPayload.value)
@@ -109,6 +162,10 @@ watch([incomingEdges, title], () => {
     nextTick(() => updateNodeInternals?.([props.id]))
   }
 }, { deep: true })
+
+
+
+
 </script>
 
 
@@ -134,7 +191,12 @@ watch([incomingEdges, title], () => {
         :class="{ 'doc-node__row--connected': row.connected }"
       >
         <div class="doc-node__preview" :title="row.preview || 'Attach child...'">
-          {{ row.preview || 'Connect elements...' }}
+          <span v-if="row.type === 'paragraph'">
+            {{row.preview || 'Connect paragraph...' }}
+          </span>
+          <span v-else-if="row.type === 'figure'">
+            📷 {{row.preview || 'Connect figure...' }}
+          </span>
         </div>
         <Handle
           :id="row.handleId"

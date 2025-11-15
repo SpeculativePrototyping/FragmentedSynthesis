@@ -21,6 +21,7 @@ import StickyNote from "@/components/StickyNote.vue";
 import ReferenceTrackerNode from "@/components/ReferenceTrackerNode.vue";
 import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
+import FigureTrackerNode from "@/components/FigureTrackerNode.vue";
 
 
 export interface BibEntry {
@@ -40,8 +41,16 @@ const demoActive = ref(false)
 provide('demoActive', demoActive)
 
 //global image save for performance reasons
-type ImageCache = Record<string, string>
+
+interface ImageCacheEntry {
+  base64: string
+  refLabel: string
+}
+type ImageCache = Record<string, ImageCacheEntry>
+
 const imageCache = ref<ImageCache>({})
+
+// Global bereitstellen
 provide('imageCache', imageCache)
 
 
@@ -177,6 +186,12 @@ function onEdgeUpdate({ edge, connection }) {
       </template>
       <template #node-tourGuide="tourGuideProps">
         <TourGuideNode v-bind="tourGuideProps" />
+      </template>
+      <template #node-figureTracker="{ id, data, ...rest }">
+        <FigureTrackerNode
+            :label="data?.label"
+            v-bind="rest"
+        />
       </template>
 
 

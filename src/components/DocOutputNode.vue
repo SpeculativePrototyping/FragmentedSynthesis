@@ -2,7 +2,7 @@
 import { computed, nextTick, watch, watchEffect } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
-import type { DocElement, ParagraphElement } from '../api/docstruct'
+import type { DocElement, ParagraphElement, FigureElement } from '../api/docstruct'
 import { renderToLatex } from '../api/docstruct'
 import '../styles/docNodes.css'
 import type {BibEntry} from "@/App.vue";
@@ -75,16 +75,20 @@ interface HandleRow {
 
 function describeDoc(doc?: DocElement): string {
   if (!doc) return ''
-  if (doc.kind === 'section') {
-    const title = doc.title?.trim() || 'Untitled section'
-    return `${title} (level ${doc.level})`
+
+  switch (doc.kind) {
+    case 'section':
+      return doc.title?.trim() || 'Untitled section'
+    case 'paragraph':
+      return doc.body?.trim()?.split(/\s+/).slice(0, 10).join(' ') || 'Paragraph'
+    case 'figure':
+      return doc.latexLabel ?? 'Figure'
+    default:
+      const _exhaustiveCheck: never = doc
+      return _exhaustiveCheck
   }
-  if (doc.kind === 'paragraph') {
-    const text = doc.body?.trim() ?? ''
-    return text ? text.split(/\s+/).slice(0, 10).join(' ') : 'Paragraph'
-  }
-  return doc.kind
 }
+
 
 const handleRows = computed<HandleRow[]>(() => {
   const indices = incomingEdges.value.map((edge) => parseHandleIndex(edge.targetHandle))
@@ -131,7 +135,11 @@ function buildOutline(doc: DocElement, depth: number, acc: OutlineItem[]): void 
     return
   }
 
-  acc.push({ id: doc.id, label: doc.kind, depth, type: doc.kind })
+  if (doc.kind === 'figure') {
+    const label = doc.latexLabel ?? 'Figure'
+    acc.push({ id: doc.id, label, depth, type: doc.kind })
+    return
+  }
 }
 
 const outlineItems = computed(() => {
@@ -300,7 +308,7 @@ function downloadBib() {
             'doc-output__item--bibliography': item.type === 'bibliography',
             'doc-output__item--nested': item.depth > 0,
             'doc-output__item--reference': item.type === 'reference',
-
+            'doc-output__item--figure': item.type === 'figure',
           }"
             :style="{ '--outline-depth': item.depth }"
             role="treeitem"
@@ -308,15 +316,17 @@ function downloadBib() {
         >
           <span class="doc-output__marker" />
           <span class="doc-output__level-label">
-            {{ item.type === 'section'
+     {{ item.type === 'section'
               ? ['Section','Subsection','Subsubsection'][item.depth] || 'Section'
               : item.type === 'paragraph'
                   ? 'Paragraph'
-                  : item.type === 'bibliography'
-                      ? 'Bibliography'
-                      : item.type === 'reference'
-                          ? 'Reference'
-                          : '' }}
+                  : item.type === 'figure'
+                      ? 'FIGURE'
+                      : item.type === 'bibliography'
+                          ? 'Bibliography'
+                          : item.type === 'reference'
+                              ? 'Reference'
+                              : '' }}
           </span>
           <span class="doc-output__label" :class="{ 'doc-output__label--muted': item.type === 'paragraph' && item.depth === 1 }">
             {{ item.label }}
@@ -329,12 +339,15 @@ function downloadBib() {
       </div>
 
       <button type="button" class="doc-output__export" :disabled="!latexSource" @click="onExport">
-        Export to LaTeX
+        Export .tex
       </button>
       <button type="button" class="doc-output__export"
               :disabled="!(props.bibliography?.length)"
               @click="downloadBib">
         Export .bib
+      </button>
+      <button type="button" :disabled="true" class="doc-output__export">
+        Export LaTeX-Project including Images (ZIP)
       </button>
 
     </section>
@@ -411,6 +424,10 @@ function downloadBib() {
 
 .doc-output__item--bibliography .doc-output__marker {
   background-color: #ff0000;
+}
+
+.doc-output__item--figure .doc-output__marker {
+  background-color: #1e3a8a; /* dunkelblau */
 }
 
 .doc-output__label {
