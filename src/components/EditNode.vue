@@ -14,6 +14,7 @@ interface EditNodeData {
   value?: string
   diff?: DiffSegment[]
   citations?: string[]
+  label?: string
 }
 
 const props = defineProps<NodeProps<EditNodeData>>()
@@ -196,7 +197,7 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
 <template>
   <div class="edit-node doc-node">
     <header class="doc-node__header" :class="{ 'doc-node__header-warning': conflict }">
-      <strong>Edit</strong>
+      <strong>{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">
         {{ hasManualEdit ? 'Edited text' : incomingEdge ? 'Ready to edit incoming text' : 'No input connected' }}
       </span>

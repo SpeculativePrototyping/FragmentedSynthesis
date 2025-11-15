@@ -22,7 +22,7 @@ export const nodeTemplates: NodeTemplate[] = [
     category: 'text',
     data: {
       value: '',
-      label: 'Text Input',   // label the actual node in the UI gets
+      label: 'Text Input Node',   // label the actual node in the UI gets
       placeholder: 'This node is for text input. Basically, every node represents a paragraph.' +
           ' You can type, add citations and connect it to other nodes.' +
           ' That can be the Grammar Node, the Summary Node, the Edit Node, the Compose Node, or the TextView Node.',
@@ -45,6 +45,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Edit Node',
     category: 'text',
     data: {
+      label: 'Edit Node',
       original: '',
       value: '',
       diff: [],

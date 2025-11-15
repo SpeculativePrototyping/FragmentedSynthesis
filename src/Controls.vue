@@ -7,9 +7,11 @@ import { findNodeTemplate, nodeTemplates } from './nodes/templates'
 import { applyDagreLayout } from './nodes/layouts'
 import type { Ref } from 'vue'
 import { useDemo } from './demo'
+import type {BibEntry} from "@/App.vue";
 
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
+const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 
 
 // Grab reactive helpers from Vue Flow so we can inspect and mutate the graph and remove edges
@@ -52,13 +54,15 @@ function onSaveToFile(): void {
   // Kopie von toObject() erstellen
   const exportData = JSON.parse(JSON.stringify(toObject()))
 
-  // Alle Nodes durchgehen
+  // Alle Nodes durchgehen und Base64-Bilder einfügen
   exportData.nodes.forEach((node: any) => {
     if (node.data?.imageName && imageCache?.value[node.data.imageName]) {
-      // Base64 ins JSON einfügen
       node.data.image = imageCache.value[node.data.imageName]
     }
   })
+
+  // Bibliographie hinzufügen
+  exportData.bibliography = bibliography.value
 
   const dataStr = JSON.stringify(exportData, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
@@ -71,6 +75,8 @@ function onSaveToFile(): void {
   URL.revokeObjectURL(url)
 }
 
+
+
 // function to restore from json-file
 function onRestoreFromFile(event: Event): void {
   const input = event.target as HTMLInputElement
@@ -82,16 +88,20 @@ function onRestoreFromFile(event: Event): void {
     try {
       const data = JSON.parse(reader.result as string)
 
-      // Alle Nodes durchgehen
+      // Restore images
       data.nodes.forEach((node: any) => {
         if (node.data?.image && node.data.imageName && imageCache) {
-          // Base64 wieder in den Cache schreiben
           imageCache.value[node.data.imageName] = node.data.image
-          // Node-State leicht halten
           node.data.image = undefined
         }
       })
 
+      // Restore bibliography
+      if (data.bibliography) {
+        bibliography.value = data.bibliography
+      }
+
+      // Restore nodes and edges
       fromObject(data)
     } catch (err) {
       console.error('read error', err)
@@ -99,6 +109,8 @@ function onRestoreFromFile(event: Event): void {
   }
   reader.readAsText(file)
 }
+
+
 
 
 //Demo-Mode hier einschalten!!!

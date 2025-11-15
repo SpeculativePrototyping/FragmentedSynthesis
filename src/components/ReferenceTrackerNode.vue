@@ -101,7 +101,7 @@ function removeReference(key: string) {
     <section class="text-node__body">
       <h4>Bibliography</h4>
 
-      <div v-if="props.bibliography.length === 0" >This keeps track of all your sources so you can reference them in your text. No sources yet…</div>
+      <div v-if="props.bibliography.length === 0" >This keeps track of all your sources so you can reference them in your text. This is also the point where you enter your BibTeX-Items. Deleting this node does not remove your references. You can add multiple of this node for your convenience. No sources yet…</div>
       <ul v-else>
         <li v-for="(entry, i) in props.bibliography" :key="entry.id" class="bib-entry">
           {{ i + 1 }}. {{ formatEntry(entry) }}

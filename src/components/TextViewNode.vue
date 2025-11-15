@@ -12,7 +12,7 @@ interface TextViewNodeData {
 const props = defineProps<NodeProps<TextViewNodeData>>()
 const { edges, nodes } = useVueFlow()
 
-const heading = computed(() => props.data?.label ?? 'Debug Node')
+const heading = computed(() => props.data?.label ?? '')
 const placeholder = computed(() => props.data?.placeholder ?? 'Waiting for input…')
 
 // Alle eingehenden Edges

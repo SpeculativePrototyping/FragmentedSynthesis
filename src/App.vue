@@ -34,6 +34,9 @@ export interface BibEntry {
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
 const bibliography = ref<BibEntry[]>([])  // <- global bibliography
+provide('bibliography', bibliography)
+
+
 const TLDR = ref(false) // <- for shrinking some nodes
 provide('TLDR', TLDR)
 

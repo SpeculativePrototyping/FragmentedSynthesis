@@ -72,30 +72,34 @@ export function useDemo({
                 '\nYou already know what the StickyNote is for.' +
                 '\n\nBy the way, that thing in the bottom right corner is a minimap. It shows an overview and marks selected elements in red.' +
                 '\nYou can select multiple elements by clicking them while holding down the CTRL key.' +
-                '\n\nNow lets explore all the nodes. Most of them are pretty self-explanatory.'
+                '\n\nNow lets explore all the nodes.'
             )
         },
         () => {
             if (!dimensions.value) return
 
-            const x1 = 300, y1 = 50
-            const xCompose = 1000, yCompose = 300
-            const xGuide = 600, yGuide = 100
-            const xGuide2 = 600, yGuide2 = 3000
-            const xDoc = 900, yDoc = 300
-
             const textNode1: Node = {
                 id: 'text-input-1',
                 type: 'textArea',
-                position: screenToFlowCoordinate({ x: x1, y: y1 }),
-                data: { label: 'Text Input'},
+                position: screenToFlowCoordinate({ x: 650, y: 50 }),
+                data: { label: 'Text Input Node', placeholder: 'This node is for text input. Basically, every node represents a paragraph.' +
+                        ' You can type, add citations and connect it to other nodes.' +
+                        ' That can be the Grammar Node, the Summary Node, the Edit Node, the Compose Node, or the TextView Node.'},
+                dragHandle: '.doc-node__header'
+            }
+
+            const textView1: Node = {
+                id: 'text-view-1',
+                type: 'textView',
+                position: screenToFlowCoordinate({ x: 300, y: 50 }),
+                data: { label: 'Text View Node', placeholder: 'This node displays everything that other nodes can output. It helps when you are confused about what goes where.'},
                 dragHandle: '.doc-node__header'
             }
 
             const composeNode: Node = {
                 id: 'compose-node',
                 type: 'compose',
-                position: screenToFlowCoordinate({ x: xCompose, y: yCompose }),
+                position: screenToFlowCoordinate({ x: 300, y: 350 }),
                 data: { label: 'Compose Node' },
                 dragHandle: '.doc-node__header'
             }
@@ -103,19 +107,68 @@ export function useDemo({
             const docNode: Node = {
                 id: 'doc-output',
                 type: 'docOutput',
-                position: screenToFlowCoordinate({ x: xDoc, y: yDoc }),
+                position: screenToFlowCoordinate({ x: 300, y: 550 }),
                 data: { label: 'Document Output Node', value: 'Combines inputs' },
+                dragHandle: '.doc-node__header'
+            }
+
+            const editNode: Node = {
+                id: 'edit',
+                type: 'edit',
+                position: screenToFlowCoordinate({ x: 800, y: 550 }),
+                data: { label: 'Edit Node' },
+                dragHandle: '.doc-node__header'
+            }
+
+            const figureNode: Node = {
+                id: 'figure',
+                type: 'figure',
+                position: screenToFlowCoordinate({ x: 650, y: 300 }),
+                data: { label: 'Figure Node' },
+                dragHandle: '.doc-node__header'
+            }
+
+            const referenceTracker: Node = {
+                id: 'reference',
+                type: 'referenceTracker',
+                position: screenToFlowCoordinate({ x: 1350, y: 550 }),
+                data: { label: 'Reference Tracker Node' },
+                dragHandle: '.doc-node__header'
+            }
+
+            const figureTracker: Node = {
+                id: 'figuretracker',
+                type: 'figureTracker',
+                position: screenToFlowCoordinate({ x: 1350, y: 50 }),
+                data: { label: 'Figure Tracker Node' },
+                dragHandle: '.doc-node__header'
+            }
+
+            const summary: Node = {
+                id: 'summary',
+                type: 'summary',
+                position: screenToFlowCoordinate({ x: 800, y: 900 }),
+                data: { label: 'Summary Node' },
+                dragHandle: '.doc-node__header'
+            }
+
+            const grammar: Node = {
+                id: 'grammar',
+                type: 'grammar',
+                position: screenToFlowCoordinate({ x: 1150, y: 900 }),
+                data: { label: 'Grammar Checker Node' },
                 dragHandle: '.doc-node__header'
             }
 
             const tourGuideNode: Node = {
                 id: 'tourguide-step3',
                 type: 'tourGuide',
-                position: screenToFlowCoordinate({ x: xGuide, y: yGuide }),
+                position: screenToFlowCoordinate({ x: 700, y: 200 }),
                 data: {
                     label: 'Steve',
                     value: 'Looks like i am in the way! Well not only me. Why don\'t you drag me to the side and zoom out a little?' +
                         '\nJust use your mousewheel outside a node. You should also resize me to read the rest of the instructions. Or you can scroll.' +
+                        '\nMost of the nodes you see are pretty self-explanatory and tell you what they do. ' +
                         '\nThose are the basics. Find Peter using the MiniMap, he\'ll show you the rest!' +
                         '\nDon\'t forget to delete me please. I\'m tired.'
                 },
@@ -125,11 +178,11 @@ export function useDemo({
             const tourGuideNode2: Node = {
                 id: 'tourguide2-step3',
                 type: 'tourGuide',
-                position: screenToFlowCoordinate({ x: xGuide2, y: yGuide2 }),
+                position: screenToFlowCoordinate({ x: 600, y: 2500 }),
                 data: {
                     label: 'Peter',
                     value: 'Hey man! I\'m Peter the Post-It.' +
-                        '\n Nowthat should be all the node types we currently have.' +
+                        '\nNow that should be all the node types we currently have.' +
                         '\nWhen you\'re done playing around, delete me and the others or just end the demo.' +
                         '\nAnd then, why don\'t you use that upload button there and load the project we prepared for you?'
 
@@ -138,7 +191,7 @@ export function useDemo({
                 dragHandle: '.doc-node__header'
             }
 
-            setNodes([textNode1, composeNode, docNode, tourGuideNode, tourGuideNode2])
+            setNodes([textNode1, textView1, figureNode, editNode, composeNode, summary, grammar, docNode, referenceTracker, figureTracker, tourGuideNode, tourGuideNode2])
         }
     ]
 

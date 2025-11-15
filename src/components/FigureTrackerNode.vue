@@ -25,7 +25,7 @@ const props = defineProps<{
 
     <section class="text-node__body">
       <div v-if="!imageCache || Object.keys(imageCache).length === 0">
-        This keeps track of all your figures and their keys, so you can reference them in your text. No images yet…
+        This keeps track of all your figures and their keys, so you can reference them in your text. Deleting this node does not remove your figures. You can add multiple of this node for your convenience.No figures yet…
       </div>
 
       <ul v-else>
