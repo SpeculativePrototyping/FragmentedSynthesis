@@ -23,7 +23,9 @@ export const nodeTemplates: NodeTemplate[] = [
     data: {
       value: '',
       label: 'Text Input',   // label the actual node in the UI gets
-      placeholder: '',
+      placeholder: 'This node is for text input. Basically, every node represents a paragraph.' +
+          ' You can type, add citations and connect it to other nodes.' +
+          ' That can be the Grammar Node, the Summary Node, the Edit Node, the Compose Node, or the TextView Node.',
       citations: [] as string[],
       status: 'idle',
       error: null,
@@ -35,7 +37,7 @@ export const nodeTemplates: NodeTemplate[] = [
     category: 'text',
     data: {
       label: 'Text View',
-      placeholder: 'This node displays incoming text. Waiting for input…',
+      placeholder: 'This node displays everything that other nodes can output. It helps when you are confused about what goes where.',
     },
   },
   {
@@ -62,7 +64,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Summary Node',
     category: 'llm',
     data: {
-      label: 'Summarize',
+      label: 'Summary Node',
       length: '1-2 sentences',
       value: '',
       status: 'idle',
@@ -71,10 +73,10 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'grammar',
-    label: 'Grammar Node',
+    label: 'Grammar Checker Node',
     category: 'llm',
     data: {
-      label: 'Grammar Checker',
+      label: 'Grammar Checker Node',
       value: '',
       status: 'idle',
       error: null,
@@ -86,6 +88,7 @@ export const nodeTemplates: NodeTemplate[] = [
     category: 'text',
     data: {
       sectionType: 'section',
+      label: 'Compose Node',
       title: '',
       json: '',
       value: '',
@@ -114,7 +117,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Reference Tracker Node',
     category: 'utility',
     data: {
-      label: 'Reference Tracker',
+      label: 'Reference Tracker Node',
       bibliography: [] as BibEntry[],          // optional default empty, Props aus App.vue überschreiben
       updateBibliography: () => {},           // wird durch Props ersetzt
     },
@@ -124,7 +127,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Figure Node',     // Name im Drag & Drop Menü
     category: 'text',         // oder 'utility'
     data: {
-      label: 'Figure',
+      label: 'Figure Node',
       image: '' as string,      // Base64-String des Bildes
       citations: [] as string[], // Ausgewählte Referenzen
     }
@@ -144,7 +147,7 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Figure Tracker Node', // Name im Drag & Drop Menü
     category: 'utility',          // Utility Node
     data: {
-      label: 'Figure Tracker',    // Default Label
+      label: 'Figure Tracker Node',    // Default Label
       // keine weiteren Props nötig, imageCache wird injectet
     }
   }

@@ -10,6 +10,10 @@ interface BibEntry {
   fields: Record<string, string>
 }
 
+interface ReferenceTrackerData {
+  label?: string
+}
+
 // Props kommen jetzt direkt von App.vue
 const props = defineProps<{
   label?: string
@@ -91,13 +95,13 @@ function removeReference(key: string) {
 <template>
   <div class="text-node doc-node node-wrapper" @wheel.stop>
     <header class="doc-node__header">
-      <strong>{{ props.label ?? 'Reference Tracker' }}</strong>
+      <strong>{{ props.label ?? 'Reference Tracker Node' }}</strong>
     </header>
 
     <section class="text-node__body">
       <h4>Bibliography</h4>
 
-      <div v-if="props.bibliography.length === 0" >No sources yet…</div>
+      <div v-if="props.bibliography.length === 0" >This keeps track of all your sources so you can reference them in your text. No sources yet…</div>
       <ul v-else>
         <li v-for="(entry, i) in props.bibliography" :key="entry.id" class="bib-entry">
           {{ i + 1 }}. {{ formatEntry(entry) }}

@@ -20,12 +20,12 @@ const props = defineProps<{
 <template>
   <div class="text-node doc-node node-wrapper" @wheel.stop>
     <header class="doc-node__header">
-      <strong>{{ props.label ?? 'Figure Tracker' }}</strong>
+      <strong>{{ props.label ?? 'Figure Tracker Node' }}</strong>
     </header>
 
     <section class="text-node__body">
       <div v-if="!imageCache || Object.keys(imageCache).length === 0">
-        No images yet…
+        This keeps track of all your figures and their keys, so you can reference them in your text. No images yet…
       </div>
 
       <ul v-else>

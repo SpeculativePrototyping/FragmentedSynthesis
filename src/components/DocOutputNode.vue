@@ -11,6 +11,7 @@ interface DocOutputNodeData {
   json?: string
   value?: string
   bibliography?: BibEntry[]
+  label?: string
 }
 
 const props = defineProps<NodeProps<DocOutputNodeData> & { bibliography?: BibEntry[] }>()
@@ -277,7 +278,7 @@ function downloadBib() {
 <template>
   <div class="doc-output doc-node">
     <header class="doc-node__header">
-      <strong>Document Output</strong>
+      <strong>{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">Aggregates composed sections</span>
     </header>
 
@@ -295,7 +296,7 @@ function downloadBib() {
 
       <div class="doc-output__outline" role="tree">
         <div v-if="!outlineItems.length && !bibliographyItems.length" class="doc-output__empty">
-          Attach sections, paragraphs, or citations to preview.
+          Attach sections or paragraphs to get a preview of your document and take a look at the outline.
         </div>
 
         <div

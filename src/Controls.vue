@@ -179,7 +179,7 @@ function handleSkipDemo() {
           <span
               class="toggle-label"
               title="Enables the use of LLM-base nodes. Disabling this mode will not remove already implemented nodes.">
-            Unethical mode
+            Unethical
           </span>
         </div>
         <div class="toggle-switch">
@@ -190,7 +190,7 @@ function handleSkipDemo() {
           <span
               class="toggle-label"
               title="Enables or disables TLDR mode for all nodes">
-    TLDR Mode
+    TLDR
   </span>
         </div>
 

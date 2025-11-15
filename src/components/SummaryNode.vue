@@ -276,7 +276,7 @@ function stripCodeFences(text: string): string {
           :value="summary"
           readonly
           aria-label="Summary output"
-          :placeholder="status === 'idle' ? 'This node can summarize incoming text for you. You can choose from a variety of options. Citations will be removed in the process. You can re-add citations using the Edit Node.' : ''"
+          :placeholder="status === 'idle' ? 'This node can summarize incoming text for you. You can choose from a variety of options. Citations will be removed in the process. You can re-add citations using the Edit Node later.' : ''"
       />
 
       <p v-if="status === 'error'" class="summary-node__status summary-node__status--error" role="alert">

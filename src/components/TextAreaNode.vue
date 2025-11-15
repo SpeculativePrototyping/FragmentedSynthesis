@@ -309,7 +309,7 @@ watch(text, (v) => {
 
         </div>
         <button @click="showSearch = !showSearch" class="citation-add-btn">
-          + Add New Reference
+          + Add New Citation
         </button>
         <div v-if="showSearch" class="citation-search">
           <input

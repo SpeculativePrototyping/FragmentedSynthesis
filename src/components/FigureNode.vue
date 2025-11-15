@@ -204,7 +204,7 @@ function onFileChange(event: Event) {
       <input
           type="text"
           v-model="latexLabel"
-          placeholder="Figure name and references:"
+          placeholder="Upload a figure, give it a caption and add a reference. Type here..."
           class="figure-node__label-input"
       />
 
@@ -263,8 +263,8 @@ function onFileChange(event: Event) {
 }
 
 .image-preview img {
-  width: 600px;
-  max-height: 200px;
+  max-width: 100%;   /* passt sich Containerbreite an */
+  height: auto;
   display: block;
   margin: 0 auto 6px;
 }

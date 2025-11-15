@@ -46,7 +46,8 @@ export function useDemo({
             spawnStepNode(
                 dimensions.value!.width / 2,
                 dimensions.value!.height / 2,
-                '👋 Hey! I am Steve the StickyNote.\nYou can place StickyNotes anywhere on the canvas as reminders, notes, or scratchpaper. Just drag one of my friends out of the control bar to your left! You can drag all the nodes around by the bar on the top (Where my face is).'
+                '👋 Hey! I am Steve the StickyNote.\nYou can place StickyNotes anywhere on the canvas as reminders, notes, or scratch paper. ' +
+                'Just drag one of my friends out of the control bar to your left! You can drag all the nodes around by the bar on the top (Where my face is).'
             )
         },
         () => {
@@ -54,13 +55,13 @@ export function useDemo({
                 200,
                 100,
                 'Over here!' +
-                '\nThis is the controlbar. The top-part has 6 control-elements:' +
+                '\nThis is the control bar. The top-part has 6 control-elements:' +
                 '\n1. Trashcan: Deletes selected elements' +
                 '\n2. Floppydisk: Downloads your project' +
                 '\n3. Upload: Uploads a project' +
                 '\n4. Magic-Wand: Sorts your graph automatically' +
                 '\n5. UNETHICAL MODE: Unlocks LLM-based nodes' +
-                '\n6. TLDR MODE: Shrinks nodes for a better overview'
+                '\n6. TLDR MODE: Shrinks some nodes for a better overview'
             )
         },
         () => {
@@ -71,14 +72,13 @@ export function useDemo({
                 '\nYou already know what the StickyNote is for.' +
                 '\n\nBy the way, that thing in the bottom right corner is a minimap. It shows an overview and marks selected elements in red.' +
                 '\nYou can select multiple elements by clicking them while holding down the CTRL key.' +
-                '\n\nNow lets explore all the other nodes.'
+                '\n\nNow lets explore all the nodes. Most of them are pretty self-explanatory.'
             )
         },
         () => {
             if (!dimensions.value) return
 
             const x1 = 300, y1 = 50
-            const x2 = 300, y2 = 600
             const xCompose = 1000, yCompose = 300
             const xGuide = 600, yGuide = 100
             const xGuide2 = 600, yGuide2 = 3000
@@ -88,15 +88,7 @@ export function useDemo({
                 id: 'text-input-1',
                 type: 'textArea',
                 position: screenToFlowCoordinate({ x: x1, y: y1 }),
-                data: { label: 'Text Input', value: 'This is a paragraph.' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const textNode2: Node = {
-                id: 'text-input-2',
-                type: 'textArea',
-                position: screenToFlowCoordinate({ x: x2, y: y2 }),
-                data: { label: 'Text Input', value: 'This is also a paragraph. Duh.' },
+                data: { label: 'Text Input'},
                 dragHandle: '.doc-node__header'
             }
 
@@ -104,7 +96,7 @@ export function useDemo({
                 id: 'compose-node',
                 type: 'compose',
                 position: screenToFlowCoordinate({ x: xCompose, y: yCompose }),
-                data: { label: 'Compose', value: 'Combines inputs' },
+                data: { label: 'Compose Node' },
                 dragHandle: '.doc-node__header'
             }
 
@@ -112,7 +104,7 @@ export function useDemo({
                 id: 'doc-output',
                 type: 'docOutput',
                 position: screenToFlowCoordinate({ x: xDoc, y: yDoc }),
-                data: { label: 'Document Output', value: 'Combines inputs' },
+                data: { label: 'Document Output Node', value: 'Combines inputs' },
                 dragHandle: '.doc-node__header'
             }
 
@@ -124,9 +116,6 @@ export function useDemo({
                     label: 'Steve',
                     value: 'Looks like i am in the way! Well not only me. Why don\'t you drag me to the side and zoom out a little?' +
                         '\nJust use your mousewheel outside a node. You should also resize me to read the rest of the instructions. Or you can scroll.' +
-                        '\nWhen you\'re done with that, sort out the mess, and make connections from the Text Input Nodes to the Compose Node.' +
-                        '\nWhile you\'re at it: Connect the Compose Node to the Document Output Node.' +
-                        '\nOh, and give your section a title.' +
                         '\nThose are the basics. Find Peter using the MiniMap, he\'ll show you the rest!' +
                         '\nDon\'t forget to delete me please. I\'m tired.'
                 },
@@ -139,29 +128,17 @@ export function useDemo({
                 position: screenToFlowCoordinate({ x: xGuide2, y: yGuide2 }),
                 data: {
                     label: 'Peter',
-                    value: 'Hey man! I\'m Peter the Post-It. What you also need to know:' +
-                        '\nThe Text View Node can display what the other nodes spit out. Drag one over here if you want to try it.' +
-                        '\nThe Reference Tracker keeps track of your bibliography. It\'s also wireless. Magic.' +
-                        '\nIt does not show the flow of your content and all the connections to and from it would be in the way, so..' +
-                        '\nAfter you\'ve put in a reference, you can add citations anywhere in your paragraphs. You\'ll figure that out on your own.' +
-                        '\nHere\'s a reference if you want to try it out:' +
-                        '\n\n@article{asnicar2024machine,\n' +
-                        '  title={Machine learning for microbiologists},\n' +
-                        '  author={Asnicar, Francesco and Thomas, Andrew Maltez and Passerini, Andrea and Waldron, Levi and Segata, Nicola},\n' +
-                        '  journal={Nature Reviews Microbiology},\n' +
-                        '  volume={22},\n' +
-                        '  number={4},\n' +
-                        '  pages={191--205},\n' +
-                        '  year={2024},\n' +
-                        '  publisher={Nature Publishing Group UK London}\n' +
-                        '}' +
-                        '\n\nThe other node-types are.. cough. Not ready for primetime yet.' +
-                        '\nWhen you\'re done playing around, delete me and the others or just end the demo.'
+                    value: 'Hey man! I\'m Peter the Post-It.' +
+                        '\n Nowthat should be all the node types we currently have.' +
+                        '\nWhen you\'re done playing around, delete me and the others or just end the demo.' +
+                        '\nAnd then, why don\'t you use that upload button there and load the project we prepared for you?'
+
+
                 },
                 dragHandle: '.doc-node__header'
             }
 
-            setNodes([textNode1, textNode2, composeNode, docNode, tourGuideNode, tourGuideNode2])
+            setNodes([textNode1, composeNode, docNode, tourGuideNode, tourGuideNode2])
         }
     ]
 

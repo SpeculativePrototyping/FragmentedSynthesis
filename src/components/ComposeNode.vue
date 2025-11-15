@@ -11,6 +11,7 @@ interface ComposeNodeData {
   title?: string
   json?: string
   value?: string
+  label?: string
 }
 
 const props = defineProps<NodeProps<ComposeNodeData>>()
@@ -172,7 +173,7 @@ watch([incomingEdges, title], () => {
 <template>
   <div class="compose doc-node">
     <header class="doc-node__header">
-      <strong>Compose</strong>
+      <strong>{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">aggregates paragraphs to sections</span>
     </header>
 
@@ -192,7 +193,7 @@ watch([incomingEdges, title], () => {
       >
         <div class="doc-node__preview" :title="row.preview || 'Attach child...'">
           <span v-if="row.type === 'paragraph'">
-            {{row.preview || 'Connect paragraph...' }}
+            {{row.preview || 'Connect paragraph or figure...' }}
           </span>
           <span v-else-if="row.type === 'figure'">
             📷 {{row.preview || 'Connect figure...' }}
