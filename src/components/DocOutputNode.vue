@@ -15,11 +15,110 @@ interface DocOutputNodeData {
   label?: string
 }
 
+interface OutlineItem {
+  id: string
+  label: string
+  depth: number
+  type: DocElement['kind'] | 'bibliography' | 'reference'
+}
+
+interface HandleRow {
+  handleId: string
+  handleTop: string
+  connected: boolean
+  preview: string
+}
+
+let lastJson = ''
+
 const props = defineProps<NodeProps<DocOutputNodeData>>()
 const { nodes, edges, updateNodeInternals, removeEdges, updateNodeData } = useVueFlow()
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))
+const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
 
+const handleRows = computed<HandleRow[]>(() => {
+  const indices = incomingEdges.value.map((edge) => parseHandleIndex(edge.targetHandle))
+  const maxIndex = Math.max(-1, ...indices)
+  const totalRows = maxIndex + 2
+
+  const rows: HandleRow[] = []
+  for (let index = 0; index < totalRows; index += 1) {
+    const matchingEdge = incomingEdges.value.find(
+        (edge) => parseHandleIndex(edge.targetHandle) === index,
+    )
+    rows.push({
+      handleId: `doc-${index}`,
+      handleTop: `${((index + 0.5) / totalRows) * 100}%`,
+      connected: Boolean(matchingEdge),
+      preview: describeDoc(edgeToDoc(matchingEdge)),
+    })
+  }
+
+  return rows
+})
+
+const outlineItems = computed(() => {
+  const items: OutlineItem[] = []
+  for (const doc of topLevelDocs.value) {
+    buildOutline(doc, 0, items)
+  }
+  return items
+})
+
+const topLevelDocs = computed(() =>
+    incomingEdges.value
+        .slice()
+        .sort((a, b) => parseHandleIndex(a.targetHandle) - parseHandleIndex(b.targetHandle))
+        .map((edge) => edgeToDoc(edge))
+        .filter((doc): doc is DocElement => Boolean(doc)),
+)
+
+const outlineText = computed(() =>
+    outlineItems.value.map((item) => `${'  '.repeat(item.depth)}${item.label}`).join('\n'),
+)
+
+const latexSource = computed(() => {
+  if (!topLevelDocs.value.length && !(bibliography?.value.length ?? 0)) {
+    return ''
+  }
+  return renderToLatex(topLevelDocs.value, {
+    includeDocument: true,
+    bibliography: bibliography?.value,
+    bibFilename: 'references.bib',
+  })
+})
+
+
+const bibliographyItems = computed<OutlineItem[]>(() => {
+  const items: OutlineItem[] = []
+  const bib = bibliography?.value ?? []
+  if (!bib.length) return items
+
+  items.push({
+    id: 'bibliography-root',
+    label: 'Bibliography',
+    depth: 0,
+    type: 'bibliography'
+  })
+
+  bib.forEach((entry, index) => {
+    const authors = entry.fields?.author?.split(/ and /i).map(a => a.trim()).join('; ') ?? ''
+    const year = entry.fields?.year ?? 'n.d.'
+    const title = entry.fields?.title ?? '(no title)'
+
+    items.push({
+      id: `bib-${index}`,
+      label: `${authors} (${year}). ${title}`,
+      depth: 1,
+      type: 'reference'
+    })
+  })
+
+  return items
+})
+
+//Functions
 
 function parseHandleIndex(handleId?: Edge['targetHandle']): number {
   if (!handleId) return -1
@@ -61,20 +160,6 @@ function edgeToDoc(edge?: Edge): DocElement | undefined {
   return undefined
 }
 
-const topLevelDocs = computed(() =>
-    incomingEdges.value
-        .slice()
-        .sort((a, b) => parseHandleIndex(a.targetHandle) - parseHandleIndex(b.targetHandle))
-        .map((edge) => edgeToDoc(edge))
-        .filter((doc): doc is DocElement => Boolean(doc)),
-)
-
-interface HandleRow {
-  handleId: string
-  handleTop: string
-  connected: boolean
-  preview: string
-}
 
 function describeDoc(doc?: DocElement): string {
   if (!doc) return ''
@@ -92,34 +177,6 @@ function describeDoc(doc?: DocElement): string {
   }
 }
 
-
-const handleRows = computed<HandleRow[]>(() => {
-  const indices = incomingEdges.value.map((edge) => parseHandleIndex(edge.targetHandle))
-  const maxIndex = Math.max(-1, ...indices)
-  const totalRows = maxIndex + 2
-
-  const rows: HandleRow[] = []
-  for (let index = 0; index < totalRows; index += 1) {
-    const matchingEdge = incomingEdges.value.find(
-        (edge) => parseHandleIndex(edge.targetHandle) === index,
-    )
-    rows.push({
-      handleId: `doc-${index}`,
-      handleTop: `${((index + 0.5) / totalRows) * 100}%`,
-      connected: Boolean(matchingEdge),
-      preview: describeDoc(edgeToDoc(matchingEdge)),
-    })
-  }
-
-  return rows
-})
-
-interface OutlineItem {
-  id: string
-  label: string
-  depth: number
-  type: DocElement['kind'] | 'bibliography' | 'reference'
-}
 
 function buildOutline(doc: DocElement, depth: number, acc: OutlineItem[]): void {
   if (doc.kind === 'section') {
@@ -144,96 +201,6 @@ function buildOutline(doc: DocElement, depth: number, acc: OutlineItem[]): void 
     return
   }
 }
-
-const outlineItems = computed(() => {
-  const items: OutlineItem[] = []
-  for (const doc of topLevelDocs.value) {
-    buildOutline(doc, 0, items)
-  }
-  return items
-})
-
-const bibliographyItems = computed<OutlineItem[]>(() => {
-  const items: OutlineItem[] = []
-  const bib = bibliography?.value ?? []
-  if (!bib.length) return items
-
-  items.push({
-    id: 'bibliography-root',
-    label: 'Bibliography',
-    depth: 0,
-    type: 'bibliography'
-  })
-
-  bib.forEach((entry, index) => {
-    const authors = entry.fields?.author?.split(/ and /i).map(a => a.trim()).join('; ') ?? ''
-    const year = entry.fields?.year ?? 'n.d.'
-    const title = entry.fields?.title ?? '(no title)'
-
-    items.push({
-      id: `bib-${index}`,
-      label: `${authors} (${year}). ${title}`,
-      depth: 1,
-      type: 'reference'
-    })
-  })
-
-  return items
-})
-
-// Trigger Node update, damit UI neu rendert, wenn sich bibliography ändert
-watch(bibliography, () => {
-  updateNodeData(props.id, { ...props.data })
-})
-
-
-const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
-
-watch(
-    handleRows,
-    async (rows) => {
-      await nextTick()
-      updateNodeInternals?.([props.id])
-
-      const validHandles = new Set(rows.map((row) => row.handleId))
-      const stale = incomingEdges.value.filter((edge) => {
-        const handleId = edge.targetHandle ?? ''
-        return !validHandles.has(handleId)
-      })
-
-      if (stale.length) {
-        removeEdges(stale)
-      }
-    },
-    { deep: true, immediate: true },
-)
-
-const outlineText = computed(() =>
-    outlineItems.value.map((item) => `${'  '.repeat(item.depth)}${item.label}`).join('\n'),
-)
-
-const latexSource = computed(() => {
-  if (!topLevelDocs.value.length && !(bibliography?.value.length ?? 0)) {
-    return ''
-  }
-  return renderToLatex(topLevelDocs.value, {
-    includeDocument: true,
-    bibliography: bibliography?.value,
-    bibFilename: 'references.bib',
-  })
-})
-
-
-
-let lastJson = ''
-
-watchEffect(() => {
-  const docs = topLevelDocs.value
-  const json = JSON.stringify(docs)
-  if (json === lastJson && props.data?.json === json) return
-  lastJson = json
-  updateNodeData(props.id, { ...props.data, json, value: outlineText.value })
-})
 
 function downloadLatex() {
   if (!latexSource.value) return
@@ -273,7 +240,38 @@ function downloadBib() {
 }
 
 
+// Watchers:
+watch(bibliography, () => {
+  updateNodeData(props.id, { ...props.data })
+})
 
+watch(
+    handleRows,
+    async (rows) => {
+      await nextTick()
+      updateNodeInternals?.([props.id])
+
+      const validHandles = new Set(rows.map((row) => row.handleId))
+      const stale = incomingEdges.value.filter((edge) => {
+        const handleId = edge.targetHandle ?? ''
+        return !validHandles.has(handleId)
+      })
+
+      if (stale.length) {
+        removeEdges(stale)
+      }
+    },
+    { deep: true, immediate: true },
+)
+
+
+watchEffect(() => {
+  const docs = topLevelDocs.value
+  const json = JSON.stringify(docs)
+  if (json === lastJson && props.data?.json === json) return
+  lastJson = json
+  updateNodeData(props.id, { ...props.data, json, value: outlineText.value })
+})
 
 </script>
 
