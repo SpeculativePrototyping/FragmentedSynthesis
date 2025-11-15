@@ -31,11 +31,20 @@ export interface BibEntry {
   raw?: string
 }
 
+interface ImageCacheEntry {
+  base64: string
+  refLabel: string
+}
+
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
 
 const bibliography = ref<BibEntry[]>([])  // <- global bibliography
 provide('bibliography', bibliography)
+const updateBibliography = (newBib: BibEntry[]) => {
+  bibliography.value = newBib
+}
+provide('updateBibliography', updateBibliography)
 
 const TLDR = ref(false) // <- for shrinking some nodes
 provide('TLDR', TLDR)
@@ -43,39 +52,20 @@ provide('TLDR', TLDR)
 const demoActive = ref(false)
 provide('demoActive', demoActive)
 
-interface ImageCacheEntry {
-  base64: string
-  refLabel: string
-}
 type ImageCache = Record<string, ImageCacheEntry>
 const imageCache = ref<ImageCache>({})
 provide('imageCache', imageCache)
-
 
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
 
 let nodeCounter = 0
 
-const updateBibliography = (newBib: BibEntry[]) => {
-  bibliography.value = newBib
-}
 
 function onConnect(connection: Connection) {
   edges.value = addEdge(connection, edges.value) as Edge[]
 }
 
-watch(edges, (newEdges) => {
-  newEdges.forEach(edge => {
-    if (edge.animated === undefined) edge.animated = true
-    if (!edge.style) edge.style = {}
-    if (!edge.markerEnd) edge.markerEnd = { type: 'arrowclosed', color: '#000000' }
-    else {
-    }
-  })
-}, { deep: true, immediate: true })
-
-//function to take over chosen type from controls.vue and drop node on the canvas
 function onDrop(event: DragEvent) {
   const type = event.dataTransfer?.getData('node/type')
   if (!type) return
@@ -118,6 +108,16 @@ function onEdgeUpdate({ edge, connection }) {
   updateEdge(edge, connection)
 }
 
+watch(edges, (newEdges) => {
+  newEdges.forEach(edge => {
+    if (edge.animated === undefined) edge.animated = true
+    if (!edge.style) edge.style = {}
+    if (!edge.markerEnd) edge.markerEnd = { type: 'arrowclosed', color: '#000000' }
+    else {
+    }
+  })
+}, { deep: true, immediate: true })
+
 </script>
 
 <template>
@@ -137,11 +137,7 @@ function onEdgeUpdate({ edge, connection }) {
         <ConcatNode v-bind="concatNodeProps" />
       </template>
       <template #node-textArea="textAreaProps">
-        <TextAreaNode
-            v-bind="textAreaProps"
-            :bibliography="bibliography"
-            :updateBibliography="updateBibliography"
-        />
+        <TextAreaNode v-bind="textAreaProps" />
       </template>
       <template #node-textView="textViewProps">
         <TextViewNode v-bind="textViewProps" />
@@ -153,10 +149,7 @@ function onEdgeUpdate({ edge, connection }) {
         <ComposeNode v-bind="composeProps" />
       </template>
       <template #node-docOutput="docOutputProps">
-        <DocOutputNode
-            v-bind="docOutputProps"
-            :bibliography="bibliography"
-        />
+        <DocOutputNode v-bind="docOutputProps" />
       </template>
       <template #node-edit="editProps">
         <EditNode v-bind="editProps" />
@@ -167,29 +160,17 @@ function onEdgeUpdate({ edge, connection }) {
       <template #node-stickyNote="stickyNoteProps">
         <StickyNote v-bind="stickyNoteProps" />
       </template>
-      <template #node-referenceTracker="{ id, data, ...rest }">
-        <ReferenceTrackerNode
-            :label="data?.label"
-            :bibliography="bibliography"
-            :updateBibliography="updateBibliography"
-            v-bind="rest"
-        />
+      <template #node-referenceTracker="trackerProps">
+        <ReferenceTrackerNode v-bind="trackerProps" />
       </template>
       <template #node-figure="figureProps">
-        <FigureNode
-            v-bind="figureProps"
-            :bibliography="bibliography"
-            :updateBibliography="updateBibliography"
-        />
+        <FigureNode v-bind="figureProps"/>
       </template>
       <template #node-tourGuide="tourGuideProps">
         <TourGuideNode v-bind="tourGuideProps" />
       </template>
-      <template #node-figureTracker="{ id, data, ...rest }">
-        <FigureTrackerNode
-            :label="data?.label"
-            v-bind="rest"
-        />
+      <template #node-figureTracker="figureTrackerProps">
+        <FigureTrackerNode v-bind="figureTrackerProps" />
       </template>
 
 

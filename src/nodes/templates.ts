@@ -2,7 +2,7 @@ import type { Node } from '@vue-flow/core'
 import type { BibEntry } from '@/App.vue'   // Pfad anpassen
 
 
-//describes the structure of a node template that can be dragged from the control pabel
+//describes the structure of a node template that can be dragged from the control panel
 //every node needs: an entry in nodeTemplates, an accompanying import, and an added template in app.vue
 export interface NodeTemplate {
 
@@ -14,7 +14,6 @@ export interface NodeTemplate {
 }
 
 // Nodes in the drag and drop menu appear in the same order they do here:
-
 export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'textArea',       // tells vueflow what component to load
@@ -88,7 +87,6 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Compose Node',
     category: 'text',
     data: {
-      sectionType: 'section',
       label: 'Compose Node',
       title: '',
       json: '',

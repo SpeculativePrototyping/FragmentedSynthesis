@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
+import type { NodeProps } from '@vue-flow/core'
+
 
 interface ImageCacheEntry {
   base64: string
@@ -8,19 +10,22 @@ interface ImageCacheEntry {
 
 type ImageCache = Record<string, ImageCacheEntry>
 
-// ImageCache kommt z. B. aus globalem State oder Injection
+interface FigureTrackerData {
+  label: string
+}
+
+interface FigureTrackerProps extends NodeProps<FigureTrackerData> {}
+
+const props = defineProps<FigureTrackerProps>()
 const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))
 
-// Optional: label wie bei Reference Tracker Node
-const props = defineProps<{
-  label?: string
-}>()
+
 </script>
 
 <template>
   <div class="text-node doc-node node-wrapper" @wheel.stop>
     <header class="doc-node__header">
-      <strong>{{ props.label ?? 'Figure Tracker Node' }}</strong>
+      <strong>{{ props.data.label ?? 'Figure Tracker Node' }}</strong>
     </header>
 
     <section class="text-node__body">

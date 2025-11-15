@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {inject, type Ref, ref, watch, watchEffect} from 'vue'
-import { Handle, Position } from '@vue-flow/core'
+import {Handle, type NodeProps, Position} from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 
 
@@ -8,20 +8,21 @@ interface BibEntry {
   id: string
   type: string
   fields: Record<string, string>
+  raw?: string
 }
 
 interface ReferenceTrackerData {
   label?: string
 }
 
-// Props kommen jetzt direkt von App.vue
-const props = defineProps<{
-  label?: string
-  bibliography: BibEntry[]
-  updateBibliography: (newBib: BibEntry[]) => void
-}>()
+interface ReferenceTrackerProps extends NodeProps<ReferenceTrackerData> {}
 
-const TLDR = inject<Ref<boolean>>('TLDR') // injected reactive TLDR state
+const props = defineProps<ReferenceTrackerProps>()
+const TLDR = inject<Ref<boolean>>('TLDR')
+const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))!
+const updateBibliography = inject<(newBib: BibEntry[]) => void>('updateBibliography')!
+
+
 
 
 // ======= BibTeX Import =======
@@ -30,25 +31,17 @@ const rawBibtexInput = ref('')
 function parseBibtex(input: string): BibEntry[] {
   const entries: BibEntry[] = []
   const blocks = input.split('@').map(b => b.trim()).filter(b => b)
-
   for (const block of blocks) {
     const match = block.match(/^(\w+)\s*\{\s*([^,]+)\s*,([\s\S]*?)\}\s*$/)
     if (!match) continue
-
     const [, type, id, body] = match
-
     const fields: Record<string, string> = {}
     body.split('\n').forEach(line => {
       const fieldMatch = line.match(/(\w+)\s*=\s*[\{"]([^"}]+)[\}"]/)
-      if (fieldMatch) {
-        fields[fieldMatch[1]] = fieldMatch[2]
-      }
+      if (fieldMatch) fields[fieldMatch[1]] = fieldMatch[2]
     })
-
-    // Hier wird der rohe Block gespeichert
     entries.push({ id, type, fields, raw: `@${block}` })
   }
-
   return entries
 }
 
@@ -56,39 +49,30 @@ function parseBibtex(input: string): BibEntry[] {
 function importBibtex() {
   const newEntries = parseBibtex(rawBibtexInput.value)
 
-  // Filtere nur Einträge, die noch nicht existieren
   const uniqueNewEntries = newEntries.filter(
-      entry => !props.bibliography.some(e => e.id === entry.id)
+      entry => !bibliography.value.some(e => e.id === entry.id)
   )
-
   if (uniqueNewEntries.length > 0) {
-    props.updateBibliography([...props.bibliography, ...uniqueNewEntries])
+    updateBibliography([...bibliography.value, ...uniqueNewEntries])
   }
-
   rawBibtexInput.value = ''
 }
 
 
 function formatEntry(entry: BibEntry): string {
   const authorsRaw = entry.fields.author || ''
-  const authors = authorsRaw
-      .split(/ and /i)
-      .map(a => a.trim())
-      .join('; ')
-
+  const authors = authorsRaw.split(/ and /i).map(a => a.trim()).join('; ')
   const year = entry.fields.year || 'n.d.'
   const title = entry.fields.title || '(no title)'
   const key = entry.id
-
   return `${authors} (${year}). ${title}. → Key: ${key}`
 }
 
+
 function removeReference(key: string) {
-  const newBib = props.bibliography.filter(entry => entry.id !== key)
-  props.updateBibliography(newBib)
+  const newBib = bibliography.value.filter(entry => entry.id !== key)
+  updateBibliography(newBib)
 }
-
-
 
 </script>
 
@@ -101,9 +85,15 @@ function removeReference(key: string) {
     <section class="text-node__body">
       <h4>Bibliography</h4>
 
-      <div v-if="props.bibliography.length === 0" >This keeps track of all your sources so you can reference them in your text. This is also the point where you enter your BibTeX-Items. Deleting this node does not remove your references. You can add multiple of this node for your convenience. No sources yet…</div>
+      <div v-if="bibliography.length === 0">
+        This keeps track of all your sources so you can reference them in your text.
+        This is also the point where you enter your BibTeX-Items.
+        Deleting this node does not remove your references.
+        You can add multiple of this node for your convenience. No sources yet…
+      </div>
+
       <ul v-else>
-        <li v-for="(entry, i) in props.bibliography" :key="entry.id" class="bib-entry">
+        <li v-for="(entry, i) in bibliography" :key="entry.id" class="bib-entry">
           {{ i + 1 }}. {{ formatEntry(entry) }}
           <button class="bib-entry-delete" @click="removeReference(entry.id)">×</button>
         </li>
@@ -116,11 +106,7 @@ function removeReference(key: string) {
           placeholder="Paste BibTeX entries here..."
           @wheel.stop
       />
-      <button
-          type="button"
-          class="reftracker__import-btn"
-          @click="importBibtex"
-      >
+      <button type="button" class="reftracker__import-btn" @click="importBibtex">
         Import BibTeX
       </button>
     </section>

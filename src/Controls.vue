@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, inject, nextTick} from 'vue'
-import type { Node } from '@vue-flow/core'
 import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
-import { findNodeTemplate, nodeTemplates } from './nodes/templates'
+import { nodeTemplates } from './nodes/templates'
 import { applyDagreLayout } from './nodes/layouts'
 import type { Ref } from 'vue'
 import { useDemo } from './demo'
@@ -12,36 +11,35 @@ import type {BibEntry} from "@/App.vue";
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
-
-
-// Grab reactive helpers from Vue Flow so we can inspect and mutate the graph and remove edges
 const { nodes, edges, setNodes, setEdges, screenToFlowCoordinate, addNodes, dimensions, toObject, fromObject} = useVueFlow()
-// Keep the list of templates reactive so the select updates if you edit nodeTemplates.
 const availableTemplates = computed(() => nodeTemplates)
-// Remember the template the user last chose; default to the first entry.
-const selectedNodeType = ref(availableTemplates.value[0]?.type ?? 'default')
-
 const showLLM = ref(true)
-
 const TLDR = inject<Ref<boolean>>('TLDR')!
-
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
+const showIntro = ref(true) //Demo-Mode!!!
+
+const { startDemo, skipDemo, nextStep } = useDemo({
+  demoActive,
+  nodes,
+  setNodes,
+  setEdges,
+  addNodes,
+  screenToFlowCoordinate,
+  dimensions
+})
 
 
-//dnd for new nodes
 function onDragStart(type: string, event: DragEvent) {
   if (!event.dataTransfer) return
   event.dataTransfer.setData('node/type', type)
   event.dataTransfer.effectAllowed = 'move'
 }
 
-//test function for autolayout
 function onAutoLayout() {
   const newNodes = applyDagreLayout(nodes.value, edges.value, 'LR')
   setNodes(newNodes)
 }
 
-//function to delete selected nodes or edges
 function onDeleteSelected() {
   const remainingEdges = edges.value.filter(edge => !edge.selected)
   setEdges(remainingEdges)
@@ -49,30 +47,21 @@ function onDeleteSelected() {
   setNodes(remainingNodes)
 }
 
-// function to save to json-file
 function onSaveToFile(): void {
-  // Kopie von toObject() erstellen
-  const exportData = JSON.parse(JSON.stringify(toObject()))
 
-  // Alle Nodes durchgehen und Base64-Bilder einfügen
+  const exportData = JSON.parse(JSON.stringify(toObject()))
   exportData.nodes.forEach((node: any) => {
     if (node.data?.imageName && imageCache?.value[node.data.imageName]) {
       node.data.image = imageCache.value[node.data.imageName]
     }
   })
 
-  // Bibliographie hinzufügen
   exportData.bibliography = bibliography.value
-
-  //TLDR
   exportData.TLDR = TLDR.value
-
-
 
   const dataStr = JSON.stringify(exportData, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
-
   const a = document.createElement('a')
   a.href = url
   a.download = 'graph.json'
@@ -81,8 +70,6 @@ function onSaveToFile(): void {
 }
 
 
-
-// function to restore from json-file
 function onRestoreFromFile(event: Event): void {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -93,7 +80,6 @@ function onRestoreFromFile(event: Event): void {
     try {
       const data = JSON.parse(reader.result as string)
 
-      // Restore images
       data.nodes.forEach((node: any) => {
         if (node.data?.image && node.data.imageName && imageCache) {
           imageCache.value[node.data.imageName] = node.data.image
@@ -101,15 +87,12 @@ function onRestoreFromFile(event: Event): void {
         }
       })
 
-      // Restore bibliography
       if (data.bibliography) {
         bibliography.value = data.bibliography
       }
 
-      // Restore nodes and edges
       fromObject(data)
 
-      //Restore TLDR
       await nextTick()
       if (typeof data.TLDR === 'boolean') {
         TLDR.value = data.TLDR
@@ -122,23 +105,6 @@ function onRestoreFromFile(event: Event): void {
   }
   reader.readAsText(file)
 }
-
-
-
-
-//Demo-Mode hier einschalten!!!
-const showIntro = ref(true) //Demo-Mode ein/ausschalten!!!
-
-const { startDemo, skipDemo, nextStep } = useDemo({
-  demoActive,
-  nodes,
-  setNodes,
-  setEdges,
-  addNodes,
-  screenToFlowCoordinate,
-  dimensions
-})
-
 
 function handleStartDemo() {
   showIntro.value = false
@@ -156,7 +122,7 @@ function handleSkipDemo() {
 
 <template>
 
-  <!-- Overlay oben drüber -->
+  <!-- Overlay -->
   <div v-if="showIntro" class="demo-overlay">
     <div class="demo-box">
       <h1>👋 Hey there! Looks like you're new here. Want a quick tour?</h1>

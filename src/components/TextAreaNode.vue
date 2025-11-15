@@ -4,6 +4,9 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 import { NodeToolbar } from '@vue-flow/node-toolbar'
+import type { Ref } from 'vue'
+
+
 
 
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
@@ -24,17 +27,17 @@ interface TextNodeData {
 }
 
 interface TextNodeProps extends NodeProps<TextNodeData> {
-  bibliography: BibEntry[]           // zentrale Bibliographie
-  updateBibliography?: (newBib: BibEntry[]) => void
+
 }
 
+const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const props = defineProps<TextNodeProps>()
 const { updateNodeData, nodes, edges } = useVueFlow()
 const isCompact = ref(false)
 const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
 const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
-const availableSources = computed(() => props.bibliography ?? [])
+const availableSources = computed(() => bibliography.value)
 const TLDR = inject('TLDR')
 const textAreaRef = ref<HTMLTextAreaElement | null>(null)
 const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
@@ -212,20 +215,17 @@ watch(isCompact, v => {
   if (!v) status.value = "idle"
 })
 
-watch(
-    () => props.bibliography,
-    (newBib) => {
-      if (!props.data.citations) return;
+watch(bibliography, (newBib) => {
+  if (!props.data.citations) return;
 
-      const invalidCitations = props.data.citations.filter(
-          key => !newBib.some(entry => entry.id === key)
-      );
+  const invalidCitations = props.data.citations.filter(
+      key => !newBib.some(entry => entry.id === key)
+  );
 
-      // Alle ungültigen Zitate entfernen
-      invalidCitations.forEach(key => removeCitation(key));
-    },
-    { deep: true }
-);
+  // Alle ungültigen Zitate entfernen
+  invalidCitations.forEach(key => removeCitation(key));
+}, { deep: true })
+
 
 watch(TLDR, (val) => {
   if (typeof val === 'boolean') {

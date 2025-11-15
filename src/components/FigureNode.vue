@@ -18,11 +18,9 @@ interface FigureNodeData {
   refLabel?: string
 }
 
-interface FigureNodeProps extends NodeProps<FigureNodeData> {
-  bibliography: BibEntry[]
-  updateBibliography?: (newBib: BibEntry[]) => void
-}
+interface FigureNodeProps extends NodeProps<FigureNodeData> {}
 
+const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const props = defineProps<FigureNodeProps>()
 const { updateNodeData } = useVueFlow()
 const refLabel = computed(() => {
@@ -42,7 +40,7 @@ const imageCache = inject<Ref<ImageCache>>('imageCache')
 
 
 // Zentral: Alle Bibliographie-Einträge
-const availableSources = computed(() => props.bibliography ?? [])
+const availableSources = computed(() => bibliography.value)
 
 // TLDR / Compact
 const TLDR = inject('TLDR')
@@ -109,21 +107,18 @@ function removeCitation(key: string) {
 }
 
 // Bibliography-Update Watcher
-watch(
-    () => props.bibliography,
-    (newBib) => {
-      if (!props.data.citations) return
+watch(bibliography, (newBib) => {
+  if (!props.data.citations) return
 
-      const validCitations = props.data.citations.filter(key =>
-          newBib.some(entry => entry.id === key)
-      )
+  const validCitations = props.data.citations.filter(key =>
+      newBib.some(entry => entry.id === key)
+  )
 
-      if (validCitations.length !== props.data.citations.length) {
-        syncDataDownstream({ citations: validCitations })
-      }
-    },
-    { deep: true }
-)
+  if (validCitations.length !== props.data.citations.length) {
+    syncDataDownstream({ citations: validCitations })
+  }
+}, { deep: true })
+
 
 watch(latexLabel, () => {
   syncDataDownstream()

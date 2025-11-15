@@ -4,7 +4,6 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps, Edge } from '@vue-flow/core'
 import type { ParagraphElement, SectionElement, FigureElement, DocElement } from '../api/docstruct'
 import '../styles/docNodes.css'
-import type { ComputedRef } from 'vue'
 
 
 interface ComposeNodeData {

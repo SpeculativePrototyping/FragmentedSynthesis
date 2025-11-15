@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, watch, watchEffect } from 'vue'
+import {computed, nextTick, watch, watchEffect, inject, type Ref, ref} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
 import type { DocElement, ParagraphElement, FigureElement } from '../api/docstruct'
 import { renderToLatex } from '../api/docstruct'
 import '../styles/docNodes.css'
 import type {BibEntry} from "@/App.vue";
+
 
 interface DocOutputNodeData {
   json?: string
@@ -14,10 +15,11 @@ interface DocOutputNodeData {
   label?: string
 }
 
-const props = defineProps<NodeProps<DocOutputNodeData> & { bibliography?: BibEntry[] }>()
+const props = defineProps<NodeProps<DocOutputNodeData>>()
 const { nodes, edges, updateNodeInternals, removeEdges, updateNodeData } = useVueFlow()
-
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
+const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))
+
 
 function parseHandleIndex(handleId?: Edge['targetHandle']): number {
   if (!handleId) return -1
@@ -153,7 +155,7 @@ const outlineItems = computed(() => {
 
 const bibliographyItems = computed<OutlineItem[]>(() => {
   const items: OutlineItem[] = []
-  const bib = props.bibliography ?? []
+  const bib = bibliography?.value ?? []
   if (!bib.length) return items
 
   items.push({
@@ -180,9 +182,9 @@ const bibliographyItems = computed<OutlineItem[]>(() => {
 })
 
 // Trigger Node update, damit UI neu rendert, wenn sich bibliography ändert
-watch(() => props.bibliography, () => {
+watch(bibliography, () => {
   updateNodeData(props.id, { ...props.data })
-}, { deep: true })
+})
 
 
 const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
@@ -211,13 +213,13 @@ const outlineText = computed(() =>
 )
 
 const latexSource = computed(() => {
-  if (!topLevelDocs.value.length && !(props.bibliography?.length ?? 0)) {
+  if (!topLevelDocs.value.length && !(bibliography?.value.length ?? 0)) {
     return ''
   }
   return renderToLatex(topLevelDocs.value, {
     includeDocument: true,
-    bibliography: props.bibliography,
-    bibFilename: 'references.bib', // <-- hier auf die herunterladbare .bib verweisen
+    bibliography: bibliography?.value,
+    bibFilename: 'references.bib',
   })
 })
 
@@ -252,7 +254,7 @@ function onExport() {
 }
 
 function downloadBib() {
-  const bib = props.bibliography ?? []
+  const bib = bibliography?.value ?? []
   if (!bib.length) return
 
   // alle raw-Einträge zusammenfügen
@@ -294,7 +296,7 @@ function downloadBib() {
         />
       </div>
 
-      <div class="doc-output__outline" role="tree">
+      <div class="doc-output__outline" role="tree" @wheel.stop>
         <div v-if="!outlineItems.length && !bibliographyItems.length" class="doc-output__empty">
           Attach sections or paragraphs to get a preview of your document and take a look at the outline.
         </div>
@@ -343,7 +345,7 @@ function downloadBib() {
         Export .tex
       </button>
       <button type="button" class="doc-output__export"
-              :disabled="!(props.bibliography?.length)"
+              :disabled="!bibliography?.length"
               @click="downloadBib">
         Export .bib
       </button>
