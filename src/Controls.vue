@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, inject} from 'vue'
+import { computed, ref, watch, inject, nextTick} from 'vue'
 import type { Node } from '@vue-flow/core'
 import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
@@ -23,7 +23,7 @@ const selectedNodeType = ref(availableTemplates.value[0]?.type ?? 'default')
 
 const showLLM = ref(true)
 
-const TLDR = inject('TLDR') // <- referencing global state
+const TLDR = inject<Ref<boolean>>('TLDR')!
 
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 
@@ -64,6 +64,11 @@ function onSaveToFile(): void {
   // Bibliographie hinzufügen
   exportData.bibliography = bibliography.value
 
+  //TLDR
+  exportData.TLDR = TLDR.value
+
+
+
   const dataStr = JSON.stringify(exportData, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -84,7 +89,7 @@ function onRestoreFromFile(event: Event): void {
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
       const data = JSON.parse(reader.result as string)
 
@@ -103,9 +108,17 @@ function onRestoreFromFile(event: Event): void {
 
       // Restore nodes and edges
       fromObject(data)
+
+      //Restore TLDR
+      await nextTick()
+      if (typeof data.TLDR === 'boolean') {
+        TLDR.value = data.TLDR
+      }
+
     } catch (err) {
       console.error('read error', err)
     }
+
   }
   reader.readAsText(file)
 }

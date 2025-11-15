@@ -28,14 +28,14 @@ export interface BibEntry {
   id: string
   type: string
   fields: Record<string, string>
-  raw?: string   // <-- der rohe BibTeX-Block
+  raw?: string
 }
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
+
 const bibliography = ref<BibEntry[]>([])  // <- global bibliography
 provide('bibliography', bibliography)
-
 
 const TLDR = ref(false) // <- for shrinking some nodes
 provide('TLDR', TLDR)
@@ -43,17 +43,12 @@ provide('TLDR', TLDR)
 const demoActive = ref(false)
 provide('demoActive', demoActive)
 
-//global image save for performance reasons
-
 interface ImageCacheEntry {
   base64: string
   refLabel: string
 }
 type ImageCache = Record<string, ImageCacheEntry>
-
 const imageCache = ref<ImageCache>({})
-
-// Global bereitstellen
 provide('imageCache', imageCache)
 
 
