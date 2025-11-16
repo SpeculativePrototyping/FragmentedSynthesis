@@ -61,7 +61,7 @@ export function useDemo({
                 '\n3. Upload: Uploads a project' +
                 '\n4. Magic-Wand: Sorts your graph automatically' +
                 '\n5. UNETHICAL MODE: Unlocks LLM-based nodes' +
-                '\n6. TLDR MODE: Shrinks some nodes for a better overview'
+                '\n6. TLDR MODE: Shrinks TextInput Nodes and FigureNodes for a better overview. You can also turn it on or off for each individual node. '
             )
         },
         () => {
