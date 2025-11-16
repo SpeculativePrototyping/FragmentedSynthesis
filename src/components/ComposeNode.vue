@@ -11,9 +11,12 @@ interface ComposeNodeData {
   json?: string
   value?: string
   label?: string
+  level?: number
 }
 
+
 const props = defineProps<NodeProps<ComposeNodeData>>()
+const level = ref(props.data?.level ?? 1)
 const { nodes, edges, updateNodeData, updateNodeInternals } = useVueFlow()
 
 // Node-Titel
@@ -56,7 +59,6 @@ function asFigure(edge?: Edge): FigureElement | undefined {
   const latexLabel = payload.latexLabel as string | undefined
   const refLabel = payload.refLabel as string | undefined        // <- richtig
   const citations = payload.citations as string[] | undefined  // <-- übernehmen
-
   if (typeof imageName === 'string' && imageName.trim()) {
     return {
       id: sourceNode.id,
@@ -95,14 +97,26 @@ const childElements = computed<DocElement[]>(() => {
 })
 
 // JSON-Payload für DocOutput
-const docPayload = computed<SectionElement>(() => ({
-  id: props.id,
-  kind: 'section',  // alles als section für DocOutput
-  level: 1,
-  title: title.value || undefined,
-  body: undefined,
-  children: childElements.value, // <- jetzt hier die neuen Kinder
-}))
+const docPayload = computed<SectionElement>(() => {
+  // Ziehe Level direkt aus dem aktuellen ComposeNode JSON
+  let currentLevel = 1
+  if (props.data?.json) {
+    try {
+      const parsed = JSON.parse(props.data.json) as SectionElement
+      currentLevel = parsed.level ?? 1
+    } catch {}
+  }
+  return {
+    id: props.id,
+    kind: 'section',
+    level: currentLevel,
+    title: title.value || undefined,
+    body: undefined,
+    children: childElements.value,
+  }
+})
+
+
 
 // HandleRows für Template
 interface HandleRow {
@@ -157,11 +171,13 @@ watch([incomingEdges, title], () => {
       title: title.value,
       json,
       value: json,
+      // level unverändert lassen
     })
-
     nextTick(() => updateNodeInternals?.([props.id]))
   }
 }, { deep: true })
+
+
 
 
 

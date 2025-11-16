@@ -2,7 +2,7 @@
 import {computed, nextTick, watch, watchEffect, inject, type Ref, ref} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
-import type { DocElement, ParagraphElement, FigureElement } from '../api/docstruct'
+import type { DocElement, ParagraphElement, FigureElement, SectionElement } from '../api/docstruct'
 import { renderToLatex } from '../api/docstruct'
 import '../styles/docNodes.css'
 import type {BibEntry} from "@/App.vue";
@@ -61,7 +61,7 @@ const handleRows = computed<HandleRow[]>(() => {
 const outlineItems = computed(() => {
   const items: OutlineItem[] = []
   for (const doc of topLevelDocs.value) {
-    buildOutline(doc, 0, items)
+    buildOutline(doc, 1, items)
   }
   return items
 })
@@ -178,29 +178,58 @@ function describeDoc(doc?: DocElement): string {
 }
 
 
-function buildOutline(doc: DocElement, depth: number, acc: OutlineItem[]): void {
+function buildOutline(doc: DocElement, currentSectionLevel: number, acc: OutlineItem[]): void {
+
+  //
+  // SECTION
+  //
   if (doc.kind === 'section') {
-    const label = doc.title?.trim() || 'Untitled section'
-    acc.push({ id: doc.id, label, depth, type: doc.kind })
+
+    // Level kommt direkt aus dem ComposeNode-JSON
+    const level = (doc as any).level ?? currentSectionLevel ?? 1
+
+    // Abschnitt-Einrückung
+    const depth = Math.max(0, level - 1)
+
+    acc.push({
+      id: doc.id,
+      label: doc.title?.trim() || 'Untitled section',
+      depth,
+      type: 'section',
+    })
+
+    // Für Kinder gilt ab jetzt dieses Level
     for (const child of doc.children) {
-      buildOutline(child, depth + 1, acc)
+      buildOutline(child, level, acc)
     }
+
     return
   }
 
-  if (doc.kind === 'paragraph') {
-    const snippet = doc.body?.trim() ?? ''
-    const label = snippet ? snippet.split(/\s+/).slice(0, 12).join(' ') : 'Paragraph'
-    acc.push({ id: doc.id, label, depth, type: doc.kind })
-    return
-  }
+  //
+  // PARAGRAPH + FIGURE (gleicher Depth!)
+  //
+  if (doc.kind === 'paragraph' || doc.kind === 'figure') {
 
-  if (doc.kind === 'figure') {
-    const label = doc.latexLabel ?? 'Figure'
-    acc.push({ id: doc.id, label, depth, type: doc.kind })
+    // Beide sollen identisch behandelt werden:
+    const depth = Math.max(0, currentSectionLevel)
+
+    const label =
+        doc.kind === 'paragraph'
+            ? (doc.body?.trim()?.split(/\s+/).slice(0, 12).join(' ') || 'Paragraph')
+            : (doc.latexLabel || 'Figure')
+
+    acc.push({
+      id: doc.id,
+      label,
+      depth,
+      type: doc.kind,
+    })
+
     return
   }
 }
+
 
 function downloadLatex() {
   if (!latexSource.value) return
@@ -239,6 +268,34 @@ function downloadBib() {
   URL.revokeObjectURL(url)
 }
 
+function changeSectionLevel(sectionId: string, delta: number) {
+  // Finde das Edge, das diese Section liefert
+  const edge = incomingEdges.value.find(e => edgeToDoc(e)?.id === sectionId)
+  if (!edge) return
+
+  // Finde den SourceNode (ComposeNode)
+  const sourceNode = nodes.value.find(n => n.id === edge.source)
+  if (!sourceNode?.data?.json) return
+
+  try {
+    const doc: SectionElement = JSON.parse(sourceNode.data.json)
+
+    // Level anpassen, aber auf 1..3 begrenzen
+    const newLevel = Math.min(3, Math.max(1, (doc.level ?? 1) + delta))
+    doc.level = newLevel
+
+    // Node-Daten updaten (ComposeNode JSON wird überschrieben)
+    updateNodeData(sourceNode.id, {
+      ...sourceNode.data,
+      json: JSON.stringify(doc),
+    })
+
+    // VueFlow intern aktualisieren
+    nextTick(() => updateNodeInternals?.([sourceNode.id]))
+  } catch (err) {
+    console.error("Failed to change section level:", err)
+  }
+}
 
 // Watchers:
 watch(bibliography, () => {
@@ -333,8 +390,8 @@ watchEffect(() => {
             {{ item.label }}
           </span>
           <div v-if="item.type === 'section'" class="doc-output__level-controls">
-            <button class="doc-output__level-btn" title="Promote this section">←</button>
-            <button class="doc-output__level-btn" title="Demote this section">→</button>
+            <button class="doc-output__level-btn" @click="changeSectionLevel(item.id, -1)" title="Promote this section">←</button>
+            <button class="doc-output__level-btn" @click="changeSectionLevel(item.id, +1)" title="Demote this section">→</button>
           </div>
         </div>
       </div>
