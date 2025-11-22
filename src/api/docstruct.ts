@@ -166,8 +166,10 @@ export function renderToLatex(
     },
     figure(figure: FigureElement) {
       const lines: string[] = ["\\begin{figure}[h]", "  \\centering"];
-      if (figure.imageName) {lines.push(`  \\includegraphics[width=\\linewidth,keepaspectratio]{${escLaTeX(figure.imageName)}}`);}
-      if (figure.latexLabel) lines.push(`  \\caption{${escLaTeXPreserveCites(figure.latexLabel)}}`);
+      if (figure.imageName) {
+        const path = `images/${escLaTeX(figure.imageName)}`;
+        lines.push(`  \\includegraphics[width=\\linewidth,keepaspectratio]{${path}}`);
+      }      if (figure.latexLabel) lines.push(`  \\caption{${escLaTeXPreserveCites(figure.latexLabel)}}`);
       if (figure.refLabel) lines.push(`  \\label{${figure.refLabel}}`);
       lines.push("\\end{figure}");
       return lines.join("\n");

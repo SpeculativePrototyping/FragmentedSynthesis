@@ -6,6 +6,8 @@ import type { DocElement, ParagraphElement, FigureElement, SectionElement } from
 import { renderToLatex } from '../api/docstruct'
 import '../styles/docNodes.css'
 import type {BibEntry} from "@/App.vue";
+import JSZip from "jszip"
+
 
 
 interface DocOutputNodeData {
@@ -29,6 +31,14 @@ interface HandleRow {
   preview: string
 }
 
+interface ImageCacheEntry {
+  base64: string
+  refLabel: string
+}
+
+type ImageCache = Record<string, ImageCacheEntry>
+
+
 let lastJson = ''
 
 const props = defineProps<NodeProps<DocOutputNodeData>>()
@@ -36,6 +46,7 @@ const { nodes, edges, updateNodeInternals, removeEdges, updateNodeData } = useVu
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))
 const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
+const imageCache = inject<Ref<ImageCache>>('imageCache')
 
 const handleRows = computed<HandleRow[]>(() => {
   const indices = incomingEdges.value.map((edge) => parseHandleIndex(edge.targetHandle))
@@ -237,7 +248,7 @@ function downloadLatex() {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = 'document.tex'
+  link.download = 'main.tex'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -296,6 +307,158 @@ function changeSectionLevel(sectionId: string, delta: number) {
     console.error("Failed to change section level:", err)
   }
 }
+
+
+async function downloadZip() {
+  const tex = latexSource.value
+  const bibEntries = bibliography?.value ?? []
+  const images = imageCache?.value ?? {}
+
+  if (!tex && !bibEntries.length && Object.keys(images).length === 0) return
+
+  const zip = new JSZip()
+
+  //
+  // ---- main.tex ----
+  //
+  if (tex) {
+    zip.file("main.tex", tex)
+  }
+
+  //
+  // ---- references.bib ----
+  //
+  if (bibEntries.length) {
+    const bibContent = bibEntries
+        .map(entry => entry.raw?.trim() ?? "")
+        .filter(Boolean)
+        .join("\n\n")
+
+    if (bibContent.trim()) {
+      zip.file("references.bib", bibContent)
+    }
+  }
+
+  //
+  // ---- images/ folder ----
+  //
+  const imgFolder = zip.folder("images")
+
+  for (const [key, entry] of Object.entries(images)) {
+    // entry.base64 = "data:image/png;base64,AAAA..."
+    const base64 = entry.base64
+    const matches = base64.match(/^data:(.*?);base64,(.*)$/)
+
+    if (!matches) continue
+
+    const mime = matches[1]           // z.B. "image/png"
+    const b64data = matches[2]
+
+    // Dateiendung bestimmen
+    let ext = "png"
+    if (mime.includes("jpeg")) ext = "jpg"
+    if (mime.includes("svg")) ext = "svg"
+    if (mime.includes("pdf")) ext = "pdf"
+
+    imgFolder.file(`${key}.${ext}`, b64data, { base64: true })
+  }
+
+  //
+  // ---- ZIP generieren ----
+  //
+  const blob = await zip.generateAsync({
+    type: "blob",
+    compression: "DEFLATE"
+  })
+
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = "latex-project.zip"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+async function onOpenInOverleaf() {
+  const { blob, base64 } = await createLatexZipBlob(
+      latexSource.value,
+      bibliography?.value ?? [],
+      imageCache?.value ?? {}
+  );
+  openInOverleafWithZip(base64);
+}
+
+function openInOverleafWithZip(b64zip: string) {
+  // MIME für ZIP
+  const dataUri = `data:application/zip;base64,${b64zip}`;
+
+  const form = document.createElement("form");
+  form.action = "https://www.overleaf.com/docs";
+  form.method = "POST";
+  form.target = "_blank";
+
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = "snip_uri";
+  input.value = dataUri;
+
+  form.appendChild(input);
+
+  // Optional: main_document
+  const mainDoc = document.createElement("input");
+  mainDoc.type = "hidden";
+  mainDoc.name = "main_document";
+  mainDoc.value = "main.tex";
+  form.appendChild(mainDoc);
+
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+}
+
+
+async function createLatexZipBlob(tex: string, bibEntries: BibEntry[], images: Record<string, { base64: string }>) {
+  const zip = new JSZip();
+
+  // tex
+  zip.file("main.tex", tex);
+
+  // bib
+  if (bibEntries.length) {
+    const bib = bibEntries
+        .map(e => e.raw?.trim() ?? "")
+        .filter(Boolean)
+        .join("\n\n");
+    zip.file("references.bib", bib);
+  }
+
+  // images
+  const imgFolder = zip.folder("images");
+  for (const [key, entry] of Object.entries(images)) {
+    // Base64-String „data:image/...;base64,...“
+    const matches = entry.base64.match(/^data:(.*?);base64,(.*)$/);
+    if (!matches) continue;
+    const mime = matches[1];
+    const b64 = matches[2];
+    let ext = "png";
+    if (mime.includes("jpeg")) ext = "jpg";
+    else if (mime.includes("svg")) ext = "svg";
+    else if (mime.includes("pdf")) ext = "pdf";
+
+    imgFolder.file(`${key}.${ext}`, b64, { base64: true });
+  }
+
+  const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+  const base64 = await zip.generateAsync({ type: "base64", compression: "DEFLATE" });
+
+  return { blob, base64 };
+}
+
+
+
+
 
 // Watchers:
 watch(bibliography, () => {
@@ -404,8 +567,21 @@ watchEffect(() => {
               @click="downloadBib">
         Export .bib
       </button>
-      <button type="button" :disabled="true" class="doc-output__export">
-        Export LaTeX-Project including Images (ZIP)
+      <button
+          type="button"
+          class="doc-output__export"
+          :disabled="!latexSource && !(bibliography?.length)"
+          @click="downloadZip"
+      >
+        Export Project as .zip
+      </button>
+      <button
+          type="button"
+          class="doc-output__export"
+          :disabled="!latexSource && !(bibliography?.length)"
+          @click="onOpenInOverleaf"
+      >
+        Open Project in Overleaf
       </button>
 
     </section>

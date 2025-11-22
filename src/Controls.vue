@@ -13,7 +13,6 @@ const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const { nodes, edges, setNodes, setEdges, screenToFlowCoordinate, addNodes, dimensions, toObject, fromObject} = useVueFlow()
 const availableTemplates = computed(() => nodeTemplates)
-const showLLM = ref(true)
 const TLDR = inject<Ref<boolean>>('TLDR')!
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
@@ -125,11 +124,13 @@ function handleSkipDemo() {
   <!-- Overlay -->
   <div v-if="showIntro" class="demo-overlay">
     <div class="demo-box">
-      <h1>👋 Hey there! Looks like you're new here. Want a quick tour?</h1>
-      <p>I'll show you around and help you get started!</p>
+      <h1>👋 Hey there! Looks like you're new here.</h1>
+      <p>What would you like to do?</p>
       <div class="demo-buttons">
-        <button class="start-button" @click="handleStartDemo">🎬 Sure</button>
-        <button class="skip-button" @click="handleSkipDemo">🚫 Nope</button>
+        <button class="skip-button" @click="handleSkipDemo">Start New Project</button>
+        <button class="skip-button">Upload Project from File</button>
+        <button class="skip-button">Upload LaTex-File</button>
+        <button class="start-button" @click="handleStartDemo">🎬 Start Tour</button>
       </div>
     </div>
   </div>
@@ -164,7 +165,7 @@ function handleSkipDemo() {
         <!-- Toggle-Switch für LLM Nodes -->
         <div class="toggle-switch">
           <label>
-            <input type="checkbox" v-model="showLLM" />
+            <input type="checkbox" />
             <span class="slider"></span>
           </label>
           <span
@@ -220,7 +221,6 @@ function handleSkipDemo() {
         <!-- LLM Nodes -->
         <h4
             class="drag-category"
-            v-if="showLLM"
         >
           LLM-based Nodes
         </h4>
@@ -230,7 +230,6 @@ function handleSkipDemo() {
             class="draggable-node"
             draggable="true"
             @dragstart="onDragStart(template.type, $event)"
-            v-if="showLLM"
             title="Drag and drop nodes you would like to add over to the canvas"
         >
           {{ template.label }}
