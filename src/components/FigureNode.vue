@@ -257,6 +257,7 @@ function onFileChange(event: Event) {
   height: 100%;
 }
 
+
 .image-preview img {
   max-width: 100%;   /* passt sich Containerbreite an */
   height: auto;

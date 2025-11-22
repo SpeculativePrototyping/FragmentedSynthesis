@@ -43,6 +43,8 @@ const textAreaRef = ref<HTMLTextAreaElement | null>(null)
 const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
 const searchQuery = ref('')
 const showSearch = ref(false)
+const COMPLETE_CITATION_REGEX = /~\\cite\{([^\}]+)\}(?=\s|$)/g;
+
 
 const filteredSources = computed(() => {
   if (!searchQuery.value) return availableSources.value
@@ -53,6 +55,12 @@ const filteredSources = computed(() => {
       entry.id.toLowerCase().includes(query)
   )
 })
+
+const invalidCitations = computed(() => {
+  if (!props.data?.citations) return new Set<string>();
+  const bibKeys = new Set(bibliography.value.map(entry => entry.id));
+  return new Set(props.data.citations.filter(key => !bibKeys.has(key)));
+});
 
 
 const statusLabel = computed(() => {
@@ -243,6 +251,37 @@ watch(text, (v) => {
   }, 150)
 })
 
+let citationTimer: number | undefined;
+
+watch(text, (currentText) => {
+  window.clearTimeout(citationTimer);
+  citationTimer = window.setTimeout(() => {
+    if (!props.data) return;
+
+    const currentCitations = new Set(props.data.citations ?? []);
+    const matches = currentText.matchAll(COMPLETE_CITATION_REGEX);
+
+    let changed = false;
+
+    for (const match of matches) {
+      const key = match[1].trim();
+      if (key && !currentCitations.has(key)) {
+        currentCitations.add(key);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      updateNodeData(props.id, {
+        ...props.data,
+        citations: Array.from(currentCitations),
+      });
+    }
+  }, 5000); // 5000ms = 5 Sekunden
+});
+
+
+
 
 </script>
 
@@ -266,7 +305,7 @@ watch(text, (v) => {
     </div>
 
     <header class="doc-node__header">
-      <strong>{{ props.data?.label ?? 'Text' }}</strong>
+      <strong v-if="!isCompact">{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">{{ statusLabel }}</span>
     </header>
 
@@ -300,12 +339,14 @@ watch(text, (v) => {
     v-for="key in props.data.citations ?? []"
     :key="key"
     class="citation-tag"
+    :class="{ 'citation-unknown': invalidCitations.has(key) }"
 >
   <span @click="reinsertCitation(key)" style="cursor: pointer;">
     {{ key }}
   </span>
   <button @click="removeCitation(key)">×</button>
 </span>
+
 
         </div>
         <button @click="showSearch = !showSearch" class="citation-add-btn">
@@ -341,10 +382,10 @@ watch(text, (v) => {
   overflow: hidden;
   flex-direction: column;
   resize: none;
-  min-height: 0;
   width: 650px;
-  height: 100%;
+  height: auto;
 }
+
 
 .doc-node__body {
   display: flex;
@@ -501,6 +542,11 @@ watch(text, (v) => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.citation-unknown {
+  background-color: #fca5a5; /* Hellrot */
+  border: 1px solid #f87171;
 }
 
 .citation-tag button {
