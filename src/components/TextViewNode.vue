@@ -1,38 +1,59 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
-import type { NodeProps, Edge } from '@vue-flow/core'
+import type { NodeProps } from '@vue-flow/core'
 
 interface TextViewNodeData {
   value?: string
   label?: string
   placeholder?: string
+  width?: number
+  height?: number
 }
 
 const props = defineProps<NodeProps<TextViewNodeData>>()
-const { edges, nodes } = useVueFlow()
+const { edges, nodes, setNodes } = useVueFlow()
 
 const heading = computed(() => props.data?.label ?? '')
 const placeholder = computed(() => props.data?.placeholder ?? 'Waiting for input…')
+
+// --- Ref auf den gesamten Node-Container ---
+const nodeRef = ref<HTMLDivElement | null>(null)
+const currentWidth = ref(0)
+const currentHeight = ref(0)
 
 // Alle eingehenden Edges
 const incomingEdges = computed(() =>
     edges.value.filter((edge) => edge.target === props.id)
 )
 
-// Hilfsfunktion zum Formatieren von Bibliographien
-function formatBibliography(bib: any[]): string {
-  return bib
-      .map((e, i) => {
-        const authors = e.fields?.author?.split(/ and /i).map((a: string) => a.trim()).join('; ') ?? ''
-        const year = e.fields?.year ?? 'n.d.'
-        const title = e.fields?.title ?? '(no title)'
-        return `${i + 1}. ${authors} (${year}). ${title}`
-      })
-      .join('\n')
+// Funktion zum Aktualisieren der Node-Größe
+function updateSize() {
+  if (nodeRef.value) {
+    currentWidth.value = nodeRef.value.offsetWidth
+    currentHeight.value = nodeRef.value.offsetHeight
+  }
 }
 
-// Anzeige-Text zusammenbauen
+// ResizeObserver einrichten
+let resizeObserver: ResizeObserver | null = null
+onMounted(() => {
+  if (nodeRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      updateSize()
+      saveSizeToNode() // Größe speichern
+    })
+    resizeObserver.observe(nodeRef.value)
+    updateSize()
+    saveSizeToNode() // initial speichern
+  }
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+})
+
+// Anzeige-Text zusammenbauen (inkl. Node-Größe)
 const displayText = computed(() => {
   return incomingEdges.value
       .map((edge) => {
@@ -42,28 +63,44 @@ const displayText = computed(() => {
         const payload = sourceNode.data as Record<string, unknown>
         const parts: string[] = []
 
-        // Basisinformationen
         if (payload.label) parts.push(`Label: ${payload.label}`)
         if (payload.value) parts.push(`Value: ${payload.value}`)
-
-        // Figure-spezifische Felder
         if (payload.latexLabel) parts.push(`LaTeX: ${payload.latexLabel}`)
         if (payload.refLabel) parts.push(`RefLabel: ${payload.refLabel}`)
         if (payload.citations) parts.push(`Citations: ${(payload.citations as string[]).join(', ')}`)
         if (payload.imageName) parts.push(`Image Name: ${payload.imageName}`)
         if (payload.image) parts.push(`Image Base64: ${payload.image}`)
-
-        // Bibliographie, falls vorhanden
-        if (payload.bibliography) parts.push(formatBibliography(payload.bibliography as any[]))
+        if (payload.bibliography) parts.push(
+            (payload.bibliography as any[]).map((e,i)=>`${i+1}. ${e.title ?? '(no title)'}`).join('\n')
+        )
 
         return `--- from ${sourceNode.id} ---\n${parts.join('\n')}`
       })
-      .join('\n\n')
+      .join('\n\n') + `\n\n[Node Size: ${currentWidth.value}px x ${currentHeight.value}px]`
 })
+
+function saveSizeToNode() {
+  setNodes((nds) =>
+      nds.map((n) =>
+          n.id === props.id
+              ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  width: currentWidth.value,
+                  height: currentHeight.value,
+                },
+              }
+              : n
+      )
+  )
+}
+
+
 </script>
 
 <template>
-  <div class="text-view-node doc-node">
+  <div class="text-view-node doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ heading }}</strong>
     </header>
@@ -96,7 +133,7 @@ const displayText = computed(() => {
 .text-view-node__textarea {
   width: 260px;
   height: 180px;
-  min-width:260px;
+  min-width: 260px;
   min-height: 180px;
   max-width: 480px;
   max-height: 480px;

@@ -2,10 +2,6 @@ import type { Node, Edge } from '@vue-flow/core'
 // @ts-ignore
 import dagre from 'dagre'
 
-/**
- * Feste Node-Größen nach Node-Type
- * (Kann jederzeit hier angepasst werden)
- */
 const SIZE_BY_TYPE: Record<string, { width: number; height: number }> = {
     textArea:        { width: 650, height: 100 },
     textView:        { width: 300, height: 250 },
@@ -15,10 +11,18 @@ const SIZE_BY_TYPE: Record<string, { width: number; height: number }> = {
     compose:         { width: 300, height: 300 },
     docOutput:       { width: 600, height: 600 },
     referenceTracker:{ width: 300, height: 500 },
-
-    // Sticky notes und concat nodes werden im Layout ignoriert
     stickyNote:      { width: 0, height: 0 },
     concat:          { width: 480, height: 140 },
+}
+
+function getNodeSize(node: Node) {
+    const dataWidth = (node.data as any)?.width
+    const dataHeight = (node.data as any)?.height
+
+    return {
+        width: dataWidth ?? SIZE_BY_TYPE[node.type ?? '']?.width ?? 500,
+        height: dataHeight ?? SIZE_BY_TYPE[node.type ?? '']?.height ?? 120,
+    }
 }
 
 export function applyDagreLayout(
@@ -27,18 +31,18 @@ export function applyDagreLayout(
     direction: 'TB' | 'LR' = 'LR'
 ): Node[] {
     const g = new dagre.graphlib.Graph()
-
     g.setGraph({ rankdir: direction })
     g.setDefaultEdgeLabel(() => ({}))
 
-    // Nur nodes layouten, die nicht sticky sind
-    const layoutNodes = nodes.filter(node => node.type !== 'stickyNote')
+    const layoutNodes = nodes.filter(n => n.type !== 'stickyNote')
 
+    // Nodes mit ihrer tatsächlichen Größe eintragen
     layoutNodes.forEach(node => {
-        const size = SIZE_BY_TYPE[node.type ?? ''] ?? { width: 500, height: 120 }
-        g.setNode(node.id, { width: size.width, height: size.height })
+        const size = getNodeSize(node)
+        g.setNode(node.id, size)
     })
 
+    // Edges setzen
     edges.forEach(edge => {
         if (
             layoutNodes.some(n => n.id === edge.source) &&
@@ -53,10 +57,11 @@ export function applyDagreLayout(
     // Neue Positionen zurückgeben
     return nodes.map(node => {
         if (node.type === 'stickyNote') return node
+
         const pos = g.node(node.id)
         if (!pos) return node
 
-        const size = SIZE_BY_TYPE[node.type ?? ''] ?? { width: 500, height: 120 }
+        const size = getNodeSize(node)
 
         return {
             ...node,
