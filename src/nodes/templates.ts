@@ -66,7 +66,7 @@ export const nodeTemplates: NodeTemplate[] = [
     data: {
       label: 'Summary Node',
       length: '1-2 sentences',
-      value: '',
+      value: 'This is a summary.',
       status: 'idle',
       error: null,
     },
@@ -91,6 +91,7 @@ export const nodeTemplates: NodeTemplate[] = [
       title: '',
       json: '',
       value: '',
+      level: 1,
     },
   },
   {

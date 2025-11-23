@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, nextTick, watch, watchEffect, inject, type Ref, ref} from 'vue'
+import {computed, nextTick, watch, watchEffect, inject, type Ref, ref, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
 import type { DocElement, ParagraphElement, FigureElement, SectionElement } from '../api/docstruct'
@@ -15,6 +15,8 @@ interface DocOutputNodeData {
   value?: string
   bibliography?: BibEntry[]
   label?: string
+  width?: number
+  height?: number
 }
 
 interface OutlineItem {
@@ -47,6 +49,9 @@ const incomingEdges = computed(() => edges.value.filter((edge) => edge.target ==
 const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))
 const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
 const imageCache = inject<Ref<ImageCache>>('imageCache')
+const nodeRef = ref<HTMLElement | null>(null)
+let resizeObs: ResizeObserver | null = null
+let resizeRaf: number | null = null
 
 const handleRows = computed<HandleRow[]>(() => {
   const indices = incomingEdges.value.map((edge) => parseHandleIndex(edge.targetHandle))
@@ -456,7 +461,41 @@ async function createLatexZipBlob(tex: string, bibEntries: BibEntry[], images: R
   return { blob, base64 };
 }
 
+onMounted(() => {
+  if (!nodeRef.value) return
 
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+
+    resizeRaf = requestAnimationFrame(() => {
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+
+      updateNodeData(props.id, {
+        ...(props.data ?? {}),
+        width,
+        height,
+      })
+    })
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
+
+onBeforeUnmount(() => {
+  if (resizeObs && nodeRef.value) {
+    resizeObs.unobserve(nodeRef.value)
+  }
+  resizeObs = null
+
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+})
 
 
 
@@ -496,7 +535,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div class="doc-output doc-node">
+  <div class="doc-output doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">Aggregates composed sections</span>

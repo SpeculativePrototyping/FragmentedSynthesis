@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, computed, watch, inject, type Ref} from 'vue'
+import {ref, computed, watch, inject, type Ref, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 
@@ -16,6 +16,8 @@ interface FigureNodeData {
   imageName?: string  // Filename
   latexLabel?: string // Figure-Name for LaTeX
   refLabel?: string
+  width?: number
+  height?: number
 }
 
 interface FigureNodeProps extends NodeProps<FigureNodeData> {}
@@ -37,7 +39,9 @@ type ImageCache = Record<string, ImageCacheEntry>
 
 const imageCache = inject<Ref<ImageCache>>('imageCache')
 
-
+const nodeRef = ref<HTMLElement | null>(null)
+let resizeObs: ResizeObserver | null = null
+let resizeRaf: number | null = null
 
 // Zentral: Alle Bibliographie-Einträge
 const availableSources = computed(() => bibliography.value)
@@ -157,11 +161,48 @@ function onFileChange(event: Event) {
   reader.readAsDataURL(file)
 }
 
+onMounted(() => {
+  if (!nodeRef.value) return
+
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+
+    resizeRaf = requestAnimationFrame(() => {
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+
+      updateNodeData(props.id, {
+        ...(props.data ?? {}),
+        width,
+        height,
+      })
+    })
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
+
+onBeforeUnmount(() => {
+  if (resizeObs && nodeRef.value) {
+    resizeObs.unobserve(nodeRef.value)
+  }
+  resizeObs = null
+
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+})
+
+
 </script>
 
 
 <template>
-  <div class="text-node doc-node node-wrapper">
+  <div class="text-node doc-node node-wrapper" ref="nodeRef">
     <!-- TLDR toggle -->
     <div class="node-hover-toggle">
       <label class="toggle-switch" title="Compact view / TLDR">

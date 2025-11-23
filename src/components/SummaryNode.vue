@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
@@ -34,6 +34,8 @@ interface SummaryNodeData {
   status?: SummaryStatus
   error?: string | null
   citations?: string[]
+  width?: number
+  height?: number
 }
 
 const props = defineProps<NodeProps<SummaryNodeData>>()
@@ -44,6 +46,9 @@ const length = ref<LengthOption>((props.data?.length as LengthOption) ?? DEFAULT
 const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
 const summary = ref(props.data?.value ?? '')
 const error = ref<string | null>(props.data?.error ?? null)
+const nodeRef = ref<HTMLElement | null>(null)
+let resizeObs: ResizeObserver | null = null
+let resizeRaf: number | null = null
 
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 
@@ -247,10 +252,46 @@ function stripCodeFences(text: string): string {
   }
   return text
 }
+
+onMounted(() => {
+  if (!nodeRef.value) return
+
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    // debounce via rAF to avoid rapid update thrashing
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+
+    resizeRaf = requestAnimationFrame(() => {
+      // skip if nothing changed
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+
+      updateNodeData(props.id, {
+        ...(props.data ?? {}),
+        width,
+        height,
+      })
+    })
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
+
+onBeforeUnmount(() => {
+  if (resizeObs && nodeRef.value) resizeObs.unobserve(nodeRef.value)
+  resizeObs = null
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+  window.clearTimeout(debounceTimer)
+})
 </script>
 
 <template>
-  <div class="summary-node doc-node">
+  <div class="summary-node doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ label }}</strong>
       <span class="doc-node__hint">{{ statusLabel }}</span>

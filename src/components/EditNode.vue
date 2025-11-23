@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref, watch, watchEffect} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
 import '../styles/docNodes.css'
@@ -15,6 +15,8 @@ interface EditNodeData {
   diff?: DiffSegment[]
   citations?: string[]
   label?: string
+  width?: number
+  height?: number
 }
 
 const props = defineProps<NodeProps<EditNodeData>>()
@@ -26,6 +28,9 @@ const originalText = ref(props.data?.original ?? '')
 const hasManualEdit = ref(Boolean(props.data?.value && props.data?.value !== props.data?.original))
 const conflict = ref(false)
 let lastSnapshot = ''
+const nodeRef = ref<HTMLElement | null>(null)
+let resizeObs: ResizeObserver | null = null
+let resizeRaf: number | null = null
 
 // Edit node only supports a single input edge; grab it reactively
 const incomingEdge = computed(() => edges.value.find((edge) => edge.target === props.id))
@@ -192,10 +197,47 @@ function diffTokens(original: string, edited: string): DiffSegment[] {
 
   return segments
 }
+
+onMounted(() => {
+  if (!nodeRef.value) return
+
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+
+    resizeRaf = requestAnimationFrame(() => {
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+
+      updateNodeData(props.id, {
+        ...(props.data ?? {}),
+        width,
+        height,
+      })
+    })
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
+
+onBeforeUnmount(() => {
+  if (resizeObs && nodeRef.value) {
+    resizeObs.unobserve(nodeRef.value)
+  }
+  resizeObs = null
+
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+})
+
 </script>
 
 <template>
-  <div class="edit-node doc-node">
+  <div class="edit-node doc-node" ref="nodeRef">
     <header class="doc-node__header" :class="{ 'doc-node__header-warning': conflict }">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch, computed, inject, nextTick} from 'vue'
+import {ref, watch, computed, inject, nextTick, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
@@ -24,6 +24,8 @@ interface TextNodeData {
   citations?: string[]
   status?: SummaryStatus
   error?: string | null
+  width?: number
+  height?: number
 }
 
 interface TextNodeProps extends NodeProps<TextNodeData> {
@@ -44,6 +46,9 @@ const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
 const searchQuery = ref('')
 const showSearch = ref(false)
 const COMPLETE_CITATION_REGEX = /~\\cite\{([^\}]+)\}(?=\s|$)/g;
+const nodeRef = ref<HTMLElement | null>(null)
+let resizeObs: ResizeObserver | null = null
+let resizeRaf: number | null = null
 
 
 const filteredSources = computed(() => {
@@ -213,6 +218,43 @@ function reinsertCitation(key: string) {
   updateNodeData(props.id, { ...props.data, value: text.value })
 }
 
+onMounted(() => {
+  if (!nodeRef.value) return
+
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+
+    resizeRaf = requestAnimationFrame(() => {
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+
+      updateNodeData(props.id, {
+        ...(props.data ?? {}),
+        width,
+        height,
+      })
+    })
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
+
+onBeforeUnmount(() => {
+  if (resizeObs && nodeRef.value) {
+    resizeObs.unobserve(nodeRef.value)
+  }
+  resizeObs = null
+
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+})
+
+
 
 // --- Watchers ---
 watch(isCompact, v => {
@@ -290,7 +332,7 @@ watch(text, (currentText) => {
   <NodeToolbar>
   </NodeToolbar>
 
-  <div class="text-node doc-node node-wrapper" >
+  <div class="text-node doc-node node-wrapper" ref="nodeRef">
 
     <div class="node-hover-toggle">
       <label class="toggle-switch" title="Shrinks the node and shows a short summary of your input for better visibility.">

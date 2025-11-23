@@ -7,6 +7,8 @@ import { applyDagreLayout } from './nodes/layouts'
 import type { Ref } from 'vue'
 import { useDemo } from './demo'
 import type {BibEntry} from "@/App.vue";
+import {parseLatexToNodesAndEdges} from '@/api/latexParser'
+
 
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
@@ -16,6 +18,7 @@ const availableTemplates = computed(() => nodeTemplates)
 const TLDR = inject<Ref<boolean>>('TLDR')!
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
@@ -115,6 +118,31 @@ function handleSkipDemo() {
   skipDemo()
 }
 
+function UploadFile() {
+  showIntro.value = false
+}
+
+function onLatexFileUpload() {
+  const file = fileInputRef.value?.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+
+  reader.onload = async () => {
+    const content = reader.result as string
+    const { nodes: newNodes, edges: newEdges } = parseLatexToNodesAndEdges(content)
+
+    addNodes(newNodes)         // Nodes hinzufügen
+    setEdges([...edges.value, ...newEdges]) // Edges hinzufügen
+    onAutoLayout()             // Layout anpassen
+    showIntro.value = false
+  }
+
+  reader.readAsText(file)
+}
+
+
+
 </script>
 
 //HTML
@@ -127,10 +155,19 @@ function handleSkipDemo() {
       <h1>👋 Hey there! Looks like you're new here.</h1>
       <p>What would you like to do?</p>
       <div class="demo-buttons">
-        <button class="skip-button" @click="handleSkipDemo">Start New Project</button>
-        <button class="skip-button">Upload Project from File</button>
-        <button class="skip-button">Upload LaTex-File</button>
-        <button class="start-button" @click="handleStartDemo">🎬 Start Tour</button>
+        <label class="skip-button upload-label" @click="handleSkipDemo">Start New Project</label>
+
+        <label class="skip-button upload-label" @change="onRestoreFromFile" @click="UploadFile">
+          Upload Project from File
+          <input type="file" accept=".json"/>
+        </label>
+
+        <label class="skip-button upload-label" @change="onLatexFileUpload">
+          Upload LaTeX-File
+          <input type="file" accept=".tex" ref="fileInputRef"/>
+        </label>
+
+        <label class="start-button upload-label" @click="handleStartDemo" >🎬 Start Tour</label>
       </div>
     </div>
   </div>
@@ -150,10 +187,10 @@ function handleSkipDemo() {
                @click="onDeleteSelected">
              <Icon name="trash" />
            </button>
-          <button title="Save graph to file" @click="onSaveToFile">
+          <button title="Save project to file" @click="onSaveToFile">
             <Icon name="save" />
           </button>
-          <button title="Load graph from file" class="upload-label">
+          <button title="Load project from file" class="upload-label">
             <Icon name="upload" />
             <input type="file" accept=".json" @change="onRestoreFromFile" />
           </button>
@@ -162,18 +199,6 @@ function handleSkipDemo() {
            </button>
          </div>
       <div class="drag-nodes">
-        <!-- Toggle-Switch für LLM Nodes -->
-        <div class="toggle-switch">
-          <label>
-            <input type="checkbox" />
-            <span class="slider"></span>
-          </label>
-          <span
-              class="toggle-label"
-              title="Enables the use of LLM-base nodes. Disabling this mode will not remove already implemented nodes.">
-            Unethical
-          </span>
-        </div>
         <div class="toggle-switch">
           <label>
             <input type="checkbox" v-model="TLDR" />
@@ -182,8 +207,8 @@ function handleSkipDemo() {
           <span
               class="toggle-label"
               title="Enables or disables TLDR mode for all nodes">
-    TLDR
-  </span>
+              TLDR
+          </span>
         </div>
 
         <!-- Text Nodes -->
@@ -504,7 +529,7 @@ function handleSkipDemo() {
 .start-button,
 .skip-button {
   padding: 0.75rem 1.5rem;
-  font-size: 1.1rem;
+  font-size: 1.0rem;
   font-weight: 600;
   border: none;
   border-radius: 12px;

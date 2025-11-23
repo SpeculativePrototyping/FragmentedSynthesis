@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
@@ -29,6 +29,8 @@ interface GrammarNodeData {
   status?: GrammarStatus
   error?: string | null
   citations?: string[]
+  width?: number
+  height?: number
 }
 
 const props = defineProps<NodeProps<GrammarNodeData>>()
@@ -38,7 +40,9 @@ const label = computed(() => props.data?.label ?? NODE_LABEL)
 const status = ref<GrammarStatus>((props.data?.status as GrammarStatus) ?? 'idle')
 const grammar = ref(props.data?.value ?? '')
 const error = ref<string | null>(props.data?.error ?? null)
-
+const nodeRef = ref<HTMLElement | null>(null)
+let resizeObs: ResizeObserver | null = null
+let resizeRaf: number | null = null
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 
 
@@ -235,7 +239,45 @@ watch(inputText, (newText) => {
 
 function onRetry() { schedule(true) }
 
-onBeforeUnmount(() => window.clearTimeout(debounceTimer))
+onBeforeUnmount(() => {
+  window.clearTimeout(debounceTimer)
+
+  if (resizeObs && nodeRef.value) {
+    resizeObs.unobserve(nodeRef.value)
+  }
+  resizeObs = null
+
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+})
+
+
+onMounted(() => {
+  if (!nodeRef.value) return
+
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    // debounce via rAF → vermeidet update loop + jitter
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+
+    resizeRaf = requestAnimationFrame(() => {
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+
+      updateNodeData(props.id, {
+        ...(props.data ?? {}),
+        width,
+        height,
+      })
+    })
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
 </script>
 
 
@@ -246,7 +288,7 @@ onBeforeUnmount(() => window.clearTimeout(debounceTimer))
 
 
 <template>
-  <div class="grammar-node doc-node">
+  <div class="grammar-node doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ label }}</strong>
       <span class="doc-node__hint">{{ statusLabel }}</span>

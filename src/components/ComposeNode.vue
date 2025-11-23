@@ -102,14 +102,17 @@ const childElements = computed<DocElement[]>(() => {
 
 // JSON-Payload für DocOutput
 const docPayload = computed<SectionElement>(() => {
-  // Ziehe Level direkt aus dem aktuellen ComposeNode JSON
-  let currentLevel = 1
+  // Ziehe Level direkt aus props.data.level, fallback 1
+  let currentLevel = props.data?.level ?? 1
+
+  // Falls JSON vorhanden, überschreibe currentLevel
   if (props.data?.json) {
     try {
       const parsed = JSON.parse(props.data.json) as SectionElement
-      currentLevel = parsed.level ?? 1
+      currentLevel = parsed.level ?? currentLevel
     } catch {}
   }
+
   return {
     id: props.id,
     kind: 'section',
@@ -119,6 +122,7 @@ const docPayload = computed<SectionElement>(() => {
     children: childElements.value,
   }
 })
+
 
 
 
