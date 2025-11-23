@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import {ref, computed, watch, nextTick, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps, Edge } from '@vue-flow/core'
 import type { ParagraphElement, SectionElement, FigureElement, DocElement } from '../api/docstruct'
@@ -12,12 +12,16 @@ interface ComposeNodeData {
   value?: string
   label?: string
   level?: number
+  width?: number
+  height?: number
 }
 
 
 const props = defineProps<NodeProps<ComposeNodeData>>()
 const level = ref(props.data?.level ?? 1)
 const { nodes, edges, updateNodeData, updateNodeInternals } = useVueFlow()
+const nodeRef = ref<HTMLDivElement | null>(null)
+
 
 // Node-Titel
 const title = ref(props.data?.title ?? '')
@@ -178,7 +182,34 @@ watch([incomingEdges, title], () => {
 }, { deep: true })
 
 
+let resizeObs: ResizeObserver | null = null
 
+onMounted(() => {
+  if (!nodeRef.value) return
+
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+
+    if (
+        props.data?.width !== width ||
+        props.data?.height !== height
+    ) {
+      updateNodeData(props.id, {
+        ...props.data,
+        width,
+        height,
+      })
+
+      nextTick(() => updateNodeInternals?.([props.id]))
+    }
+  })
+
+  resizeObs.observe(nodeRef.value)
+})
+
+onBeforeUnmount(() => resizeObs?.disconnect())
 
 
 
@@ -186,7 +217,7 @@ watch([incomingEdges, title], () => {
 
 
 <template>
-  <div class="compose doc-node">
+  <div class="compose doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
       <span class="doc-node__hint">aggregates paragraphs to sections</span>
