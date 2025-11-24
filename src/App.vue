@@ -56,6 +56,13 @@ type ImageCache = Record<string, ImageCacheEntry>
 const imageCache = ref<ImageCache>({})
 provide('imageCache', imageCache)
 
+const templates = ref([])
+
+provide('styleTemplates', templates)
+provide('setStyleTemplates', (newList) => {
+  templates.value = newList
+})
+
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
 

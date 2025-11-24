@@ -31,7 +31,11 @@ export function applyDagreLayout(
     direction: 'TB' | 'LR' = 'LR'
 ): Node[] {
     const g = new dagre.graphlib.Graph()
-    g.setGraph({ rankdir: direction })
+    g.setGraph({
+        rankdir: direction ,
+        ranksep: 150,
+        nodesep: 100,
+    })
     g.setDefaultEdgeLabel(() => ({}))
 
     const layoutNodes = nodes.filter(n => n.type !== 'stickyNote')

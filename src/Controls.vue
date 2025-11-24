@@ -9,6 +9,9 @@ import { useDemo } from './demo'
 import type {BibEntry} from "@/App.vue";
 import {parseLatexToNodesAndEdges} from '@/api/latexParser'
 
+import FigurePanelContent from "@/FigurePanelContent.vue";
+import ReferencePanelContent from "@/ReferencePanelContent.vue";
+import StylePanelContent from "@/StylePanelContent.vue";
 
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
@@ -19,6 +22,7 @@ const TLDR = inject<Ref<boolean>>('TLDR')!
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const activeSidebar = ref<null | 'bibliography' | 'figures' | 'style'>(null)
 
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
@@ -82,6 +86,11 @@ function onRestoreFromFile(event: Event): void {
     try {
       const data = JSON.parse(reader.result as string)
 
+      setNodes([])
+      setEdges([])
+
+      await nextTick()
+
       data.nodes.forEach((node: any) => {
         if (node.data?.image && node.data.imageName && imageCache) {
           imageCache.value[node.data.imageName] = node.data.image
@@ -141,6 +150,13 @@ function onLatexFileUpload() {
   reader.readAsText(file)
 }
 
+function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
+  if (activeSidebar.value === panel) {
+    activeSidebar.value = null // Schaltet aus, wenn nochmal geklickt
+  } else {
+    activeSidebar.value = panel
+  }
+}
 
 
 </script>
@@ -198,6 +214,20 @@ function onLatexFileUpload() {
              <Icon name="wand" />
            </button>
          </div>
+
+      <div class="toggle-switches">
+        <div class="toggle-switch" v-for="panel in ['bibliography','figures','style']" :key="panel">
+          <label>
+            <input type="checkbox" :checked="activeSidebar === panel" @change="togglePanel(panel)" />
+            <span class="slider purple"></span>
+          </label>
+          <span class="toggle-label">
+    {{ panel.charAt(0).toUpperCase() + panel.slice(1) }}
+  </span>
+        </div>
+
+      </div>
+
       <div class="drag-nodes">
         <div class="toggle-switch">
           <label>
@@ -207,7 +237,7 @@ function onLatexFileUpload() {
           <span
               class="toggle-label"
               title="Enables or disables TLDR mode for all nodes">
-              TLDR
+              TLDR-Mode
           </span>
         </div>
 
@@ -262,6 +292,24 @@ function onLatexFileUpload() {
       </div>
     </div>
    </Panel>
+
+  <!-- Right-side panels -->
+  <div class="right-panels">
+    <div v-if="activeSidebar === 'bibliography'" class="side-panel">
+      <h4>Reference Tracker</h4>
+      <ReferencePanelContent />
+    </div>
+    <div v-if="activeSidebar === 'figures'" class="side-panel">
+      <h4>Figure Tracker</h4>
+      <FigurePanelContent />
+    </div>
+    <div v-if="activeSidebar === 'style'" class="side-panel">
+      <h4>Style Specifications</h4>
+      <StylePanelContent />
+    </div>
+  </div>
+
+
 </template>
 
 //CSS
@@ -615,6 +663,44 @@ function onLatexFileUpload() {
 .demo-controls .end-demo-btn:hover {
   background: #ff6666;
 }
+
+
+/* New Sidebar and Switches */
+
+.toggle-switch .slider.purple {
+  background-color: #9b59b6;
+}
+.toggle-switch input:checked + .slider.purple {
+  background-color: #8e44ad;
+}
+.toggle-switch input:checked + .slider.purple::before {
+  transform: translateX(16px);
+}
+
+.right-panels {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 9999;
+}
+
+.side-panel {
+  background: rgba(25, 25, 25, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  color: white;
+  min-width: 200px;
+  width: 500px;
+  height: 600px;
+  min-height: 150px;
+}
+
 
 
 </style>

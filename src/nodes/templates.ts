@@ -61,10 +61,10 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'summary',
-    label: 'Summary Node',
+    label: 'Paraphrase Node',
     category: 'llm',
     data: {
-      label: 'Summary Node',
+      label: 'Paraphrase Node',
       length: '1-2 sentences',
       value: 'This is a summary.',
       status: 'idle',
@@ -115,7 +115,7 @@ export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'referenceTracker',
     label: 'Reference Tracker Node',
-    category: 'utility',
+    category: 'disabled',
     data: {
       label: 'Reference Tracker Node',
       bibliography: [] as BibEntry[],          // optional default empty, Props aus App.vue überschreiben
@@ -145,7 +145,7 @@ export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'figureTracker',      // VueFlow Component Type
     label: 'Figure Tracker Node', // Name im Drag & Drop Menü
-    category: 'utility',          // Utility Node
+    category: 'disabled',          // Utility Node
     data: {
       label: 'Figure Tracker Node',    // Default Label
       // keine weiteren Props nötig, imageCache wird injectet
