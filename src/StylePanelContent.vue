@@ -84,7 +84,7 @@ function deleteTemplate(index: number) {
       </div>
 
       <div class="form-group">
-        <label>Tone / Style</label>
+        <label>Tone / Style / Target Audience</label>
         <textarea v-model="tone" placeholder="Describe your target audience or the desired tone."></textarea>
       </div>
 
