@@ -95,7 +95,7 @@ function deleteTemplate(index: number) {
 
       <div class="form-group">
         <label>Examples</label>
-        <textarea v-model="emphasizePoints" placeholder="Snippet or example for how you'd like your text to be written. The example will determine the leght of your paragraph in case you did not set a paragraph length above." rows="4"></textarea>
+        <textarea v-model="emphasizePoints" placeholder="Snippet or example for how you'd like your text to be written. The example will determine the length of your paragraph in case you did not set a paragraph length above." rows="4"></textarea>
       </div>
 
       <button @click="saveTemplate">💾 Save Template</button>
