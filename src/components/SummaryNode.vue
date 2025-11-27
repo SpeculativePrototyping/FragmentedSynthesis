@@ -247,7 +247,7 @@ function buildUserPrompt(text: string): string {
 
   if (tpl) {
     // Tone immer einfügen
-    styleInfo += `Use the following style template precisely:\nTarget Group: ${tpl.tone}\n`
+    styleInfo += `Use the following style template precisely:\nTarget Audience: ${tpl.tone}\n`
 
     // Paragraph length bestimmen
     let nWords = tpl.sectionLength

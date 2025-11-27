@@ -34,7 +34,6 @@ export function applyDagreLayout(
     g.setGraph({
         rankdir: direction ,
         ranksep: 150,
-        nodesep: 100,
     })
     g.setDefaultEdgeLabel(() => ({}))
 

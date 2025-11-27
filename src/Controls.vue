@@ -13,6 +13,13 @@ import FigurePanelContent from "@/FigurePanelContent.vue";
 import ReferencePanelContent from "@/ReferencePanelContent.vue";
 import StylePanelContent from "@/StylePanelContent.vue";
 
+interface StyleTemplate {
+  templateName: string
+  tone: string
+  sectionLength: number
+  emphasizePoints: string
+}
+
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
@@ -23,6 +30,8 @@ const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const activeSidebar = ref<null | 'bibliography' | 'figures' | 'style'>(null)
+const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
+const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
 
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
@@ -64,6 +73,8 @@ function onSaveToFile(): void {
 
   exportData.bibliography = bibliography.value
   exportData.TLDR = TLDR.value
+  exportData.templates = templates.value
+
 
   const dataStr = JSON.stringify(exportData, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
@@ -107,6 +118,10 @@ function onRestoreFromFile(event: Event): void {
       await nextTick()
       if (typeof data.TLDR === 'boolean') {
         TLDR.value = data.TLDR
+      }
+
+      if (data.templates && setTemplates) {
+        setTemplates(data.templates)
       }
 
     } catch (err) {
