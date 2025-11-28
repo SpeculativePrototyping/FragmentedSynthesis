@@ -174,6 +174,8 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
 }
 
 
+
+
 </script>
 
 //HTML
@@ -213,6 +215,15 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
     <div class="panel-content">
          <label class="sr-only" for="node-type-select">Node type</label>
          <div class="buttons">
+
+           <button title="Undo (coming soon)">
+             <Icon name="undo" />
+           </button>
+
+           <button title="Redo (coming soon)">
+             <Icon name="redo" />
+           </button>
+
            <button
                title="Delete selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL."
                @click="onDeleteSelected">
@@ -228,6 +239,9 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
            <button title="Unchaosify - This will automatically sort your elements according to the flow of the content." @click="onAutoLayout" >
              <Icon name="wand" />
            </button>
+
+
+
          </div>
 
       <div class="toggle-switches">
@@ -237,10 +251,9 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
             <span class="slider purple"></span>
           </label>
           <span class="toggle-label">
-    {{ panel.charAt(0).toUpperCase() + panel.slice(1) }}
-  </span>
+            {{ panel.charAt(0).toUpperCase() + panel.slice(1) }}
+          </span>
         </div>
-
       </div>
 
       <div class="drag-nodes">
