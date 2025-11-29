@@ -89,8 +89,8 @@ function deleteTemplate(index: number) {
       </div>
 
       <div class="form-group">
-        <label>Paragraph Length (Words)</label>
-        <input type="number" v-model="sectionLength" min="20" max="10000" />
+        <label>Paragraph Length (Sentences)</label>
+        <input type="number" v-model="sectionLength" min="1" max="200" />
       </div>
 
       <div class="form-group">

@@ -141,8 +141,8 @@ function buildBasePrompt(template?: StyleTemplate): string {
   }
 
   return `You are a concise academic assistant. Use the user's preferred style template if provided.
-Paraphrase the following text and ensure it has at least ${nWords} words.
-If necessary, expand the content naturally to reach at least ${nWords} words.
+Paraphrase the following text and ensure it has at least ${nWords} sentences.
+If necessary, expand the content naturally to reach at least ${nWords} sentences.
 Output only LaTeX-safe prose suitable for inclusion in a paragraph. Respond strictly with JSON containing a single string property named 'paraphrase'.`
   }
 
@@ -241,6 +241,10 @@ watch(
 /* ----------------------
    prompt builder using style template
    ---------------------- */
+function countSentences(s: string): number {
+  return (s.match(/[^.!?]+[.!?]+/g) || []).length;
+}
+
 function buildUserPrompt(text: string): string {
   const tpl = styleTemplates.value.find((t) => t.templateName === selectedTemplate.value)
   let styleInfo = ''
@@ -250,14 +254,14 @@ function buildUserPrompt(text: string): string {
     styleInfo += `Use the following style template precisely:\nTarget Audience: ${tpl.tone}\n`
 
     // Paragraph length bestimmen
-    let nWords = tpl.sectionLength
+    let nWords = tpl.sectionLength;
     if (nWords === 0) {
       // Wörter im Beispiel zählen
-      const exampleText = tpl.emphasizePoints ?? ''
-      nWords = exampleText.trim().split(/\s+/).length
+      const exampleText = tpl.emphasizePoints ?? "";
+      nWords = countSentences(exampleText);
     }
 
-    styleInfo += `Paraphrase in exactly ${nWords} words.\n`
+    styleInfo += `Paraphrase in exactly ${nWords} sentences.\n`
     styleInfo += `Examples:\n${tpl.emphasizePoints}\n\n`
   }
 

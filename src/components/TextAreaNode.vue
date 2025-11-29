@@ -17,11 +17,20 @@ interface BibEntry {
   fields: Record<string, string>
 }
 
+interface ImageCacheEntry {
+  base64: string
+  refLabel: string
+}
+type ImageCache = Record<string, ImageCacheEntry>
+
+const imageCache = inject<Ref<ImageCache>>('imageCache')!
+
 interface TextNodeData {
   value?: string
   label?: string
   placeholder?: string
   citations?: string[]
+  figures?: string[]
   status?: SummaryStatus
   error?: string | null
   width?: number
@@ -322,7 +331,104 @@ watch(text, (currentText) => {
   }, 5000); // 5000ms = 5 Sekunden
 });
 
+// Normiert alle "~\autoref{key}" im Text und erzeugt passende figure-tags
+function syncFiguresFromText() {
+  const found = new Set<string>()
 
+  for (const [imageName, img] of Object.entries(imageCache.value)) {
+    const label = img.refLabel
+    if (!label) continue
+
+    const regex = new RegExp(`~\\\\autoref\\{${label}\\}`, 'g')
+    if (regex.test(text.value)) {
+      found.add(imageName)   // wir speichern ImageName, weil das intern eindeutig ist
+    }
+  }
+
+  updateNodeData(props.id, {
+    ...props.data,
+    figures: [...found],
+  })
+}
+
+
+// Füge neue Figure-Referenz an Cursor ein
+function addFigureReferenceByKey(imageName: string) {
+  const img = imageCache.value[imageName]
+  if (!img) return
+
+  const label = img.refLabel
+  const insertText = `~\\autoref{${label}}`
+
+  const textarea = textAreaRef.value
+  const { start, end } = cursorPos.value
+
+  if (!textarea || start == null) {
+    text.value += insertText
+  } else {
+    text.value =
+        text.value.slice(0, start) +
+        insertText +
+        text.value.slice(end)
+
+    nextTick(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + insertText.length
+      textarea.focus()
+    })
+  }
+
+  // Figures speichern als imageName (intern eindeutig)
+  const figs = new Set(props.data.figures ?? [])
+  figs.add(imageName)
+
+  updateNodeData(props.id, { ...props.data, figures: [...figs] })
+}
+
+
+// Entfernt Tag UND alle Vorkommen im Text
+function removeFigureReference(imageName: string) {
+  const img = imageCache.value[imageName]
+  if (!img) return
+
+  const label = img.refLabel
+
+  // Entfernen im Text
+  const regex = new RegExp(`~\\\\autoref\\{${label}\\}`, 'g')
+  text.value = text.value.replace(regex, '').replace(/\s{2,}/g, ' ').trim()
+
+  // Entfernen aus Liste
+  const figs = (props.data.figures ?? []).filter(f => f !== imageName)
+
+  updateNodeData(props.id, {
+    ...props.data,
+    figures: figs,
+    value: text.value,
+  })
+}
+
+
+// Beim Klick auf gelben Tag erneut einfügen
+function reinsertFigureReference(key: string) {
+  addFigureReferenceByKey(key)
+}
+
+// Für Suchliste
+const searchFigureQuery = ref('')
+const showFigureSearch = ref(false)
+
+const filteredFigures = computed(() => {
+  const q = searchFigureQuery.value.toLowerCase()
+  if (!q) return Object.entries(imageCache.value)
+
+  return Object.entries(imageCache.value).filter(([key, img]) =>
+      img.refLabel.toLowerCase().includes(q)
+  )
+})
+
+// Textänderungen → automatisch Tags synchronisieren
+watch(text, () => {
+  syncFiguresFromText()
+})
 
 
 </script>
@@ -391,6 +497,19 @@ watch(text, (currentText) => {
 
 
         </div>
+
+        <div class="selected-citations">
+    <span
+        v-for="key in props.data.figures ?? []"
+        :key="key"
+        class="figure-tag"
+        @click="reinsertFigureReference(key)"
+    >
+      {{ imageCache[key].refLabel }}
+      <button class="remove-btn" @click.stop="removeFigureReference(key)">×</button>
+    </span>
+        </div>
+
         <button @click="showSearch = !showSearch" class="citation-add-btn">
           + Add New Citation
         </button>
@@ -407,6 +526,34 @@ watch(text, (currentText) => {
           </ul>
         </div>
       </div>
+
+      <div v-if="!isCompact" class="figures-ui">
+        <!-- BUTTON -->
+        <button class="citation-add-btn" @click="showFigureSearch = !showFigureSearch">
+          + Add Figure Reference
+        </button>
+
+        <!-- SEARCH DROPDOWN -->
+        <div v-if="showFigureSearch" class="citation-search">
+          <input
+              v-model="searchFigureQuery"
+              placeholder="Search figures..."
+              class="citation-search-input"
+          />
+
+          <ul class="citation-search-list" @wheel.stop>
+            <li
+                v-for="([key, img]) in filteredFigures"
+                :key="key"
+                @click="addFigureReferenceByKey(key)"
+            >
+              <img :src="img.base64" width="40" />
+              <strong>{{ img.refLabel }}</strong> ({{ key }})
+            </li>
+          </ul>
+        </div>
+      </div>
+
     </section>
     <Handle id="output" type="source" :position="Position.Right" />
   </div>
@@ -657,6 +804,54 @@ watch(text, (currentText) => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.figure-tag {
+  background: #facc15;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.figure-add-btn {
+  margin-top: 4px;
+  padding: 4px 8px;
+}
+
+.figure-search {
+  margin-top: 4px;
+}
+
+.figure-search-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.figure-search-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
 
 
 </style>

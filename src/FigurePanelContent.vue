@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, type Ref } from 'vue'
+import {inject, ref, type Ref} from 'vue'
 
 interface ImageCacheEntry {
   base64: string
@@ -8,8 +8,15 @@ interface ImageCacheEntry {
 
 type ImageCache = Record<string, ImageCacheEntry>
 
-// inject den bestehenden imageCache
-const imageCache = inject<Ref<ImageCache>>('imageCache')
+// Inject den bestehenden imageCache
+const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))!
+const updateImageCache = inject<(newCache: ImageCache) => void>('updateImageCache', () => {})!
+
+// Funktion zum Löschen eines Eintrags
+function removeFigure(key: string) {
+  if (!imageCache) return
+  delete imageCache.value[key]
+}
 </script>
 
 <template>
@@ -25,6 +32,7 @@ const imageCache = inject<Ref<ImageCache>>('imageCache')
         </div>
         <div class="figure-info">
           Key: <strong>{{ img.refLabel }}</strong>
+          <button class="figure-delete" @click="removeFigure(key)">×</button>
         </div>
       </li>
     </ul>
@@ -68,5 +76,19 @@ const imageCache = inject<Ref<ImageCache>>('imageCache')
 
 .figure-info {
   font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.figure-delete {
+  border: none;
+  background: transparent;
+  color: #ff4444;
+  cursor: pointer;
+  font-weight: bold;
+}
+.figure-delete:hover {
+  color: #ff0000;
 }
 </style>

@@ -119,9 +119,11 @@ const SECTION_COMMAND_BY_LEVEL: Record<number, string> = {
 };
 
 const escLaTeXPreserveCites = (s = "") => {
-  return s.replace(/~\\cite\{[^}]+\}|([#$%&_{}])/g, (match, group1) => {
-    // Wenn es ein \cite ist, nicht escapen
-    if (match.startsWith("~\\cite{")) return match;
+  return s.replace(/~\\(cite|autoref)\{[^}]+\}|([#$%&_{}])/g, (match, group1) => {
+    // cite/autoref bleiben unescaped
+    if (match.startsWith("~\\cite{") || match.startsWith("~\\autoref{")) {
+      return match;
+    }
     return "\\" + group1;
   });
 };
