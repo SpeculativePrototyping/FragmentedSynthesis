@@ -25,10 +25,19 @@ interface FigureNodeProps extends NodeProps<FigureNodeData> {}
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const props = defineProps<FigureNodeProps>()
 const { updateNodeData } = useVueFlow()
-const refLabel = computed(() => {
-  if (!latexLabel.value) return ''
-  return latexLabel.value.split(/~\\cite\{/)?.[0]?.trim() ?? '' // Alles vor dem ersten ~\cite{...} als Label
-})
+
+
+const refLabel = ref(props.data?.refLabel ?? randomRefLabel())
+
+function randomRefLabel(length = 5) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return `Figure-${result}`
+}
+
 
 interface ImageCacheEntry {
   base64: string
@@ -66,7 +75,7 @@ function syncDataDownstream(updated: Partial<FigureNodeData> = {}) {
     image: props.data.image,
     imageName: props.data.imageName,
     latexLabel: latexLabel.value,
-    refLabel: latexLabel.value?.split(/~\\cite\{/)?.[0]?.trim() ?? '',
+    refLabel: refLabel.value,
     ...updated
   })
 }
@@ -125,13 +134,8 @@ watch(bibliography, (newBib) => {
 
 
 watch(latexLabel, () => {
-  syncDataDownstream()
+  syncDataDownstream({ refLabel: refLabel.value })
 
-  // 🆕 globalen Cache aktuell halten
-  if (props.data?.imageName && imageCache?.value[props.data.imageName]) {
-    imageCache.value[props.data.imageName].refLabel =
-        latexLabel.value.split(/~\\cite\{/)?.[0]?.trim() ?? ''
-  }
 })
 
 
@@ -149,7 +153,7 @@ function onFileChange(event: Event) {
     // Base64 zentral speichern
     imageCache.value[randomName] = {
       base64: reader.result as string,
-      refLabel: latexLabel.value.split(/~\\cite\{/)?.[0]?.trim() ?? ''
+      refLabel: refLabel.value
     }
 
     // Node nur den generierten Namen speichern

@@ -56,13 +56,17 @@ export function useDemo({
                 100,
                 'Over here!' +
                 '\nThis is the control bar. The top-part has 6 control-elements:' +
-                '\n1. Trashcan: Deletes selected elements' +
-                '\n2. Floppydisk: Downloads your project' +
-                '\n3. Upload: Uploads a project' +
-                '\n4. Magic-Wand: Sorts your graph automatically' +
-                '\n5. UNETHICAL MODE: Unlocks LLM-based nodes' +
-                '\n6. TLDR MODE: Shrinks TextInput Nodes and FigureNodes for a better overview. You can also turn it on or off for each individual node. '
-            )
+                '\n1. Undo: Undo your last change.' +
+                '\n2. Redo: Redo what you have just undone :D' +
+                '\n3. Trashcan: Deletes selected elements' +
+                '\n4. Floppydisk: Downloads your project' +
+                '\n5. Upload: Uploads a project' +
+                '\n6. Magic-Wand: Sorts your graph automatically' +
+                '\n7. Bibliography, Figures and Styles give you options to add references, refert to graphics and create style templates for LLM functions.' +
+                '\n8. TLDR MODE: Shrinks TextInput Nodes and FigureNodes for a better overview. You can also turn it on or off for each individual node. ' +
+                '\n8. Language: Select your language for the LLM-functions and outputs to work correctly. '
+
+        )
         },
         () => {
             spawnStepNode(
@@ -128,27 +132,11 @@ export function useDemo({
                 dragHandle: '.doc-node__header'
             }
 
-            const referenceTracker: Node = {
-                id: 'reference',
-                type: 'referenceTracker',
-                position: screenToFlowCoordinate({ x: 1350, y: 550 }),
-                data: { label: 'Reference Tracker Node' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const figureTracker: Node = {
-                id: 'figuretracker',
-                type: 'figureTracker',
-                position: screenToFlowCoordinate({ x: 1350, y: 50 }),
-                data: { label: 'Figure Tracker Node' },
-                dragHandle: '.doc-node__header'
-            }
-
             const summary: Node = {
                 id: 'summary',
                 type: 'summary',
                 position: screenToFlowCoordinate({ x: 800, y: 900 }),
-                data: { label: 'Summary Node' },
+                data: { label: 'Paraphrase Node' },
                 dragHandle: '.doc-node__header'
             }
 
@@ -191,7 +179,7 @@ export function useDemo({
                 dragHandle: '.doc-node__header'
             }
 
-            setNodes([textNode1, textView1, figureNode, editNode, composeNode, summary, grammar, docNode, referenceTracker, figureTracker, tourGuideNode, tourGuideNode2])
+            setNodes([textNode1, textView1, figureNode, editNode, composeNode, summary, grammar, docNode, tourGuideNode, tourGuideNode2])
         }
     ]
 

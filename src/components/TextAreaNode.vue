@@ -568,18 +568,18 @@ watch(language, () => {
   overflow: hidden;
   flex-direction: column;
   resize: none;
-  width: 650px;
   height: auto;
 }
 
 
 .doc-node__body {
   display: flex;
-  flex-direction: column;
   height: 100%;
 }
 
 .text-node__textarea {
+  min-width: 260px;
+  min-height: 180px;
   width: 600px;
   margin: 0 auto;
   min-height: 100px;
@@ -590,7 +590,7 @@ watch(language, () => {
   background: #fff;
   font: inherit;
   line-height: 1.45;
-  resize: vertical;
+  resize: both;
 }
 
 .text-node__textarea:focus {
