@@ -36,6 +36,10 @@ interface ImageCacheEntry {
   refLabel: string
 }
 
+export type Language = 'en' | 'de'
+const language = ref<Language>('en')
+provide('language', language)
+
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
 

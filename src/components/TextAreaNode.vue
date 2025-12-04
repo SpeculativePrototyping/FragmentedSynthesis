@@ -5,6 +5,8 @@ import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 import { NodeToolbar } from '@vue-flow/node-toolbar'
 import type { Ref } from 'vue'
+import { textNodePrompts } from '@/nodes/prompts'
+
 
 
 
@@ -58,6 +60,7 @@ const COMPLETE_CITATION_REGEX = /~\\cite\{([^\}]+)\}(?=\s|$)/g;
 const nodeRef = ref<HTMLElement | null>(null)
 let resizeObs: ResizeObserver | null = null
 let resizeRaf: number | null = null
+const language = inject<Ref<'en' | 'de'>>('language')!
 
 
 const filteredSources = computed(() => {
@@ -93,23 +96,6 @@ const statusLabel = computed(() => {
 })
 
 
-const NODE_PROMPT = `You are a concise academic assistant. Summarize the user's text in 1 extremely short sentence.
-Output only LaTeX-safe prose (no environments), suitable for inclusion in a paragraph.
-Respond strictly with JSON containing a single string property named 'summary'.`
-
-const RESPONSE_FORMAT = {
-  type: 'json_schema',
-  json_schema: {
-    name: 'summary_response',
-    schema: {
-      type: 'object',
-      properties: { summary: { type: 'string' } },
-      required: ['summary'],
-      additionalProperties: false,
-    },
-  },
-} as const
-
 let requestToken = 0;
 
 async function generateSummary() {
@@ -122,13 +108,16 @@ async function generateSummary() {
 
   const token = ++requestToken
   summary.value = ''
-  status.value ="queued"
+  status.value = "queued"
+
+  // Hier holen wir dynamisch die Prompts
+  const { basePrompt, responseFormat } = getPrompts()
 
   try {
     const result = await enqueueLlmJob({
-      sys: NODE_PROMPT,
+      sys: basePrompt,
       user: txt,
-      responseFormat: RESPONSE_FORMAT,
+      responseFormat,
       onStart: () => {},
     })
 
@@ -146,6 +135,9 @@ async function generateSummary() {
     status.value = "error"
   }
 }
+
+
+
 
 function addCitationByKey(key: string) {
   const textarea = textAreaRef.value
@@ -177,6 +169,9 @@ function addCitationByKey(key: string) {
   showSearch.value = false
 }
 
+function getPrompts() {
+  return textNodePrompts[language.value]
+}
 
 
 function removeCitation(key: string) {
@@ -302,6 +297,7 @@ watch(text, (v) => {
   }, 150)
 })
 
+
 let citationTimer: number | undefined;
 
 watch(text, (currentText) => {
@@ -309,47 +305,46 @@ watch(text, (currentText) => {
   citationTimer = window.setTimeout(() => {
     if (!props.data) return;
 
-    const currentCitations = new Set(props.data.citations ?? []);
+    const foundCitations = new Set<string>();
     const matches = currentText.matchAll(COMPLETE_CITATION_REGEX);
-
-    let changed = false;
 
     for (const match of matches) {
       const key = match[1].trim();
-      if (key && !currentCitations.has(key)) {
-        currentCitations.add(key);
-        changed = true;
+      if (key) foundCitations.add(key);
+    }
+
+    updateNodeData(props.id, {
+      ...props.data,
+      citations: Array.from(foundCitations),
+    });
+  }, 5000);
+});
+
+
+
+let figureTimer: number | undefined;
+
+watch(text, (currentText) => {
+  window.clearTimeout(figureTimer);
+  figureTimer = window.setTimeout(() => {
+    const found = new Set<string>();
+
+    for (const [imageName, img] of Object.entries(imageCache.value)) {
+      const label = img.refLabel;
+      if (!label) continue;
+
+      const regex = new RegExp(`~\\\\autoref\\{${label}\\}`, 'g');
+      if (regex.test(currentText)) {
+        found.add(imageName);
       }
     }
 
-    if (changed) {
-      updateNodeData(props.id, {
-        ...props.data,
-        citations: Array.from(currentCitations),
-      });
-    }
-  }, 5000); // 5000ms = 5 Sekunden
+    updateNodeData(props.id, {
+      ...props.data,
+      figures: [...found],
+    });
+  }, 5000); // z.B. gleiche 5 Sekunden wie bei citations
 });
-
-// Normiert alle "~\autoref{key}" im Text und erzeugt passende figure-tags
-function syncFiguresFromText() {
-  const found = new Set<string>()
-
-  for (const [imageName, img] of Object.entries(imageCache.value)) {
-    const label = img.refLabel
-    if (!label) continue
-
-    const regex = new RegExp(`~\\\\autoref\\{${label}\\}`, 'g')
-    if (regex.test(text.value)) {
-      found.add(imageName)   // wir speichern ImageName, weil das intern eindeutig ist
-    }
-  }
-
-  updateNodeData(props.id, {
-    ...props.data,
-    figures: [...found],
-  })
-}
 
 
 // Füge neue Figure-Referenz an Cursor ein
@@ -425,10 +420,12 @@ const filteredFigures = computed(() => {
   )
 })
 
-// Textänderungen → automatisch Tags synchronisieren
-watch(text, () => {
-  syncFiguresFromText()
+watch(language, () => {
+  if (status.value === 'done') {
+    generateSummary()
+  }
 })
+
 
 
 </script>
@@ -824,26 +821,6 @@ watch(text, () => {
   font-weight: bold;
 }
 
-.figure-add-btn {
-  margin-top: 4px;
-  padding: 4px 8px;
-}
-
-.figure-search {
-  margin-top: 4px;
-}
-
-.figure-search-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 4px;
-  max-height: 160px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-
 .figure-search-list li {
   display: flex;
   align-items: center;
@@ -851,7 +828,5 @@ watch(text, () => {
   padding: 6px;
   cursor: pointer;
 }
-
-
 
 </style>

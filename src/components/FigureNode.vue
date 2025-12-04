@@ -197,6 +197,42 @@ onBeforeUnmount(() => {
   if (resizeRaf) cancelAnimationFrame(resizeRaf)
 })
 
+const COMPLETE_CITATION_REGEX = /~\\cite\{([^\}]+)\}/g
+
+let citationTimer: number | undefined
+
+watch(latexLabel, (currentLabel) => {
+  window.clearTimeout(citationTimer)
+  citationTimer = window.setTimeout(() => {
+    if (!props.data) return
+
+    const currentCitations = new Set(props.data.citations ?? [])
+    const matches = currentLabel.matchAll(COMPLETE_CITATION_REGEX)
+    let changed = false
+
+    for (const match of matches) {
+      const key = match[1].trim()
+      if (key && !currentCitations.has(key)) {
+        currentCitations.add(key)
+        changed = true
+      }
+    }
+
+    // Alte Citations entfernen, die nicht mehr im Label vorkommen
+    for (const key of props.data.citations ?? []) {
+      if (!currentLabel.includes(`~\\cite{${key}}`)) {
+        currentCitations.delete(key)
+        changed = true
+      }
+    }
+
+    if (changed) {
+      syncDataDownstream({ citations: Array.from(currentCitations) })
+    }
+  }, 5000)
+})
+
+
 
 </script>
 

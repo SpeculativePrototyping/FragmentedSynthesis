@@ -6,7 +6,7 @@ import { nodeTemplates } from './nodes/templates'
 import { applyDagreLayout } from './nodes/layouts'
 import type { Ref } from 'vue'
 import { useDemo } from './demo'
-import type {BibEntry} from "@/App.vue";
+import type {BibEntry, Language} from "@/App.vue";
 import {parseLatexToNodesAndEdges} from '@/api/latexParser'
 
 import FigurePanelContent from "@/FigurePanelContent.vue";
@@ -32,6 +32,9 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const activeSidebar = ref<null | 'bibliography' | 'figures' | 'style'>(null)
 const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
 const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
+const language = inject<Ref<'en' | 'de'>>('language')!
+const languageLabel = computed(() => language.value.toUpperCase())
+
 
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
@@ -48,6 +51,10 @@ function onDragStart(type: string, event: DragEvent) {
   if (!event.dataTransfer) return
   event.dataTransfer.setData('node/type', type)
   event.dataTransfer.effectAllowed = 'move'
+}
+
+function toggleLanguage() {
+  language.value = language.value === 'en' ? 'de' : 'en'
 }
 
 function onAutoLayout() {
@@ -267,6 +274,22 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
               title="Enables or disables TLDR mode for all nodes">
               TLDR-Mode
           </span>
+        </div>
+
+        <div class="toggle-switch">
+          <label>
+            <input
+                type="checkbox"
+                :checked="language === 'de'"
+                @change="toggleLanguage"
+            />
+            <span class="slider flag"></span>
+          </label>
+          <span
+              class="toggle-label"
+              title="Switch between English and German">
+              Language: {{ languageLabel }}
+  </span>
         </div>
 
         <!-- Text Nodes -->
@@ -501,13 +524,6 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
   transition: 0.2s;
 }
 
-.toggle-switch input:checked + .slider {
-  background-color: #22ff00;
-}
-
-.toggle-switch input:checked + .slider::before {
-  transform: translateX(16px);
-}
 
 .toggle-switch .toggle-label {
   font-size: 0.85rem;
@@ -705,6 +721,11 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
   transform: translateX(16px);
 }
 
+.toggle-switch input:checked + .slider:not(.flag):not(.purple)::before {
+  transform: translateX(16px);
+}
+
+
 .right-panels {
   position: fixed;
   top: 20px;
@@ -728,6 +749,45 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
   height: 600px;
   min-height: 150px;
 }
+
+/* Nur TLDR-Slider (ohne zusätzliche Klassen) wird grün */
+.toggle-switch input:checked + .slider:not(.flag):not(.purple) {
+  background-color: #22ff00;
+}
+
+/* Alle anderen speziellen Slider behalten ihr Styling */
+.toggle-switch input:checked + .slider.purple {
+  background-color: #8e44ad;
+}
+
+.toggle-switch .slider.flag {
+  background-color: #ccc; /* neutraler Hintergrund */
+}
+
+.toggle-switch .slider.flag::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  border-radius: 50%;
+  background-size: cover;
+  transition: 0.2s;
+}
+
+/* Wenn unchecked, englische Flagge */
+.toggle-switch input:not(:checked) + .slider.flag::before {
+  background-image: url('https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg');
+}
+
+/* Wenn checked, deutsche Flagge */
+.toggle-switch input:checked + .slider.flag::before {
+  background-image: url('https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg');
+  transform: translateX(16px);
+}
+
+
 
 
 

@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, inject, type Ref } fr
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
+import {summaryPrompts} from "@/nodes/prompts.ts";
 
 /* ----------------------
    Typen / Interfaces
@@ -40,44 +41,18 @@ const styleTemplates = inject<Ref<StyleTemplate[]>>('styleTemplates', ref([]))!
 
 // selected template initialized from node data (props is available)
 const selectedTemplate = ref<string | null>(props.data?.templateName ?? null)
-
+const language = inject<Ref<'en' | 'de'>>('language')!
 const NODE_LABEL = 'Summarize'
-const BASE_PROMPT =
-    "You are a concise academic assistant. Use the user's preferred style template if provided. Output only LaTeX-safe prose, suitable for inclusion in a paragraph. Respond strictly with JSON containing a single string property named 'paraphrase'."
-
-const RESPONSE_FORMAT = {
-  type: 'json_schema',
-  json_schema: {
-    name: 'paraphrase_response',
-    schema: {
-      type: 'object',
-      properties: {
-        paraphrase: { type: 'string' },  // statt summary
-      },
-      required: ['paraphrase'],
-      additionalProperties: false,
-    },
-  },
-} as const
-
-
-/* ----------------------
-   Vue Flow
-   ---------------------- */
 const { edges, nodes, updateNodeData } = useVueFlow()
-
 const label = computed(() => props.data?.label ?? NODE_LABEL)
 const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle')
 const summary = ref(props.data?.value ?? '')
 const error = ref<string | null>(props.data?.error ?? null)
-
 const nodeRef = ref<HTMLElement | null>(null)
 let resizeObs: ResizeObserver | null = null
 let resizeRaf: number | null = null
 
-/* incoming edges */
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
-
 const inputCitations = computed(() =>
     incomingEdges.value.flatMap((edge) => readNodeCitations(edge.source)),
 )
@@ -129,22 +104,7 @@ function pushNodeData(patch: Partial<SummaryNodeData>) {
   updateNodeData(props.id, { ...(props.data ?? {}), ...patch })
 }
 
-function buildBasePrompt(template?: StyleTemplate): string {
-  if (!template) {
-    return `You are a concise academic assistant. Rewrite the text. Output only LaTeX-safe prose but do not include LaTeX-specific commands. Respond strictly with JSON containing a single string property named 'paraphrase'.`
-  }
 
-  let nWords = template.sectionLength
-  if (nWords === 0) {
-    const exampleText = template.emphasizePoints ?? ''
-    nWords = exampleText.trim().split(/\s+/).length
-  }
-
-  return `You are a concise academic assistant. Use the user's preferred style template if provided.
-Paraphrase the following text and ensure it has at least ${nWords} sentences.
-If necessary, expand the content naturally to reach at least ${nWords} sentences.
-Output only LaTeX-safe prose suitable for inclusion in a paragraph. Respond strictly with JSON containing a single string property named 'paraphrase'.`
-  }
 
 
 function resetState() {
@@ -161,9 +121,9 @@ function schedule(force: boolean) {
   }, force ? 0 : 200)
 }
 
+
 async function queueSummary(force: boolean) {
   const text = inputText.value.trim()
-
   if (!text) {
     requestToken += 1
     lastKey = ''
@@ -172,9 +132,7 @@ async function queueSummary(force: boolean) {
   }
 
   const key = `${text}:::${selectedTemplate.value ?? 'none'}`
-  if (!force && key === lastKey && status.value !== 'error') {
-    return
-  }
+  if (!force && key === lastKey && status.value !== 'error') return
 
   const token = ++requestToken
   lastKey = key
@@ -184,15 +142,27 @@ async function queueSummary(force: boolean) {
   pushNodeData({ value: '', status: 'queued', error: null })
 
   const tpl = styleTemplates.value.find((t) => t.templateName === selectedTemplate.value)
-  const sys = buildBasePrompt(tpl)
-  const user = buildUserPrompt(inputText.value)
+  const lang = language.value
 
+  // BasePrompt aus prompts.ts
+  const sys = summaryPrompts[lang].basePrompt
+
+  // UserPrompt aus prompts.ts + Template-Infos
+  let user = summaryPrompts[lang].userPromptIntro + '\n\n' + text
+  if (tpl) {
+    const nSentences = tpl.sectionLength || countSentences(tpl.emphasizePoints || '')
+    user =
+        `${summaryPrompts[lang].templateToneIntro}\nTarget Audience: ${tpl.tone}\n` +
+        `${summaryPrompts[lang].templateSentenceCount.replace('{{n}}', nSentences.toString())}\n` +
+        `${summaryPrompts[lang].templateExamplesIntro}\n${tpl.emphasizePoints}\n\n` +
+        summaryPrompts[lang].userPromptIntro + '\n\n' + text
+  }
 
   try {
     const result = await enqueueLlmJob({
       sys,
       user,
-      responseFormat: RESPONSE_FORMAT,
+      responseFormat: summaryPrompts[lang].responseFormat,
       onStart: () => {
         if (token !== requestToken) return
         status.value = 'processing'
@@ -216,6 +186,8 @@ async function queueSummary(force: boolean) {
     pushNodeData({ value: '', status: 'error', error: message, citations: inputCitations.value })
   }
 }
+
+
 
 /* ----------------------
    watchers
@@ -245,34 +217,6 @@ function countSentences(s: string): number {
   return (s.match(/[^.!?]+[.!?]+/g) || []).length;
 }
 
-function buildUserPrompt(text: string): string {
-  const tpl = styleTemplates.value.find((t) => t.templateName === selectedTemplate.value)
-  let styleInfo = ''
-
-  if (tpl) {
-    // Tone immer einfügen
-    styleInfo += `Use the following style template precisely:\nTarget Audience: ${tpl.tone}\n`
-
-    // Paragraph length bestimmen
-    let nWords = tpl.sectionLength;
-    if (nWords === 0) {
-      // Wörter im Beispiel zählen
-      const exampleText = tpl.emphasizePoints ?? "";
-      nWords = countSentences(exampleText);
-    }
-
-    styleInfo += `Paraphrase in exactly ${nWords} sentences.\n`
-    styleInfo += `Examples:\n${tpl.emphasizePoints}\n\n`
-  }
-
-  return `${styleInfo}Paraphrase the following text:\n\n${text}`
-}
-
-
-
-/* ----------------------
-   helpers for parsing LLM output
-   ---------------------- */
 function extractSummary(message: string, response: unknown): string {
   const raw = (message || '').trim()
   if (!raw) return ''

@@ -1,25 +1,14 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {computed, onBeforeUnmount, onMounted, type Ref, ref, watch} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
+import { grammarPrompts } from '@/nodes/prompts'
+import { inject } from 'vue'
 
 
 const NODE_LABEL = 'Grammar Check'
-const BASE_PROMPT =
-    'You are a concise academic writing assistant.' +
-    'Task: Correct grammar and spelling in a single sentence.' +
-    'Do NOT change word order, add new content, or remove existing content.' +
-    'Fix only grammatical and spelling mistakes.' +
-    'Now process the following input and respond strictly with JSON containing one string property grammar.'
 
-const RESPONSE_FORMAT = {
-  type: 'json_schema',
-  json_schema: {
-    name: 'grammar_response',
-    schema: { type: 'object', properties: { grammar: { type: 'string' } }, required: ['grammar'], additionalProperties: false },
-  },
-} as const
 
 type GrammarStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
 
@@ -35,7 +24,7 @@ interface GrammarNodeData {
 
 const props = defineProps<NodeProps<GrammarNodeData>>()
 const { edges, nodes, updateNodeData } = useVueFlow()
-
+const language = inject<Ref<'en' | 'de'>>('language')!
 const label = computed(() => props.data?.label ?? NODE_LABEL)
 const status = ref<GrammarStatus>((props.data?.status as GrammarStatus) ?? 'idle')
 const grammar = ref(props.data?.value ?? '')
@@ -45,6 +34,10 @@ let resizeObs: ResizeObserver | null = null
 let resizeRaf: number | null = null
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 
+
+function getPrompts() {
+  return grammarPrompts[language.value]
+}
 
 function readNodeText(nodeId: string): string {
   const sourceNode = nodes.value.find(n => n.id === nodeId)
@@ -146,15 +139,16 @@ function splitSentences(tokens: { type: 'text' | 'latex'; value: string }[]) {
 // LLM nur auf Sätze anwenden, LaTeX unverändert lassen
 async function correctSentences(
     tokens: { type: 'sentence' | 'latex'; value: string }[]
-): Promise<{ type: 'sentence' | 'latex'; value: string }[]> {
+) {
   const output: { type: 'sentence' | 'latex'; value: string }[] = []
+  const { basePrompt, responseFormat } = getPrompts()
 
   for (const t of tokens) {
     if (t.type === 'sentence') {
       const result = await enqueueLlmJob({
-        sys: BASE_PROMPT,
+        sys: basePrompt,
         user: t.value,
-        responseFormat: RESPONSE_FORMAT,
+        responseFormat,
         onStart: () => {}
       })
 
@@ -168,13 +162,13 @@ async function correctSentences(
 
       output.push({ type: 'sentence', value: corrected })
     } else {
-      // LaTeX unverändert weitergeben
       output.push({ type: 'latex', value: t.value })
     }
   }
 
   return output
 }
+
 
 
 // Alles wieder zusammenfügen
@@ -278,6 +272,15 @@ onMounted(() => {
 
   resizeObs.observe(nodeRef.value)
 })
+
+
+watch(language, () => {
+  if (status.value === 'done') {
+    schedule(true) // erzwingt erneute Korrektur in neuer Sprache
+  }
+})
+
+
 </script>
 
 
