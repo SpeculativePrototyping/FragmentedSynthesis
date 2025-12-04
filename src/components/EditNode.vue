@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, watch, watchEffect} from 'vue'
+import {computed, inject, onBeforeUnmount, onMounted, type Ref, ref, watch, watchEffect, nextTick} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
 import '../styles/docNodes.css'
@@ -14,30 +14,74 @@ interface EditNodeData {
   value?: string
   diff?: DiffSegment[]
   citations?: string[]
+  figures?: string[]
   label?: string
   width?: number
   height?: number
 }
 
+interface BibEntry {
+  id: string
+  type: string
+  fields: Record<string, string>
+}
+
+interface ImageCacheEntry {
+  base64: string
+  refLabel: string
+}
+type ImageCache = Record<string, ImageCacheEntry>
+
 const props = defineProps<NodeProps<EditNodeData>>()
 const { nodes, edges, updateNodeData, removeEdges, updateNodeInternals } = useVueFlow()
-
-// Local state we expose through the node
 const editedText = ref(props.data?.value ?? '')
 const originalText = ref(props.data?.original ?? '')
 const hasManualEdit = ref(Boolean(props.data?.value && props.data?.value !== props.data?.original))
 const conflict = ref(false)
+const availableSources = computed(() => bibliography.value)
+const textAreaRef = ref<HTMLTextAreaElement | null>(null)
 let lastSnapshot = ''
 const nodeRef = ref<HTMLElement | null>(null)
 let resizeObs: ResizeObserver | null = null
 let resizeRaf: number | null = null
-
-// Edit node only supports a single input edge; grab it reactively
+const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
+const searchQuery = ref('')
+const showSearch = ref(false)
+const COMPLETE_CITATION_REGEX = /~\\cite\{([^\}]+)\}(?=\s|$)/g
+const searchFigureQuery = ref('')
+const showFigureSearch = ref(false)
+const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
+const imageCache = inject<Ref<ImageCache>>('imageCache')!
 const incomingEdge = computed(() => edges.value.find((edge) => edge.target === props.id))
 const incomingCitations = computed(() => {
   const edge = incomingEdge.value
   if (!edge) return []
   return readNodeCitations(edge.source)
+})
+
+const invalidCitations = computed(() => {
+  if (!props.data?.citations) return new Set<string>();
+  const bibKeys = new Set(bibliography.value.map(entry => entry.id));
+  return new Set(props.data.citations.filter(key => !bibKeys.has(key)));
+});
+
+const filteredSources = computed(() => {
+  if (!searchQuery.value) return availableSources.value
+  const query = searchQuery.value.toLowerCase()
+  return availableSources.value.filter(entry =>
+      (entry.fields.author ?? '').toLowerCase().includes(query) ||
+      (entry.fields.title ?? '').toLowerCase().includes(query) ||
+      entry.id.toLowerCase().includes(query)
+  )
+})
+
+const filteredFigures = computed(() => {
+  const q = searchFigureQuery.value.toLowerCase()
+  if (!q) return Object.entries(imageCache.value)
+
+  return Object.entries(imageCache.value).filter(([key, img]) =>
+      img.refLabel.toLowerCase().includes(q)
+  )
 })
 
 /**
@@ -59,6 +103,108 @@ function readNodeCitations(nodeId: string): string[] {
   const c = data.citations
   return Array.isArray(c) ? c as string[] : []
 }
+
+function updateCursorPosition() {
+  const el = textAreaRef.value
+  if (el) cursorPos.value = { start: el.selectionStart, end: el.selectionEnd }
+}
+
+function addCitationByKey(key: string) {
+  const citationText = `~\\cite{${key}}`
+  const { start, end } = cursorPos.value
+  if (!textAreaRef.value || start == null) {
+    editedText.value += citationText
+  } else {
+    editedText.value = editedText.value.slice(0, start) + citationText + editedText.value.slice(end)
+    nextTick(() => {
+      textAreaRef.value!.focus()
+      textAreaRef.value!.selectionStart = textAreaRef.value!.selectionEnd = start + citationText.length
+    })
+  }
+
+  const citations = props.data.citations ? [...props.data.citations] : []
+  if (!citations.includes(key)) citations.push(key)
+  updateNodeData(props.id, { ...props.data, citations })
+
+  searchQuery.value = ''
+  showSearch.value = false
+}
+
+function removeCitation(key: string) {
+  const citations = props.data.citations ? [...props.data.citations] : []
+  const newCitations = citations.filter(c => c !== key)
+  const regex = new RegExp(`~\\\\cite\\{${key}\\}`, 'g')
+  editedText.value = editedText.value.replace(regex, '').replace(/\s{2,}/g, ' ').trim()
+  updateNodeData(props.id, { ...props.data, citations: newCitations, value: editedText.value })
+}
+
+function reinsertCitation(key: string) {
+  addCitationByKey(key)
+}
+
+function addFigureReferenceByKey(imageName: string) {
+  const img = imageCache.value[imageName]
+  if (!img) return
+  const insertText = `~\\autoref{${img.refLabel}}`
+  const { start, end } = cursorPos.value
+
+  if (!textAreaRef.value || start == null) {
+    editedText.value += insertText
+  } else {
+    editedText.value = editedText.value.slice(0, start) + insertText + editedText.value.slice(end)
+    nextTick(() => {
+      textAreaRef.value!.focus()
+      textAreaRef.value!.selectionStart = textAreaRef.value!.selectionEnd = start + insertText.length
+    })
+  }
+
+  const figs = new Set(props.data.figures ?? [])
+  figs.add(imageName)
+  updateNodeData(props.id, { ...props.data, figures: [...figs] })
+}
+
+function removeFigureReference(imageName: string) {
+  const img = imageCache.value[imageName]
+  if (!img) return
+  const regex = new RegExp(`~\\\\autoref\\{${img.refLabel}\\}`, 'g')
+  editedText.value = editedText.value.replace(regex, '').replace(/\s{2,}/g, ' ').trim()
+
+  const figs = (props.data.figures ?? []).filter(f => f !== imageName)
+  updateNodeData(props.id, { ...props.data, figures: figs, value: editedText.value })
+}
+
+function reinsertFigureReference(key: string) {
+  addFigureReferenceByKey(key)
+}
+
+// Auto-detect citations in text
+let citationTimer: number | undefined
+watch(editedText, (currentText) => {
+  window.clearTimeout(citationTimer)
+  citationTimer = window.setTimeout(() => {
+    const found = new Set<string>()
+    for (const match of currentText.matchAll(COMPLETE_CITATION_REGEX)) {
+      const key = match[1].trim()
+      if (key) found.add(key)
+    }
+    updateNodeData(props.id, { ...props.data, citations: Array.from(found) })
+  }, 5000)
+})
+
+// Auto-detect figure references
+let figureTimer: number | undefined
+watch(editedText, (currentText) => {
+  window.clearTimeout(figureTimer)
+  figureTimer = window.setTimeout(() => {
+    const found = new Set<string>()
+    for (const [key, img] of Object.entries(imageCache.value)) {
+      if (!img.refLabel) continue
+      const regex = new RegExp(`~\\\\autoref\\{${img.refLabel}\\}`, 'g')
+      if (regex.test(currentText)) found.add(key)
+    }
+    updateNodeData(props.id, { ...props.data, figures: [...found] })
+  }, 5000)
+})
 
 
 // Whenever the incoming edge changes we sync the "original" starting text
@@ -249,11 +395,100 @@ onBeforeUnmount(() => {
       <label class="edit-node__label">
         <span>Text</span>
         <textarea
+            ref="textAreaRef"
             v-model="editedText"
             class="edit-node__textarea"
             rows="8"
+            @select="updateCursorPosition"
+            @keyup="updateCursorPosition"
+            @click="updateCursorPosition"
             placeholder="With this node, you can edit incoming text and citations from any other node or add citations to summarized text."
         ></textarea>
+
+
+
+        <div  class="citations-ui">
+          <div class="selected-citations">
+            <span
+               v-for="key in props.data.citations ?? []"
+                :key="key"
+                class="citation-tag"
+                :class="{ 'citation-unknown': invalidCitations.has(key) }"
+          >
+          <span @click="reinsertCitation(key)" style="cursor: pointer;">
+             {{ key }}
+          </span>
+          <button @click="removeCitation(key)">×</button>
+          </span>
+
+
+          </div>
+
+          <div class="selected-citations">
+    <span
+        v-for="key in props.data.figures ?? []"
+        :key="key"
+        class="figure-tag"
+        @click="reinsertFigureReference(key)"
+    >
+      {{ imageCache[key].refLabel }}
+      <button class="remove-btn" @click.stop="removeFigureReference(key)">×</button>
+    </span>
+          </div>
+
+          <button @click="showSearch = !showSearch" class="citation-add-btn">
+            + Add New Citation
+          </button>
+          <div v-if="showSearch" class="citation-search">
+            <input
+                v-model="searchQuery"
+                class="citation-search-input"
+                placeholder="Search references..."
+            />
+            <ul class="citation-search-list" @wheel.stop>
+              <li v-for="entry in filteredSources" :key="entry.id" @click="addCitationByKey(entry.id)">
+                <span class="key">{{ entry.id }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+
+        <div  class="figures-ui">
+          <!-- BUTTON -->
+          <button class="citation-add-btn" @click="showFigureSearch = !showFigureSearch">
+            + Add Figure Reference
+          </button>
+
+          <!-- SEARCH DROPDOWN -->
+          <div v-if="showFigureSearch" class="citation-search">
+            <input
+                v-model="searchFigureQuery"
+                placeholder="Search figures..."
+                class="citation-search-input"
+            />
+
+            <ul class="citation-search-list" @wheel.stop>
+              <li
+                  v-for="([key, img]) in filteredFigures"
+                  :key="key"
+                  @click="addFigureReferenceByKey(key)"
+              >
+                <img :src="img.base64" width="40" />
+                <strong>{{ img.refLabel }}</strong> ({{ key }})
+              </li>
+            </ul>
+          </div>
+        </div>
+
+
+
+
+
+
+
+
+
       </label>
 
       <div class="edit-node__actions">
@@ -288,12 +523,9 @@ onBeforeUnmount(() => {
 }
 
 .edit-node__textarea {
-  width: 260px;
-  height: 180px;
-  min-width:260px;
-  min-height: 180px;
-  max-width: 480px;
-  max-height: 480px;
+  width: 600px;
+  min-width: 260px;
+  height: 100px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.15);
   border-radius: 10px;
@@ -335,5 +567,156 @@ onBeforeUnmount(() => {
 .edit-node__reset:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.citation-item input {
+  padding: 10px 12px;
+  border: 1px solid rgba(15,23,42,.15);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  width: 100%;
+}
+
+.citation-item input:focus {
+  outline: 2px solid rgba(99,102,241,.45);
+  border-color: rgba(99,102,241,.45);
+}
+
+.citation-item button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+.citation-item button:hover {
+  background: #eee;
+}
+
+.citations-ui {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.selected-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.citation-tag {
+  background: #e0e7ff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.citation-unknown {
+  background-color: #fca5a5; /* Hellrot */
+  border: 1px solid #f87171;
+}
+
+.citation-tag button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.citation-add-btn {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  padding: 8px;
+  cursor: pointer;
+
+}
+
+.citation-add-btn:hover {
+  background: #eee;
+}
+
+.citation-search-input {
+  width: 100%;
+  height: 35px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(15,23,42,.15);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.citation-search-list {
+  max-height: 160px;
+  min-height: 35px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.15);
+  border-radius: 6px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.citation-search-list li {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  width: 100%;
+  cursor: pointer;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.citation-search-list li:hover {
+  background: #eee;
+}
+
+.citation-search-list li span.key {
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.citation-search-list li span.title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figure-tag {
+  background: #facc15;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.figure-search-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  cursor: pointer;
 }
 </style>
