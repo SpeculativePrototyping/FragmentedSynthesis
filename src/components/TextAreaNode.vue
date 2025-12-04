@@ -433,28 +433,24 @@ watch(language, () => {
 <template>
 
   <NodeToolbar>
+    <div class="toolbar-buttons">
+      <label class="toggle-switch" title="Show a short summary (TLDR).">
+        <input type="checkbox" v-model="isCompact" />
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">TLDR</span>
+    </div>
   </NodeToolbar>
 
   <div class="text-node doc-node node-wrapper" ref="nodeRef">
-
-    <div class="node-hover-toggle">
-      <label class="toggle-switch" title="Shrinks the node and shows a short summary of your input for better visibility.">
-        <input type="checkbox" v-model="isCompact"/>
-        <span class="slider"></span>
-      </label>
-      <span
-          class="toggle-label"
-          title="Shrinks the node and shows a short summary of your input for better visibility.">
-            TLDR
-          </span>
-    </div>
-
     <header class="doc-node__header">
-      <strong v-if="!isCompact">{{ props.data?.label ?? 'Text' }}</strong>
-      <span class="doc-node__hint">{{ statusLabel }}</span>
+      <strong :class="{ 'compact-summary-text': isCompact }">
+        {{ isCompact ? (summary || 'Text Input Node') : (props.data?.label ?? 'Text Node') }}
+      </strong>
+      <span class="doc-node__hint" v-if="!isCompact">{{ statusLabel }}</span>
     </header>
 
-    <section class="doc-node__body">
+    <section class="doc-node__body" v-if="!isCompact">
       <textarea
           ref="textAreaRef"
           v-if="!isCompact"
@@ -569,18 +565,41 @@ watch(language, () => {
   flex-direction: column;
   resize: none;
   height: auto;
+  width: auto;
+}
+
+
+
+.compact-summary-text {
+  font-size: 0.75rem;  /* kleiner als normale Schrift */
+  line-height: 1.0;
+  max-width: 600px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
 }
 
 
 .doc-node__body {
   display: flex;
-  height: 100%;
 }
 
 .text-node__textarea {
-  min-width: 260px;
+  min-width: 350px;
   min-height: 180px;
-  width: 600px;
   margin: 0 auto;
   min-height: 100px;
   height: 100px;

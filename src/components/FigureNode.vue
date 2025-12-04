@@ -2,6 +2,7 @@
 import {ref, computed, watch, inject, type Ref, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
+import {NodeToolbar} from "@vue-flow/node-toolbar";
 
 interface BibEntry {
   id: string
@@ -242,22 +243,25 @@ watch(latexLabel, (currentLabel) => {
 
 
 <template>
-  <div class="text-node doc-node node-wrapper" ref="nodeRef">
-    <!-- TLDR toggle -->
-    <div class="node-hover-toggle">
+
+  <NodeToolbar>
+    <div class="toolbar-buttons">
       <label class="toggle-switch" title="Compact view / TLDR">
         <input type="checkbox" v-model="isCompact"/>
         <span class="slider"></span>
       </label>
       <span class="toggle-label">TLDR</span>
     </div>
+  </NodeToolbar>
 
+  <div class="text-node doc-node node-wrapper" ref="nodeRef">
     <header class="doc-node__header">
-      <strong>{{ props.data?.label ?? 'Figure' }}</strong>
+      <strong>
+        {{ isCompact ? "📷  " + latexLabel || 'Figure Node' : props.data?.label ?? 'Figure Node' }}
+      </strong>
     </header>
 
-    <section class="doc-node__body">
-      <!-- File upload, nur sichtbar wenn kein Bild vorhanden -->
+    <section class="doc-node__body" v-if="!isCompact">
       <input
           v-if="!props.data?.image"
           type="file"
@@ -267,15 +271,11 @@ watch(latexLabel, (currentLabel) => {
       />
 
       <!-- Bildvorschau / kompakte Ansicht -->
-      <div v-if="props.data?.imageName && !isCompact" class="image-preview">
+      <div v-if="props.data?.imageName" class="image-preview">
         <img :src="imageCache?.[props.data.imageName]?.base64" alt="Uploaded figure" />
         <p>{{ props.data.imageName }}</p>
       </div>
 
-
-      <div v-else-if="isCompact">
-        <p>{{ props.data?.imageName ?? 'No file selected' }}</p>
-      </div>
 
       <input
           type="text"
@@ -285,7 +285,7 @@ watch(latexLabel, (currentLabel) => {
       />
 
       <!-- Citations UI -->
-      <div v-if="!isCompact" class="citations-ui">
+      <div class="citations-ui">
         <div class="selected-citations">
           <span
               v-for="key in props.data.citations ?? []"
@@ -331,6 +331,31 @@ watch(latexLabel, (currentLabel) => {
   width: 650px;
   height: 100%;
 }
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.doc-node__header strong {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;      /* verhindert Zeilenumbruch */
+  overflow: hidden;         /* überschüssigen Text ausblenden */
+  text-overflow: ellipsis;  /* "..." am Ende */
+}
+
 
 .doc-node__body {
   display: flex;
