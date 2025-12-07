@@ -8,6 +8,7 @@ import type { Ref } from 'vue'
 import { useDemo } from './demo'
 import type {BibEntry, Language} from "@/App.vue";
 import {parseLatexToNodesAndEdges} from '@/api/latexParser'
+import JSZip from 'jszip'
 
 import FigurePanelContent from "@/FigurePanelContent.vue";
 import ReferencePanelContent from "@/ReferencePanelContent.vue";
@@ -20,9 +21,15 @@ interface StyleTemplate {
   emphasizePoints: string
 }
 
+interface ZipFileEntry {
+  path: string
+  type: 'tex' | 'bib' | 'image' | 'other'
+  content: string | ArrayBuffer
+}
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
+const updateBibliography = inject<(newBib: BibEntry[]) => void>('updateBibliography')!
 const { nodes, edges, setNodes, setEdges, screenToFlowCoordinate, addNodes, dimensions, toObject, fromObject} = useVueFlow()
 const availableTemplates = computed(() => nodeTemplates)
 const TLDR = inject<Ref<boolean>>('TLDR')!
@@ -34,6 +41,9 @@ const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
 const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
 const language = inject<Ref<'en' | 'de'>>('language')!
 const languageLabel = computed(() => language.value.toUpperCase())
+const uploadedFiles = ref<ZipFileEntry[]>([])
+const selectedMainTex = ref<string | null>(null)
+const showLatexFilePicker = ref(false)
 
 
 const { startDemo, skipDemo, nextStep } = useDemo({
@@ -153,24 +163,100 @@ function UploadFile() {
   showIntro.value = false
 }
 
-function onLatexFileUpload() {
-  const file = fileInputRef.value?.files?.[0]
-  if (!file) return
+async function onLatexZipUpload(file: File) {
+  if (!file || !file.name.endsWith('.zip')) return
 
   const reader = new FileReader()
 
   reader.onload = async () => {
-    const content = reader.result as string
-    const { nodes: newNodes, edges: newEdges } = parseLatexToNodesAndEdges(content)
+    const arrayBuffer = reader.result as ArrayBuffer
+    const zip = await JSZip.loadAsync(arrayBuffer)
 
-    addNodes(newNodes)         // Nodes hinzufügen
-    setEdges([...edges.value, ...newEdges]) // Edges hinzufügen
-    onAutoLayout()             // Layout anpassen
+    const files: ZipFileEntry[] = []
+
+    async function processZip(zip: JSZip) {
+      for (const entry of Object.values(zip.files)) {
+        if (entry.dir) continue
+
+        if (entry.name.endsWith('.tex')) {
+          files.push({
+            path: entry.name,
+            type: 'tex',
+            content: await entry.async('string')
+          })
+        } else if (entry.name.endsWith('.bib')) {
+          files.push({
+            path: entry.name,
+            type: 'bib',
+            content: await entry.async('string')
+          })
+        } else if (/\.(png|jpe?g|gif|svg|pdf)$/i.test(entry.name)) {
+          const base64 = await entry.async('base64')
+          const ext = entry.name.split('.').pop() || 'png'
+          files.push({
+            path: entry.name,
+            type: 'image',
+            content: `data:image/${ext};base64,${base64}`
+          })
+        } else {
+          files.push({
+            path: entry.name,
+            type: 'other',
+            content: await entry.async('string')
+          })
+        }
+      }
+    }
+
+    await processZip(zip)
+
+    // ✅ HIER der entscheidende Schritt
+    uploadedFiles.value = files
+    selectedMainTex.value = null
+    showLatexFilePicker.value = true
     showIntro.value = false
   }
 
-  reader.readAsText(file)
+  reader.readAsArrayBuffer(file)
 }
+
+
+function importLatexProject() {
+  if (!selectedMainTex.value) return
+
+  const mainFile = uploadedFiles.value.find(
+      f => f.path === selectedMainTex.value
+  )
+
+  if (!mainFile || typeof mainFile.content !== 'string') return
+
+  const { nodes: parsedNodes, edges: parsedEdges } =
+      parseLatexToNodesAndEdges(
+          uploadedFiles.value,
+          selectedMainTex.value,
+          (newBib) => {
+            const unique = newBib.filter(
+                e => !bibliography.value.some(b => b.id === e.id)
+            )
+            bibliography.value.push(...unique)
+          }
+      )
+
+  parsedNodes.forEach((node, i) => {
+    node.position = { x: 50, y: i * 50 }
+  })
+
+  setNodes(parsedNodes)
+  setEdges(parsedEdges)
+
+  showLatexFilePicker.value = false
+}
+
+
+
+
+
+
 
 function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
   if (activeSidebar.value === panel) {
@@ -195,22 +281,70 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
       <h1>👋 Hey there! Looks like you're new here.</h1>
       <p>What would you like to do?</p>
       <div class="demo-buttons">
-        <label class="skip-button upload-label" @click="handleSkipDemo">Start New Project</label>
+        <label class="skip-button upload-label" @click="handleSkipDemo">Start Empty Project</label>
 
         <label class="skip-button upload-label" @change="onRestoreFromFile" @click="UploadFile">
           Upload Project from File
           <input type="file" accept=".json"/>
         </label>
 
-        <label class="skip-button upload-label" @change="onLatexFileUpload">
-          Upload LaTeX-File
-          <input type="file" accept=".tex" ref="fileInputRef"/>
+        <label class="skip-button upload-label">
+          Upload LaTeX-File (.zip)
+          <input
+              type="file"
+              accept=".zip"
+              ref="fileInputRef"
+              @change="(e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) onLatexZipUpload(file);
+    }"
+          />
         </label>
 
         <label class="start-button upload-label" @click="handleStartDemo" >🎬 Start Tour</label>
       </div>
     </div>
   </div>
+
+  <!-- Latex Filepicker -->
+
+  <div v-if="showLatexFilePicker" class="latex-overlay">
+    <div class="latex-box">
+      <h1>📄 Select main LaTeX file</h1>
+      <p>Please choose the entry point of your project to begin with the import.</p>
+
+      <ul class="latex-file-list">
+        <li v-for="file in uploadedFiles" :key="file.path">
+          <label v-if="file.type === 'tex'" class="latex-file">
+            <input
+                type="radio"
+                name="mainTex"
+                :value="file.path"
+                v-model="selectedMainTex"
+            />
+            📄 {{ file.path }}
+          </label>
+
+          <span v-else class="latex-file muted">
+          {{ file.type === 'image' ? '🖼' : '📦' }} {{ file.path }}
+        </span>
+        </li>
+      </ul>
+
+      <button
+          class="start-button"
+          :disabled="!selectedMainTex"
+          @click="importLatexProject"
+      >
+        🚀 Import project
+      </button>
+    </div>
+  </div>
+
+
+
+
+
 
   <!-- BOTTOM DEMO CONTROLS -->
   <div v-if="demoActive" class="demo-controls">
@@ -254,7 +388,9 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
       <div class="toggle-switches">
         <div class="toggle-switch" v-for="panel in ['bibliography','figures','style']" :key="panel">
           <label>
-            <input type="checkbox" :checked="activeSidebar === panel" @change="togglePanel(panel)" />
+            <input type="checkbox"
+                   :checked="activeSidebar === panel"
+                   @change="() => togglePanel(panel as 'bibliography' | 'figures' | 'style')" />
             <span class="slider purple"></span>
           </label>
           <span class="toggle-label">
@@ -785,6 +921,117 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
 .toggle-switch input:checked + .slider.flag::before {
   background-image: url('https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg');
   transform: translateX(16px);
+}
+
+
+
+/* ===============================
+   LATEX FILE PICKER OVERLAY
+   =============================== */
+
+.latex-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000; /* WICHTIG: höher als VueFlow & Panels */
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.latex-box {
+  background: rgba(30, 30, 30, 0.95);
+  color: white;
+  padding: 2rem 3rem;
+  border-radius: 20px;
+  max-width: 700px;
+  width: 100%;
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Rainbow border, same as demo */
+.latex-box::before {
+  pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(
+      90deg,
+      red,
+      orange,
+      yellow,
+      lime,
+      cyan,
+      blue,
+      magenta,
+      red
+  );
+  background-size: 400%;
+  animation: rainbowBorder 3s linear infinite;
+  -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.latex-box h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.latex-box p {
+  opacity: 0.8;
+  margin-bottom: 1.5rem;
+}
+
+.latex-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 1.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.latex-file {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.latex-file:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.latex-file input {
+  accent-color: #00ff88;
+}
+
+.latex-file.muted {
+  opacity: 0.4;
+  padding-left: 1.8rem;
+  pointer-events: none;
+}
+
+/* reuse existing button */
+.latex-box .start-button {
+  margin-top: 1rem;
+}
+
+.latex-box button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 

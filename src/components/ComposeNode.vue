@@ -158,7 +158,7 @@ const handleRows = computed<HandleRow[]>(() => {
     }
   })
 
-  // zusätzlicher leerer Handle
+  // Zusätzlicher leerer Handle für neue Verbindungen
   rows.push({
     handleId: `child-${rows.length}`,
     connected: false,
@@ -168,6 +168,7 @@ const handleRows = computed<HandleRow[]>(() => {
 
   return rows
 })
+
 
 
 let lastJson = ''

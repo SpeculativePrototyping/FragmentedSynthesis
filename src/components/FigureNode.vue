@@ -30,6 +30,20 @@ const { updateNodeData } = useVueFlow()
 
 const refLabel = ref(props.data?.refLabel ?? randomRefLabel())
 
+
+const imageSrc = computed(() => {
+  // falls direkte Base64 im Node gespeichert ist
+  if (props.data?.image) return props.data.image as string
+
+  // ansonsten das zentrale imageCache-Objekt verwenden (bestehender Ansatz)
+  const name = props.data?.imageName
+  if (name && imageCache?.value?.[name]) return imageCache.value[name].base64
+
+  return undefined
+})
+
+
+
 function randomRefLabel(length = 5) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   let result = ''
@@ -139,6 +153,22 @@ watch(latexLabel, () => {
 
 })
 
+function scanCitationsFromLatexLabel() {
+  if (!props.data) return
+
+  const currentCitations = new Set<string>()
+  const matches = latexLabel.value.matchAll(COMPLETE_CITATION_REGEX)
+
+  for (const match of matches) {
+    const key = match[1].trim()
+    if (key) currentCitations.add(key)
+  }
+
+  if (currentCitations.size > 0) {
+    syncDataDownstream({ citations: Array.from(currentCitations) })
+  }
+}
+
 
 // File upload
 function onFileChange(event: Event) {
@@ -148,18 +178,23 @@ function onFileChange(event: Event) {
 
   const reader = new FileReader()
   reader.onload = () => {
-    // zufälligen eindeutigen Namen erzeugen
-    const randomName = `${crypto.randomUUID()}.${file.name.split('.').pop()}`
+    // alten Cache-Eintrag löschen, falls vorhanden
+    if (props.data?.imageName && imageCache.value[props.data.imageName]) {
+      delete imageCache.value[props.data.imageName]
+    }
+
+    // Cache-Key: refLabel + originaler Dateiname
+    const cacheKey = `${refLabel.value}-${file.name}`
 
     // Base64 zentral speichern
-    imageCache.value[randomName] = {
+    imageCache.value[cacheKey] = {
       base64: reader.result as string,
       refLabel: refLabel.value
     }
 
-    // Node nur den generierten Namen speichern
+    // Node speichert nur den Key
     syncDataDownstream({
-      imageName: randomName,
+      imageName: cacheKey,
       image: undefined // Base64 nicht im Node-State
     })
   }
@@ -237,6 +272,38 @@ watch(latexLabel, (currentLabel) => {
   }, 5000)
 })
 
+onMounted(() => {
+  // Wenn Node beim Laden schon ein Bild hat, in den Cache eintragen
+  if (props.data?.image && props.data.imageName && imageCache) {
+    imageCache.value[props.data.imageName] = {
+      base64: props.data.image,
+      refLabel: refLabel.value
+    }
+
+    // Optional: Node selbst speichert dann nur den Key
+    syncDataDownstream({ image: undefined })
+  }
+
+  // 2️⃣ Citation-Scan einmalig
+  scanCitationsFromLatexLabel()
+
+  // ResizeObserver wie gehabt
+  if (!nodeRef.value) return
+  resizeObs = new ResizeObserver(entries => {
+    const box = entries[0].contentRect
+    const width = Math.round(box.width)
+    const height = Math.round(box.height)
+    if (resizeRaf) cancelAnimationFrame(resizeRaf)
+    resizeRaf = requestAnimationFrame(() => {
+      if (
+          props.data?.width === width &&
+          props.data?.height === height
+      ) return
+      updateNodeData(props.id, { ...(props.data ?? {}), width, height })
+    })
+  })
+  resizeObs.observe(nodeRef.value)
+})
 
 
 </script>
@@ -270,10 +337,9 @@ watch(latexLabel, (currentLabel) => {
           class="citation-item-input"
       />
 
-      <!-- Bildvorschau / kompakte Ansicht -->
-      <div v-if="props.data?.imageName" class="image-preview">
-        <img :src="imageCache?.[props.data.imageName]?.base64" alt="Uploaded figure" />
-        <p>{{ props.data.imageName }}</p>
+      <div v-if="imageSrc" class="image-preview">
+        <img :src="imageSrc" alt="Uploaded figure" />
+        <p>{{ props.data.imageName ?? props.data.imageName }}</p>
       </div>
 
 

@@ -54,20 +54,23 @@ let resizeObs: ResizeObserver | null = null
 let resizeRaf: number | null = null
 
 const handleRows = computed<HandleRow[]>(() => {
-  const indices = incomingEdges.value.map((edge) => parseHandleIndex(edge.targetHandle))
+  // 1. Alle existierenden Edges auf Indices prüfen
+  const indices = incomingEdges.value.map(edge => parseHandleIndex(edge.targetHandle))
   const maxIndex = Math.max(-1, ...indices)
+
+  // 2. totalRows = maxIndex + 2 (alle existierenden + 1 leerer Handle)
   const totalRows = maxIndex + 2
 
   const rows: HandleRow[] = []
-  for (let index = 0; index < totalRows; index += 1) {
-    const matchingEdge = incomingEdges.value.find(
-        (edge) => parseHandleIndex(edge.targetHandle) === index,
-    )
+
+  for (let index = 0; index < totalRows; index++) {
+    const matchingEdge = incomingEdges.value.find(edge => parseHandleIndex(edge.targetHandle) === index)
+
     rows.push({
       handleId: `doc-${index}`,
       handleTop: `${((index + 0.5) / totalRows) * 100}%`,
-      connected: Boolean(matchingEdge),
-      preview: describeDoc(edgeToDoc(matchingEdge)),
+      connected: Boolean(matchingEdge), // sofort true bei vorhandener Verbindung
+      preview: matchingEdge ? describeDoc(edgeToDoc(matchingEdge)) : '',
     })
   }
 

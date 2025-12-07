@@ -127,9 +127,10 @@ export const nodeTemplates: NodeTemplate[] = [
     label: 'Figure Node',     // Name im Drag & Drop Menü
     category: 'text',         // oder 'utility'
     data: {
-      label: 'Figure Node',
-      image: '' as string,      // Base64-String des Bildes
-      citations: [] as string[], // Ausgewählte Referenzen
+      image: '' as string,        // fallback: inline base64 (optional)
+      imageName: '' as string,    // fallback: cache key
+      latexLabel: '' as string,   // caption/label
+      citations: [] as string[]
     }
   },
   {

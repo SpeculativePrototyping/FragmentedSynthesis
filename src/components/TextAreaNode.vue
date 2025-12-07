@@ -201,6 +201,36 @@ function updateCursorPosition() {
   }
 }
 
+function scanCitationsFromText() {
+  if (!props.data) return
+
+  // 🔹 Citations
+  const citations = new Set<string>()
+  const citationMatches = text.value.matchAll(COMPLETE_CITATION_REGEX)
+  for (const match of citationMatches) {
+    const key = match[1].trim()
+    if (key) citations.add(key)
+  }
+
+  // 🔹 Figures / Autorefs
+  const figures = new Set<string>()
+  for (const [imageName, img] of Object.entries(imageCache.value)) {
+    const label = img.refLabel
+    if (!label) continue
+    const regex = new RegExp(`~\\\\autoref\\{${label}\\}`, 'g')
+    if (regex.test(text.value)) {
+      figures.add(imageName)
+    }
+  }
+
+  updateNodeData(props.id, {
+    ...props.data,
+    citations: Array.from(citations),
+    figures: Array.from(figures),
+  })
+}
+
+
 function reinsertCitation(key: string) {
   const textarea = textAreaRef.value
   const citationText = `~\\cite{${key}}`
@@ -247,6 +277,10 @@ onMounted(() => {
   })
 
   resizeObs.observe(nodeRef.value)
+
+  // 🔹 Initial Scan von Text für importierte Nodes
+  scanCitationsFromText()
+
 })
 
 onBeforeUnmount(() => {
