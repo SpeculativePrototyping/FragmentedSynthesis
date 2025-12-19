@@ -247,7 +247,13 @@ export function parseLatexToNodesAndEdges(
             const imagePath = match[1]
             const caption = (match[2] ?? '').trim()
             const imgFile = files.find(f => f.path === imagePath && f.type === 'image')
-            const fileName = imgFile.path.split(/[/\\]/).pop() ?? imgFile.path
+            if (!imgFile) {
+                console.warn('Image not found:', imagePath)
+                continue
+            }
+
+            const fileName =
+                imgFile.path.split(/[/\\]/).pop() || imgFile.path
             if (imgFile && typeof imgFile.content === 'string') {
                 const figNode: Node = {
                     id: `figure-${idCounter++}`,
