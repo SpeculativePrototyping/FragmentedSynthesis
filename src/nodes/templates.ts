@@ -51,16 +51,7 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'concat',
-    label: 'Concat Node',
-    category: 'disabled',
-    data: {
-      label: 'Concat',
-      concatenated: '',
-    },
-  },
-  {
-    type: 'summary',
+    type: 'paraphrase',
     label: 'Paraphrase Node',
     category: 'llm',
     data: {
@@ -113,16 +104,6 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'referenceTracker',
-    label: 'Reference Tracker Node',
-    category: 'disabled',
-    data: {
-      label: 'Reference Tracker Node',
-      bibliography: [] as BibEntry[],          // optional default empty, Props aus App.vue überschreiben
-      updateBibliography: () => {},           // wird durch Props ersetzt
-    },
-  },
-  {
     type: 'figure',       // Vue Flow Component Type
     label: 'Figure Node',     // Name im Drag & Drop Menü
     category: 'text',         // oder 'utility'
@@ -142,18 +123,7 @@ export const nodeTemplates: NodeTemplate[] = [
       label: 'Steve',
       placeholder: 'This is your friendly tour guide!',
     },
-  },
-  {
-    type: 'figureTracker',      // VueFlow Component Type
-    label: 'Figure Tracker Node', // Name im Drag & Drop Menü
-    category: 'disabled',          // Utility Node
-    data: {
-      label: 'Figure Tracker Node',    // Default Label
-      // keine weiteren Props nötig, imageCache wird injectet
-    }
   }
-
-
 ]
 
 //function to help find the right component according to the type of a node

@@ -5,6 +5,7 @@ import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 import { grammarPrompts } from '@/nodes/prompts'
 import { inject } from 'vue'
+import {NodeToolbar} from "@vue-flow/node-toolbar";
 
 
 const NODE_LABEL = 'Grammar Check'
@@ -23,7 +24,7 @@ interface GrammarNodeData {
 }
 
 const props = defineProps<NodeProps<GrammarNodeData>>()
-const { edges, nodes, updateNodeData } = useVueFlow()
+const { edges, nodes, updateNodeData, removeNodes } = useVueFlow()
 const language = inject<Ref<'en' | 'de'>>('language')!
 const label = computed(() => props.data?.label ?? NODE_LABEL)
 const status = ref<GrammarStatus>((props.data?.status as GrammarStatus) ?? 'idle')
@@ -280,6 +281,9 @@ watch(language, () => {
   }
 })
 
+function deleteNode() {
+  removeNodes([props.id])
+}
 
 </script>
 
@@ -291,6 +295,13 @@ watch(language, () => {
 
 
 <template>
+  <NodeToolbar>
+    <div class="toolbar-buttons">
+      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+        🗑️
+      </button>
+    </div>
+  </NodeToolbar>
   <div class="grammar-node doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ label }}</strong>
@@ -384,4 +395,39 @@ watch(language, () => {
 .grammar-node__status--error {
   color: #dc2626;
 }
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.delete-node-btn {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
 </style>

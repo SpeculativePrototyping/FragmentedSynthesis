@@ -6,6 +6,7 @@ import { reviewPrompts } from '@/nodes/prompts'
 import { enqueueLlmJob } from '../api/llmQueue'
 
 import '../styles/docNodes.css'
+import {NodeToolbar} from "@vue-flow/node-toolbar";
 
 interface DiffSegment {
   type: 'equal' | 'insert' | 'delete'
@@ -36,7 +37,7 @@ interface ImageCacheEntry {
 type ImageCache = Record<string, ImageCacheEntry>
 
 const props = defineProps<NodeProps<EditNodeData>>()
-const { nodes, edges, updateNodeData, removeEdges, updateNodeInternals } = useVueFlow()
+const { nodes, edges, updateNodeData, removeEdges, removeNodes, updateNodeInternals } = useVueFlow()
 const editedText = ref(props.data?.value ?? '')
 const originalText = ref(props.data?.original ?? '')
 const hasManualEdit = ref(Boolean(props.data?.value && props.data?.value !== props.data?.original))
@@ -475,10 +476,20 @@ function refreshFromSource() {
 }
 
 
+function deleteNode() {
+  removeNodes([props.id])
+}
 
 </script>
 
 <template>
+  <NodeToolbar>
+    <div class="toolbar-buttons">
+      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+        🗑️
+      </button>
+    </div>
+  </NodeToolbar>
   <div class="edit-node doc-node" ref="nodeRef">
     <header class="doc-node__header" :class="{ 'doc-node__header-warning': conflict }">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
@@ -834,4 +845,39 @@ function refreshFromSource() {
   padding: 6px;
   cursor: pointer;
 }
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.delete-node-btn {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
 </style>

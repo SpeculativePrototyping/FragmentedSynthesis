@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, provide } from 'vue'
 import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
-import { VueFlow, addEdge } from '@vue-flow/core'
+import { VueFlow, addEdge, type EdgeMouseEvent } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
@@ -9,20 +9,21 @@ import {MiniMap} from "@vue-flow/minimap";
 
 
 //Import every node-component:
-import ConcatNode from './components/ConcatNode.vue'
 import TextAreaNode from './components/TextAreaNode.vue'
 import TextViewNode from './components/TextViewNode.vue'
-import SummaryNode from './components/SummaryNode.vue'
+import ParaphraseNode from './components/ParaphraseNode.vue'
 import ComposeNode from './components/ComposeNode.vue'
 import DocOutputNode from './components/DocOutputNode.vue'
 import EditNode from './components/EditNode.vue'
 import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
-import ReferenceTrackerNode from "@/components/ReferenceTrackerNode.vue";
 import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
-import FigureTrackerNode from "@/components/FigureTrackerNode.vue";
 
+interface EdgeMouseEvent {
+  edge: Edge
+  event: MouseEvent
+}
 
 export interface BibEntry {
   id: string
@@ -70,12 +71,51 @@ provide('setStyleTemplates', (newList) => {
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
 
+const edgeMenu = ref<{
+  visible: boolean
+  x: number
+  y: number
+  edge: Edge | null
+}>({
+  visible: false,
+  x: 0,
+  y: 0,
+  edge: null,
+})
+
+
 let nodeCounter = 0
+
+function onEdgeClick(event: EdgeMouseEvent) {
+  event.event.stopPropagation() // das eigentliche MouseEvent
+  const edge = event.edge
+
+  edgeMenu.value = {
+    visible: true,
+    x: event.event.clientX,
+    y: event.event.clientY,
+    edge,
+  }
+}
+
+function closeEdgeMenu() {
+  edgeMenu.value.visible = false
+}
 
 
 function onConnect(connection: Connection) {
-  edges.value = addEdge(connection, edges.value) as Edge[]
+  edges.value = addEdge(
+      {
+        ...connection,
+        animated: true,
+        style: { strokeWidth: 4 },
+        interactionWidth: 20,
+        markerEnd: { type: 'arrowclosed', color: '#000000' },
+      },
+      edges.value
+  ) as Edge[]
 }
+
 
 function onDrop(event: DragEvent) {
   const type = event.dataTransfer?.getData('node/type')
@@ -119,20 +159,98 @@ function onEdgeUpdate({ edge, connection }) {
   updateEdge(edge, connection)
 }
 
-watch(edges, (newEdges) => {
-  newEdges.forEach(edge => {
-    if (edge.animated === undefined) edge.animated = true
-    if (!edge.style) edge.style = {}
-    if (!edge.markerEnd) edge.markerEnd = { type: 'arrowclosed', color: '#000000' }
-    else {
-    }
-  })
-}, { deep: true, immediate: true })
+function deleteEdge() {
+  if (!edgeMenu.value.edge) return
+
+  edges.value = edges.value.filter(
+      e => e.id !== edgeMenu.value.edge!.id
+  )
+
+  closeEdgeMenu()
+}
+
+
+function insertNodeOnEdge(templateType: string) {
+  if (!edgeMenu.value.edge) return;
+  const edge = edgeMenu.value.edge;
+
+  const template = findNodeTemplate(templateType);
+  if (!template) return;
+
+  const sourceNode = nodes.value.find(n => n.id === edge.source);
+  const targetNode = nodes.value.find(n => n.id === edge.target);
+  if (!sourceNode || !targetNode) return;
+
+  // Mittige Position zwischen Source und Target
+  const newX = (sourceNode.position.x + targetNode.position.x) / 2;
+  const newY = (sourceNode.position.y + targetNode.position.y) / 2;
+
+  // Neue Node-ID
+  nodeCounter++;
+  const newNodeId = `node-${nodeCounter}`;
+
+  // Node aus Template kopieren
+  const newNode: Node = {
+    id: newNodeId,
+    type: template.type,
+    position: { x: newX, y: newY },
+    data: template.data ? { ...template.data } : { label: template.label },
+    dragHandle: '.doc-node__header'
+  };
+
+  addNodes([newNode]);
+
+  // Alte Edge löschen
+  edges.value = edges.value.filter(e => e.id !== edge.id);
+
+  // Default Handles definieren
+  const sourceHandle = 'output';
+  const targetHandle = 'input';
+
+  // Neue Edges erstellen
+  const newEdges: Edge[] = [
+    {
+      id: `edge-${edge.source}-${newNodeId}-${Date.now()}`,
+      source: edge.source,
+      target: newNodeId,
+      targetHandle,      // Target des neuen Nodes
+      animated: true,
+      style: { strokeWidth: 4 },
+      markerEnd: { type: 'arrowclosed', color: '#000000' },
+    },
+    {
+      id: `edge-${newNodeId}-${edge.target}-${Date.now()}`,
+      source: newNodeId,
+      sourceHandle,      // Source des neuen Nodes
+      target: edge.target,
+      animated: true,
+      style: { strokeWidth: 4 },
+      markerEnd: { type: 'arrowclosed', color: '#000000' },
+    },
+  ];
+
+  edges.value.push(...newEdges);
+
+  closeEdgeMenu();
+}
+
+
+
 
 </script>
 
 <template>
   <div style="width: 100%; height: 100vh">
+    <div
+        v-if="edgeMenu.visible"
+        class="edge-toolbar"
+        :style="{ top: `${edgeMenu.y}px`, left: `${edgeMenu.x}px` }"
+    >
+      <button class="delete-btn" @click="deleteEdge">🗑️</button>
+      <button @click="insertNodeOnEdge('edit')">Insert Edit Node</button>
+      <button @click="insertNodeOnEdge('paraphrase')">Insert Paraphrase Node</button>
+      <button @click="insertNodeOnEdge('grammar')">Insert Grammar Node</button>
+    </div>
     <VueFlow
         v-model:nodes="nodes"
         v-model:edges="edges"
@@ -141,20 +259,21 @@ watch(edges, (newEdges) => {
         @dragover.prevent
         :edgesUpdatable="true"
         @edge-update="onEdgeUpdate"
+        @edge-click="onEdgeClick"
+        @pane-click="closeEdgeMenu"
+
     >
       <SaveRestoreControls />
 
-      <template #node-concat="concatNodeProps">
-        <ConcatNode v-bind="concatNodeProps" />
-      </template>
+
       <template #node-textArea="textAreaProps">
         <TextAreaNode v-bind="textAreaProps" />
       </template>
       <template #node-textView="textViewProps">
         <TextViewNode v-bind="textViewProps" />
       </template>
-      <template #node-summary="summaryProps">
-        <SummaryNode v-bind="summaryProps" />
+      <template #node-paraphrase="paraphraseProps">
+        <ParaphraseNode v-bind="paraphraseProps" />
       </template>
       <template #node-compose="composeProps">
         <ComposeNode v-bind="composeProps" />
@@ -229,5 +348,47 @@ watch(edges, (newEdges) => {
   stroke: #000 !important;
   fill: #ff0000 !important; /* helles Gelb für Highlight */
 }
+
+.edge-toolbar {
+  position: fixed;
+  width: 100px;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.edge-toolbar button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: rgba(99, 102, 241, 0.3); /* dunkleres Lila */
+  color: #000000;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.edge-toolbar button:hover {
+  background-color: rgba(99, 102, 241, 0.5); /* etwas dunkler beim Hover */
+}
+
+/* Nur der Löschen-Button */
+.edge-toolbar .delete-btn {
+  background-color: #f87171; /* hellrot */
+}
+
+.edge-toolbar .delete-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot beim Hover */
+}
+
 
 </style>

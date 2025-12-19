@@ -7,6 +7,7 @@ import { renderToLatex } from '../api/docstruct'
 import '../styles/docNodes.css'
 import type {BibEntry} from "@/App.vue";
 import JSZip from "jszip"
+import {NodeToolbar} from "@vue-flow/node-toolbar";
 
 
 
@@ -44,7 +45,7 @@ type ImageCache = Record<string, ImageCacheEntry>
 let lastJson = ''
 
 const props = defineProps<NodeProps<DocOutputNodeData>>()
-const { nodes, edges, updateNodeInternals, removeEdges, updateNodeData } = useVueFlow()
+const { nodes, edges, updateNodeInternals, removeEdges, updateNodeData, removeNodes } = useVueFlow()
 const incomingEdges = computed(() => edges.value.filter((edge) => edge.target === props.id))
 const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))
 const outlineItemsWithBibliography = computed(() => [...outlineItems.value, ...bibliographyItems.value])
@@ -535,9 +536,20 @@ watchEffect(() => {
   updateNodeData(props.id, { ...props.data, json, value: outlineText.value })
 })
 
+function deleteNode() {
+  removeNodes([props.id])
+}
+
 </script>
 
 <template>
+  <NodeToolbar>
+    <div class="toolbar-buttons">
+      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+        🗑️
+      </button>
+    </div>
+  </NodeToolbar>
   <div class="doc-output doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
@@ -762,4 +774,39 @@ watchEffect(() => {
 .doc-output__level-btn:hover {
   background: rgba(79,70,229,0.2);
 }
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.delete-node-btn {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
 </style>

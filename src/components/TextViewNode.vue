@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
+import {NodeToolbar} from "@vue-flow/node-toolbar";
 
 interface TextViewNodeData {
   value?: string
@@ -12,7 +13,7 @@ interface TextViewNodeData {
 }
 
 const props = defineProps<NodeProps<TextViewNodeData>>()
-const { edges, nodes, setNodes } = useVueFlow()
+const { edges, nodes, setNodes, removeNodes } = useVueFlow()
 
 const heading = computed(() => props.data?.label ?? '')
 const placeholder = computed(() => props.data?.placeholder ?? 'Waiting for input…')
@@ -96,10 +97,21 @@ function saveSizeToNode() {
   )
 }
 
+function deleteNode() {
+  removeNodes([props.id])
+}
+
 
 </script>
 
 <template>
+  <NodeToolbar>
+    <div class="toolbar-buttons">
+      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+        🗑️
+      </button>
+    </div>
+  </NodeToolbar>
   <div class="text-view-node doc-node" ref="nodeRef">
     <header class="doc-node__header">
       <strong>{{ heading }}</strong>
@@ -150,4 +162,39 @@ function saveSizeToNode() {
 .text-view-node__textarea:focus {
   outline: none;
 }
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.delete-node-btn {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
 </style>

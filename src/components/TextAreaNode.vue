@@ -890,7 +890,6 @@ watch(language, () => {
 }
 
 .delete-node-btn {
-  margin-left: 8px;
   padding: 4px 8px;
   border-radius: 8px;
   border: 1px solid rgba(15,23,42,.15);

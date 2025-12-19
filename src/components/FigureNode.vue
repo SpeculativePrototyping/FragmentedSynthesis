@@ -25,7 +25,7 @@ interface FigureNodeProps extends NodeProps<FigureNodeData> {}
 
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const props = defineProps<FigureNodeProps>()
-const { updateNodeData } = useVueFlow()
+const { updateNodeData, removeNodes } = useVueFlow()
 
 
 const refLabel = ref(props.data?.refLabel ?? randomRefLabel())
@@ -305,6 +305,9 @@ onMounted(() => {
   resizeObs.observe(nodeRef.value)
 })
 
+function deleteNode() {
+  removeNodes([props.id])
+}
 
 </script>
 
@@ -313,6 +316,9 @@ onMounted(() => {
 
   <NodeToolbar>
     <div class="toolbar-buttons">
+      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+        🗑️
+      </button>
       <label class="toggle-switch" title="Compact view / TLDR">
         <input type="checkbox" v-model="isCompact"/>
         <span class="slider"></span>
@@ -614,6 +620,40 @@ onMounted(() => {
 .figure-node__label-input:focus {
   outline: 2px solid rgba(99,102,241,.45);
   border-color: rgba(99,102,241,.45);
+}
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.delete-node-btn {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
 }
 
 </style>
