@@ -110,7 +110,7 @@ function onConnect(connection: Connection) {
         animated: true,
         style: { strokeWidth: 4 },
         interactionWidth: 20,
-        markerEnd: { type: 'arrowclosed', color: '#000000' },
+        markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6,},
       },
       edges.value
   ) as Edge[]
@@ -216,7 +216,7 @@ function insertNodeOnEdge(templateType: string) {
       targetHandle,      // Target des neuen Nodes
       animated: true,
       style: { strokeWidth: 4 },
-      markerEnd: { type: 'arrowclosed', color: '#000000' },
+      markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6, },
     },
     {
       id: `edge-${newNodeId}-${edge.target}-${Date.now()}`,
@@ -225,7 +225,7 @@ function insertNodeOnEdge(templateType: string) {
       target: edge.target,
       animated: true,
       style: { strokeWidth: 4 },
-      markerEnd: { type: 'arrowclosed', color: '#000000' },
+      markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6, },
     },
   ];
 
