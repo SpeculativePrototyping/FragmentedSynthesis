@@ -42,7 +42,7 @@ export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'edit',
     label: 'Edit Node',
-    category: 'text',
+    category: 'llm',
     data: {
       label: 'Edit Node',
       original: '',

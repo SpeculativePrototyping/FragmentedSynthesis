@@ -405,9 +405,7 @@ watch(
 }
 
 .summary-node__textarea {
-  width: 260px;
-  height: 180px;
-  min-width: 260px;
+  min-width: 350px;
   min-height: 180px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
@@ -417,6 +415,7 @@ watch(
   font: inherit;
   line-height: 1.45;
   resize: both;
+  box-sizing: border-box;
 }
 
 .summary-node__status {

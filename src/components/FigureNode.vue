@@ -343,7 +343,7 @@ onMounted(() => {
       </div>
 
 
-      <input
+      <textarea
           type="text"
           v-model="latexLabel"
           placeholder="Upload a figure, give it a caption and add a reference. Type here..."
@@ -394,10 +394,10 @@ onMounted(() => {
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
-  width: 650px;
+  width: 100%;
+  max-width: 650px;
   height: 100%;
 }
-
 .toolbar-buttons {
   display: flex;
   align-items: center;
@@ -596,15 +596,19 @@ onMounted(() => {
 }
 
 .figure-node__label-input {
-  width: 600px;
-  margin: 0 auto 12px;   /* Abstand nach unten */
-  min-height: 15px;
+  min-width: 350px;
+  width: 100%;
+  min-height: 100px;
+  height: 100px;
+  margin: 0 auto;
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);
   border-radius: 10px;
   background: #fff;
   font: inherit;
   line-height: 1.45;
+  resize: both;
+  box-sizing: border-box;
 }
 
 .figure-node__label-input:focus {

@@ -2,6 +2,9 @@
 import {computed, inject, onBeforeUnmount, onMounted, type Ref, ref, watch, watchEffect, nextTick} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
+import { reviewPrompts } from '@/nodes/prompts'
+import { enqueueLlmJob } from '../api/llmQueue'
+
 import '../styles/docNodes.css'
 
 interface DiffSegment {
@@ -52,6 +55,11 @@ const searchFigureQuery = ref('')
 const showFigureSearch = ref(false)
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const imageCache = inject<Ref<ImageCache>>('imageCache')!
+const language = inject<Ref<'en' | 'de'>>('language')!  // globaler Sprachstatus
+const reviewerComment = ref('')
+const reviewerOutput = ref('')      // LLM-Ergebnis
+const status = ref<'idle'|'queued'|'processing'|'done'|'error'>('idle')
+const error = ref<string|null>(null)
 const incomingEdge = computed(() => edges.value.find((edge) => edge.target === props.id))
 const incomingCitations = computed(() => {
   const edge = incomingEdge.value
@@ -176,6 +184,73 @@ function removeFigureReference(imageName: string) {
 function reinsertFigureReference(key: string) {
   addFigureReferenceByKey(key)
 }
+
+function getPrompts() {
+  return reviewPrompts[language.value]
+}
+
+let debounceTimer: number | undefined
+let requestToken = 0
+
+function scheduleReview(force = false) {
+  window.clearTimeout(debounceTimer)
+  debounceTimer = window.setTimeout(() => {
+    void queueReview(force)
+  }, force ? 0 : 200)
+}
+
+async function queueReview(force: boolean) {
+  const comment = reviewerComment.value.trim()
+  const input = editedText.value.trim()
+
+  if (!input || !comment) return
+  const token = ++requestToken
+  status.value = 'queued'
+  error.value = null
+
+  status.value = 'processing'
+
+  const prompts = getPrompts()
+  const basePrompt = prompts.systemPrompt
+  const responseFormat = prompts.responseFormat
+
+  try {
+    const userInput = `Original Text:\n${input}\n\nReviewer Comment:\n${comment}`
+
+    const result = await enqueueLlmJob({
+      sys: basePrompt,
+      user: userInput,
+      responseFormat,
+      onStart: () => {}
+    })
+
+    let updatedText = input
+    try {
+      const parsed = JSON.parse(result.message || '{}')
+      updatedText = parsed.value?.trim() ?? input  // statt parsed.paraphrase
+    } catch {
+      updatedText = input
+    }
+
+    // **Hier schreiben wir direkt in editedText**
+    editedText.value = updatedText
+    status.value = 'done'
+
+    updateNodeData(props.id, {
+      ...props.data,
+      value: updatedText
+    })
+
+  } catch (err) {
+    status.value = 'error'
+    error.value = err instanceof Error ? err.message : String(err)
+  }
+
+
+
+}
+
+
 
 // Auto-detect citations in text
 let citationTimer: number | undefined
@@ -380,6 +455,27 @@ onBeforeUnmount(() => {
   if (resizeRaf) cancelAnimationFrame(resizeRaf)
 })
 
+watch(language, () => {
+  if (status.value === 'done') scheduleReview(true)
+})
+
+function onRetry() {
+  scheduleReview(true)
+}
+
+function refreshFromSource() {
+  const edge = incomingEdge.value
+  if (!edge) return
+
+  const newText = readNodeText(edge.source)
+  originalText.value = newText
+  editedText.value = newText
+  hasManualEdit.value = false
+  conflict.value = false
+}
+
+
+
 </script>
 
 <template>
@@ -393,28 +489,40 @@ onBeforeUnmount(() => {
 
     <section class="doc-node__body edit-node__body">
       <label class="edit-node__label">
-        <span>Text</span>
+        <button type="button" class="edit-node__reset" :disabled="!incomingEdge" @click="refreshFromSource">
+          Refresh from source
+        </button>
+        <button type="button" class="edit-node__reset" :disabled="!hasManualEdit" @click="resetEdits">
+          Reset to original
+        </button>
         <textarea
             ref="textAreaRef"
+            @wheel.stop
             v-model="editedText"
             class="edit-node__textarea"
             rows="8"
             @select="updateCursorPosition"
             @keyup="updateCursorPosition"
             @click="updateCursorPosition"
-            placeholder="With this node, you can edit incoming text and citations from any other node or add citations to summarized text."
+            placeholder="With this node, you can edit incoming text and add citations or references. It also provides you with a feature to rewrite your text based on comments from your professor, editor or reviewer. "
         ></textarea>
+        <div class="edit-node__actions">
+        <span class="edit-node__summary">
+          <span :class="{ 'edit-node__summary--positive': additions }">+{{ additions }}</span>
+          <span :class="{ 'edit-node__summary--negative': deletions }">-{{ deletions }}</span>
+        </span>
 
+        </div>
 
 
         <div  class="citations-ui">
           <div class="selected-citations">
             <span
-               v-for="key in props.data.citations ?? []"
+                v-for="key in props.data.citations ?? []"
                 :key="key"
                 class="citation-tag"
                 :class="{ 'citation-unknown': invalidCitations.has(key) }"
-          >
+            >
           <span @click="reinsertCitation(key)" style="cursor: pointer;">
              {{ key }}
           </span>
@@ -453,7 +561,6 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-
         <div  class="figures-ui">
           <!-- BUTTON -->
           <button class="citation-add-btn" @click="showFigureSearch = !showFigureSearch">
@@ -481,28 +588,21 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-
-
-
-
-
-
-
-
-      </label>
-
-      <div class="edit-node__actions">
-        <span class="edit-node__summary">
-          <span :class="{ 'edit-node__summary--positive': additions }">+{{ additions }}</span>
-          <span :class="{ 'edit-node__summary--negative': deletions }">-{{ deletions }}</span>
-        </span>
-
-        <button type="button" class="edit-node__reset" :disabled="!hasManualEdit" @click="resetEdits">
-          Reset to original
+        <textarea
+          v-model="reviewerComment"
+          @wheel.stop
+          class="edit-node__textarea2"
+          rows="3"
+          placeholder="Paste reviewer comment here.">
+        </textarea>
+        <button
+            class="citation-add-btn"
+            :disabled="status==='processing' || !reviewerComment.trim()"
+            @click="queueReview(true)">
+            {{ status==='processing' ? 'Processing...' : 'Apply Reviewer Comment' }}
         </button>
-      </div>
+      </label>
     </section>
-
     <Handle id="input" type="target" :position="Position.Left" />
     <Handle id="output" type="source" :position="Position.Right" />
   </div>
@@ -523,9 +623,9 @@ onBeforeUnmount(() => {
 }
 
 .edit-node__textarea {
-  width: 600px;
-  min-width: 260px;
-  height: 100px;
+  min-width: 350px;
+  min-height: 180px;
+  margin: 0 auto;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.15);
   border-radius: 10px;
@@ -533,7 +633,22 @@ onBeforeUnmount(() => {
   font: inherit;
   line-height: 1.45;
   resize: both;
+  box-sizing: border-box;
 }
+
+.edit-node__textarea2 {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 10px;
+  background-color: #fff;
+  font: inherit;
+  line-height: 1.45;
+  resize: none;
+  box-sizing: border-box;
+}
+
 
 .edit-node__actions {
   display: flex;

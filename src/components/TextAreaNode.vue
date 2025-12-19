@@ -45,7 +45,7 @@ interface TextNodeProps extends NodeProps<TextNodeData> {
 
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const props = defineProps<TextNodeProps>()
-const { updateNodeData, nodes, edges } = useVueFlow()
+const { updateNodeData, nodes, edges, removeNodes } = useVueFlow()
 const isCompact = ref(false)
 const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
@@ -321,6 +321,10 @@ watch(TLDR, (val) => {
   }
 })
 
+function deleteNode() {
+  removeNodes([props.id])
+}
+
 
 // Debounced push to Vue Flow state so downstream nodes can read `data.value`
 let timer: number | undefined
@@ -468,6 +472,9 @@ watch(language, () => {
 
   <NodeToolbar>
     <div class="toolbar-buttons">
+      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+        🗑️
+      </button>
       <label class="toggle-switch" title="Show a short summary (TLDR).">
         <input type="checkbox" v-model="isCompact" />
         <span class="slider"></span>
@@ -634,9 +641,8 @@ watch(language, () => {
 .text-node__textarea {
   min-width: 350px;
   min-height: 180px;
-  margin: 0 auto;
-  min-height: 100px;
   height: 100px;
+  margin: 0 auto;
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.15);
   border-radius: 10px;
@@ -644,6 +650,7 @@ watch(language, () => {
   font: inherit;
   line-height: 1.45;
   resize: both;
+  box-sizing: border-box;
 }
 
 .text-node__textarea:focus {
@@ -881,5 +888,25 @@ watch(language, () => {
   padding: 6px;
   cursor: pointer;
 }
+
+.delete-node-btn {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
 
 </style>

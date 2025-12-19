@@ -158,3 +158,63 @@ export const summaryPrompts: Record<'en' | 'de', SummaryPrompts> = {
     }
 }
 
+
+
+// Edit Node Prompts
+
+export interface ReviewPrompts {
+    systemPrompt: string         // System-Prompt für die LLM-Aktion
+    responseFormat: object       // JSON-Schema
+}
+
+export const reviewPrompts: Record<'en' | 'de', ReviewPrompts> = {
+    en: {
+        systemPrompt:
+            "You are an academic writing assistant. " +
+            "Task: Revise the provided text according to the reviewer's comment. " +
+            "Improve clarity, style, grammar, and explanations where the reviewer requested more detail. " +
+            "Preserve citations, references, and overall structure. " +
+            "Respond strictly with JSON containing a single string property named 'value'." +
+            "Ensure that the text in \"value\" is complete sentences and never cuts off mid-sentence.",
+        responseFormat: {
+            type: 'json_schema',
+            json_schema: {
+                name: 'review_response',
+                schema: {
+                    type: 'object',
+                    properties: {
+                        value: { type: 'string' }  // der angepasste Text
+                    },
+                    required: ['value'],
+                    additionalProperties: false
+                }
+            }
+        }
+    },
+    de: {
+        systemPrompt:
+            "Du bist ein akademischer Schreibassistent. " +
+            "Aufgabe: Passe den angegebenen Text basierend auf dem Kommentar des Reviewers an. " +
+            "Füge keine neuen Inhalte hinzu, die nicht mit dem Kommentar zusammenhängen. " +
+            "Behalte Zitate, Referenzen und die Struktur bei. " +
+            "Ändere nur Sätze, um die Vorschläge des Reviewers umzusetzen." +
+            "Antworte strikt mit JSON, das eine String-Eigenschaft 'value' enthält." +
+            "Stelle sicher dass der text in \"value\" komplette Sätze enthält und nie mitten im Satz abgeschnitten wird.",
+        responseFormat: {
+            type: 'json_schema',
+            json_schema: {
+                name: 'review_response',
+                schema: {
+                    type: 'object',
+                    properties: {
+                        value: { type: 'string' }  // der angepasste Text
+                    },
+                    required: ['value'],
+                    additionalProperties: false
+                }
+            }
+        }
+    }
+}
+
+

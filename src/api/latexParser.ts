@@ -205,30 +205,35 @@ export function parseLatexToNodesAndEdges(
     })
 
     // === Textarea- und Figure-Nodes zwischen Sections erzeugen ===
+    // === Text- und Figure-Nodes zwischen Sections erzeugen ===
     const figureRegex = /\\begin\{figure\}[\s\S]*?\\includegraphics.*?\{([^}]+)\}[\s\S]*?\\caption\{((?:[^{}]|\{[^}]*\})*)\}[\s\S]*?\\end\{figure\}/g
+    const paragraphRegex = /\\paragraph\{[^}]*\}([\s\S]*?)(?=(\\paragraph\{|\\begin\{figure\}|$))/g
 
     for (let i = 0; i < sections.length; i++) {
         const start = sections[i].start + (`\\${sections[i].type}{${sections[i].title}}`).length
         const end = i + 1 < sections.length ? sections[i + 1].start : latex.length
-        let textBlock = latex.slice(start, end).trim()
+        const sectionText = latex.slice(start, end).trim()
 
-        if (!textBlock) continue
+        if (!sectionText) continue
 
-        let lastIndex = 0
+        let idx = 0
+        // Regex: Paragraphs oder Figures erkennen
+        const combinedRegex = /(\\paragraph\{[^}]*\}([\s\S]*?))(?=\\paragraph\{|\\begin\{figure\}|$)|\\begin\{figure\}[\s\S]*?\\includegraphics.*?\{([^}]+)\}[\s\S]*?\\caption\{((?:[^{}]|\{[^}]*\})*)\}[\s\S]*?\\end\{figure\}/g
         let match: RegExpExecArray | null
 
-        while ((match = figureRegex.exec(textBlock)) !== null) {
-            // Text vor der Figur
-            const preText = textBlock.slice(lastIndex, match.index).trim()
-            if (preText) {
+        while ((match = combinedRegex.exec(sectionText)) !== null) {
+            const startIndex = match.index
+            // Alles zwischen letztem Index und aktuellem Match = normaler Text
+            const inBetweenText = sectionText.slice(idx, startIndex).trim()
+            if (inBetweenText) {
                 const node: Node = {
                     id: `textArea-${idCounter++}`,
                     type: 'textArea',
                     position: { x: 0, y: 0 },
                     data: {
-                        value: preText,
+                        value: inBetweenText,
                         label: 'Text Input Node',
-                        placeholder: 'Text between sections',
+                        placeholder: '',
                         citations: [],
                         status: 'idle',
                         error: null
@@ -243,54 +248,83 @@ export function parseLatexToNodesAndEdges(
                 })
             }
 
-            // Figure-Node
-            const imagePath = match[1]
-            const caption = (match[2] ?? '').trim()
-            const imgFile = files.find(f => f.path === imagePath && f.type === 'image')
-            if (!imgFile) {
-                console.warn('Image not found:', imagePath)
-                continue
-            }
-
-            const fileName =
-                imgFile.path.split(/[/\\]/).pop() || imgFile.path
-            if (imgFile && typeof imgFile.content === 'string') {
-                const figNode: Node = {
-                    id: `figure-${idCounter++}`,
-                    type: 'figure',
-                    position: { x: 0, y: 0 },
-                    data: {
-                        image: imgFile.content,
-                        imageName: fileName,
-                        latexLabel: caption,
-                        citations: []
-                    },
-                    label: 'Figure Node',
-                    category: 'text',
-                    dragHandle: '.doc-node__header'
+            // Paragraph
+            if (match[2] !== undefined) {
+                const paraText = match[2].trim()
+                if (paraText) {
+                    const node: Node = {
+                        id: `textArea-${idCounter++}`,
+                        type: 'textArea',
+                        position: { x: 0, y: 0 },
+                        data: {
+                            value: paraText,
+                            label: 'Text Input Node',
+                            placeholder: '',
+                            citations: [],
+                            status: 'idle',
+                            error: null
+                        },
+                        dragHandle: '.doc-node__header'
+                    }
+                    nodes.push(node)
+                    edges.push({
+                        id: `e-${composeNodes[i].id}-${node.id}`,
+                        source: node.id,
+                        target: composeNodes[i].id
+                    })
                 }
-                nodes.push(figNode)
-                edges.push({
-                    id: `e-${composeNodes[i].id}-${figNode.id}`,
-                    source: figNode.id,
-                    target: composeNodes[i].id
-                })
             }
 
-            lastIndex = match.index + match[0].length
+            // Figure
+// Figure
+            if (match[3] !== undefined) {
+                const imagePath = match[3]
+                let caption = (match[4] ?? '').trim()
+                if (!caption) {
+                    caption = `Unnamed Figure` // Platzhalter, falls keine Caption vorhanden
+                }
+
+                const imgFile = files.find(f => f.path === imagePath && f.type === 'image')
+                if (imgFile && typeof imgFile.content === 'string') {
+                    const fileName = imgFile.path.split(/[/\\]/).pop() || imgFile.path
+                    const figNode: Node = {
+                        id: `figure-${idCounter++}`,
+                        type: 'figure',
+                        position: { x: 0, y: 0 },
+                        data: {
+                            image: imgFile.content,
+                            imageName: fileName,
+                            latexLabel: caption, // Caption oder Platzhalter
+                            citations: []
+                        },
+                        label: 'Figure Node',
+                        category: 'text',
+                        dragHandle: '.doc-node__header'
+                    }
+                    nodes.push(figNode)
+                    edges.push({
+                        id: `e-${composeNodes[i].id}-${figNode.id}`,
+                        source: figNode.id,
+                        target: composeNodes[i].id
+                    })
+                }
+            }
+
+
+            idx = match.index + match[0].length
         }
 
-        // Text nach der letzten Figur
-        const postText = textBlock.slice(lastIndex).trim()
-        if (postText) {
+        // Restlicher Text nach letztem Match
+        const restText = sectionText.slice(idx).trim()
+        if (restText) {
             const node: Node = {
                 id: `textArea-${idCounter++}`,
                 type: 'textArea',
                 position: { x: 0, y: 0 },
                 data: {
-                    value: postText,
+                    value: restText,
                     label: 'Text Input Node',
-                    placeholder: 'Text between sections',
+                    placeholder: '',
                     citations: [],
                     status: 'idle',
                     error: null
@@ -305,6 +339,11 @@ export function parseLatexToNodesAndEdges(
             })
         }
     }
+
+
+
+
+
 
     // === Bibliographie einfügen ===
     const bibFiles = files.filter(f => f.type === 'bib')

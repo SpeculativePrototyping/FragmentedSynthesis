@@ -299,9 +299,7 @@ watch(language, () => {
 
     <section class="doc-node__body grammar-node__body">
 
-      <div class="grammar-node__actions">
-        <button type="button" class="grammar-node__retry" @click="onRetry">Retry</button>
-      </div>
+
 
       <textarea
           @wheel.stop
@@ -311,6 +309,10 @@ watch(language, () => {
           aria-label="Grammar output"
           :placeholder="status === 'idle' ? 'This node can correct your grammar and spelling. It will retain all of your inserted citations and does not change the word order, add new content or remove any existing content.' : ''"
       />
+
+      <div class="grammar-node__actions">
+        <button type="button" class="grammar-node__retry" @click="onRetry">Retry</button>
+      </div>
 
       <p v-if="status === 'error'" class="grammar-node__status grammar-node__status--error" role="alert">
         {{ error }}
@@ -360,9 +362,7 @@ watch(language, () => {
 }
 
 .grammar-node__textarea {
-  width: 260px;
-  height: 180px;
-  min-width:260px;
+  min-width: 350px;
   min-height: 180px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.12);
@@ -372,6 +372,7 @@ watch(language, () => {
   font: inherit;
   line-height: 1.45;
   resize: both;
+  box-sizing: border-box;
 }
 
 .grammar-node__status {
