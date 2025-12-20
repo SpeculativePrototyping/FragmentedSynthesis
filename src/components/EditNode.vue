@@ -515,7 +515,7 @@ function deleteNode() {
             @select="updateCursorPosition"
             @keyup="updateCursorPosition"
             @click="updateCursorPosition"
-            placeholder="With this node, you can edit incoming text and add citations or references. It also provides you with a feature to rewrite your text based on comments from your professor, editor or reviewer. "
+            placeholder="With this node, you can edit incoming text and add citations or references. You can reset to the original incoming text or update if the source has changed."
         ></textarea>
         <div class="edit-node__actions">
         <span class="edit-node__summary">
@@ -604,7 +604,7 @@ function deleteNode() {
           @wheel.stop
           class="edit-node__textarea2"
           rows="3"
-          placeholder="Paste reviewer comment here.">
+          placeholder="Paste reviewer comment here to automatically rewrite the text based on comments from your professor, editor or reviewer.">
         </textarea>
         <button
             class="citation-add-btn"
@@ -650,6 +650,7 @@ function deleteNode() {
 .edit-node__textarea2 {
   margin-top: 20px;
   width: 100%;
+  min-height: 180px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.15);
   border-radius: 10px;
