@@ -90,5 +90,6 @@ function removeFigure(key: string) {
 }
 .figure-delete:hover {
   color: #ff0000;
+  background: rgba(238, 238, 238, 0.5);
 }
 </style>

@@ -480,21 +480,30 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
     </div>
    </Panel>
 
-  <!-- Right-side panels -->
-  <div class="right-panels">
-    <div v-if="activeSidebar === 'bibliography'" class="side-panel">
+  <Panel v-if="activeSidebar === 'bibliography'" position="top-right">
+    <div class="side-panel">
       <h4>Reference Tracker</h4>
       <ReferencePanelContent />
     </div>
-    <div v-if="activeSidebar === 'figures'" class="side-panel">
+  </Panel>
+
+  <Panel v-if="activeSidebar === 'figures'" position="top-right">
+    <div class="side-panel">
       <h4>Figure Tracker</h4>
       <FigurePanelContent />
     </div>
-    <div v-if="activeSidebar === 'style'" class="side-panel">
+  </Panel>
+
+  <Panel v-if="activeSidebar === 'style'" position="top-right">
+    <div class="side-panel">
       <h4>Style Specifications</h4>
       <StylePanelContent />
     </div>
-  </div>
+  </Panel>
+
+
+
+
 
 
 </template>
@@ -873,18 +882,16 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
 }
 
 .side-panel {
-  background: rgba(25, 25, 25, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  color: white;
-  min-width: 200px;
   width: 500px;
   height: 600px;
-  min-height: 150px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1rem;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
+
 
 /* Nur TLDR-Slider (ohne zusätzliche Klassen) wird grün */
 .toggle-switch input:checked + .slider:not(.flag):not(.purple) {

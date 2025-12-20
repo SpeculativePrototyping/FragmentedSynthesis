@@ -111,15 +111,16 @@ function removeReference(key: string) {
   height: 50px;
   border-radius: 10px;
   border: 1px solid #ccc;
-  background: #f7f7f7;
+  background: rgba(0, 0, 0, 0);
   cursor: pointer;
   font-size: 0.9rem;
   margin-top: 10px;
   box-sizing: border-box;
+  color: white;
 }
 
 .reftracker__import-btn:hover {
-  background: #eee;
+  background: rgba(238, 238, 238, 0.5);
 }
 
 .bib-entry {

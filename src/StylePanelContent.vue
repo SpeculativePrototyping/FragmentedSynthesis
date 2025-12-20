@@ -98,7 +98,7 @@ function deleteTemplate(index: number) {
         <textarea v-model="emphasizePoints" placeholder="Snippet or example for how you'd like your text to be written. The example will determine the length of your paragraph in case you did not set a paragraph length above." rows="4"></textarea>
       </div>
 
-      <button @click="saveTemplate">💾 Save Template</button>
+      <button class="save-btn" @click="saveTemplate">💾 Save Template</button>
     </div>
 
     <!-- Liste vorhandener Templates -->
@@ -111,7 +111,7 @@ function deleteTemplate(index: number) {
         </div>
       </div>
 
-      <button @click="addingNew = true; clearFields()">➕ Add New Template</button>
+      <button class="save-btn" @click="addingNew = true; clearFields()">➕ Add New Template</button>
     </div>
   </div>
 </template>
@@ -152,14 +152,28 @@ button {
   border-radius: 6px;
   padding: 6px 10px;
   cursor: pointer;
-  background-color: #444;
-  color: white;
+  background: rgba(0, 0, 0, 0);
+  color: rgb(255, 255, 255);
   font-size: 0.9rem;
 }
 
 button:hover {
-  opacity: 0.85;
+  background: rgba(238, 238, 238, 0.5);
 }
+
+.save-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0);
+  color: white;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.save-btn:hover {
+  background: rgba(238, 238, 238, 0.5);
+}
+
 
 .template-list {
   display: flex;
