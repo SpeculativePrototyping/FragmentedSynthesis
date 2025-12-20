@@ -200,20 +200,21 @@ export function parseLatexToNodesAndEdges(
             id: `e-${composeNode.id}-${docNode.id}`,
             source: composeNode.id,
             target: docNode.id,
-            targetHandle: `doc-${index}`
+            targetHandle: `doc-${index}`,
+            animated: true,
+            style: { strokeWidth: 4 },
+            markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6, },
         })
     })
 
     // === Textarea- und Figure-Nodes zwischen Sections erzeugen ===
     // === Text- und Figure-Nodes zwischen Sections erzeugen ===
-    const figureRegex = /\\begin\{figure\}[\s\S]*?\\includegraphics.*?\{([^}]+)\}[\s\S]*?\\caption\{((?:[^{}]|\{[^}]*\})*)\}[\s\S]*?\\end\{figure\}/g
-    const paragraphRegex = /\\paragraph\{[^}]*\}([\s\S]*?)(?=(\\paragraph\{|\\begin\{figure\}|$))/g
 
     for (let i = 0; i < sections.length; i++) {
         const start = sections[i].start + (`\\${sections[i].type}{${sections[i].title}}`).length
         const end = i + 1 < sections.length ? sections[i + 1].start : latex.length
         const sectionText = latex.slice(start, end).trim()
-
+        let childIndex = 0
         if (!sectionText) continue
 
         let idx = 0
@@ -244,7 +245,16 @@ export function parseLatexToNodesAndEdges(
                 edges.push({
                     id: `e-${composeNodes[i].id}-${node.id}`,
                     source: node.id,
-                    target: composeNodes[i].id
+                    target: composeNodes[i].id,
+                    targetHandle: `child-${childIndex++}`,
+                    animated: true,
+                    style: { strokeWidth: 4 },
+                    markerEnd: {
+                        type: 'arrowclosed',
+                        color: '#000000',
+                        width: 6,
+                        height: 6,
+                    },
                 })
             }
 
@@ -270,13 +280,21 @@ export function parseLatexToNodesAndEdges(
                     edges.push({
                         id: `e-${composeNodes[i].id}-${node.id}`,
                         source: node.id,
-                        target: composeNodes[i].id
+                        target: composeNodes[i].id,
+                        targetHandle: `child-${childIndex++}`,
+                        animated: true,
+                        style: { strokeWidth: 4 },
+                        markerEnd: {
+                            type: 'arrowclosed',
+                            color: '#000000',
+                            width: 6,
+                            height: 6,
+                        },
                     })
                 }
             }
 
             // Figure
-// Figure
             if (match[3] !== undefined) {
                 const imagePath = match[3]
                 let caption = (match[4] ?? '').trim()
@@ -305,8 +323,18 @@ export function parseLatexToNodesAndEdges(
                     edges.push({
                         id: `e-${composeNodes[i].id}-${figNode.id}`,
                         source: figNode.id,
-                        target: composeNodes[i].id
+                        target: composeNodes[i].id,
+                        targetHandle: `child-${childIndex++}`,
+                        animated: true,
+                        style: { strokeWidth: 4 },
+                        markerEnd: {
+                            type: 'arrowclosed',
+                            color: '#000000',
+                            width: 6,
+                            height: 6,
+                        },
                     })
+
                 }
             }
 
@@ -335,14 +363,14 @@ export function parseLatexToNodesAndEdges(
             edges.push({
                 id: `e-${composeNodes[i].id}-${node.id}`,
                 source: node.id,
-                target: composeNodes[i].id
+                target: composeNodes[i].id,
+                targetHandle: `child-${childIndex++}`,
+                animated: true,
+                style: { strokeWidth: 4 },
+                markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6 },
             })
         }
     }
-
-
-
-
 
 
     // === Bibliographie einfügen ===
