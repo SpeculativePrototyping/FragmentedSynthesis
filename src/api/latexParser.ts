@@ -1,7 +1,5 @@
 // api/latexParser.ts
 import type { Node, Edge } from '@vue-flow/core'
-import type { Ref } from 'vue'
-import {inject, ref} from "vue";
 
 interface ZipFileEntry {
     path: string
