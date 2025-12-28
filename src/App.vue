@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, provide } from 'vue'
+import {ref, watch, provide, computed, nextTick, onMounted} from 'vue'
 import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
 import { VueFlow, addEdge, type EdgeMouseEvent } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
 import {MiniMap} from "@vue-flow/minimap";
+import {applyNodeChanges, applyEdgeChanges, type NodeChange, type EdgeChange} from '@vue-flow/core'
 
 
 //Import every node-component:
@@ -83,8 +84,135 @@ const edgeMenu = ref<{
   edge: null,
 })
 
-
 let nodeCounter = 0
+
+interface FlowSnapshot {
+  nodes: Node[]
+  edges: Edge[]
+}
+
+const undoStack = ref<FlowSnapshot[]>([])
+const redoStack = ref<FlowSnapshot[]>([])
+
+const canUndo = computed(() => undoStack.value.length > 0)
+const canRedo = computed(() => redoStack.value.length > 0)
+
+const isRestoring = ref(false)
+
+let snapshotTimeout: number | null = null
+let nodesDirty = false
+let edgesDirty = false
+
+const SNAPSHOT_DELAY = 300 // ms – fühlt sich sehr gut an
+
+function createSnapshot(): FlowSnapshot {
+  return {
+    nodes: JSON.parse(JSON.stringify(nodes.value)),
+    edges: JSON.parse(JSON.stringify(edges.value)),
+  }
+}
+
+function pushSnapshot() {
+  undoStack.value.push(createSnapshot())
+  redoStack.value.length = 0
+}
+
+const MAX_HISTORY = 200
+function trimHistory() {
+  if (undoStack.value.length > MAX_HISTORY) {
+    undoStack.value.shift()
+  }
+}
+
+function onNodesChange(changes: NodeChange[]) {
+  nodesDirty = true
+  scheduleSnapshot()
+}
+
+function onEdgesChange(changes: EdgeChange[]) {
+  edgesDirty = true
+  scheduleSnapshot()
+}
+
+
+function scheduleSnapshot() {
+  if (isRestoring.value) return
+
+  if (snapshotTimeout !== null) {
+    clearTimeout(snapshotTimeout)
+  }
+
+  snapshotTimeout = window.setTimeout(() => {
+    // 🔒 NUR wenn wirklich eine Änderung stattgefunden hat
+    if (nodesDirty || edgesDirty) {
+      pushSnapshot()
+      trimHistory()
+    }
+
+    nodesDirty = false
+    edgesDirty = false
+    snapshotTimeout = null
+  }, SNAPSHOT_DELAY)
+}
+
+
+
+
+function undo() {
+  if (!canUndo.value) return
+
+  if (snapshotTimeout !== null) {
+    clearTimeout(snapshotTimeout)
+    snapshotTimeout = null
+  }
+
+  isRestoring.value = true
+
+  redoStack.value.push(createSnapshot())
+  const snapshot = undoStack.value.pop()!
+
+  nodes.value = JSON.parse(JSON.stringify(snapshot.nodes))
+  edges.value = JSON.parse(JSON.stringify(snapshot.edges))
+
+  nextTick(() => {
+    isRestoring.value = false
+  })
+}
+
+
+
+function redo() {
+  if (!canRedo.value) return
+
+  //  laufenden Snapshot abbrechen
+  if (snapshotTimeout !== null) {
+    clearTimeout(snapshotTimeout)
+    snapshotTimeout = null
+  }
+
+  isRestoring.value = true
+
+  // aktuellen Zustand für Undo sichern
+  undoStack.value.push(createSnapshot())
+
+  const snapshot = redoStack.value.pop()!
+
+  // 🔒 deep clone beim Restore
+  nodes.value = JSON.parse(JSON.stringify(snapshot.nodes))
+  edges.value = JSON.parse(JSON.stringify(snapshot.edges))
+
+  nextTick(() => {
+    isRestoring.value = false
+  })
+}
+
+
+provide('undo', undo)
+provide('redo', redo)
+provide('canUndo', canUndo)
+provide('canRedo', canRedo)
+
+
 
 function onEdgeClick(event: EdgeMouseEvent) {
   event.event.stopPropagation() // das eigentliche MouseEvent
@@ -261,6 +389,8 @@ function insertNodeOnEdge(templateType: string) {
         @edge-update="onEdgeUpdate"
         @edge-click="onEdgeClick"
         @pane-click="closeEdgeMenu"
+        @nodes-change="onNodesChange"
+        @edges-change="onEdgesChange"
 
     >
       <SaveRestoreControls />

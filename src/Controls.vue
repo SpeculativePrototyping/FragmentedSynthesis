@@ -46,6 +46,11 @@ const selectedMainTex = ref<string | null>(null)
 const showLatexFilePicker = ref(false)
 
 
+const undo = inject<() => void>('undo')!
+const redo = inject<() => void>('redo')!
+const canUndo = inject<any>('canUndo')
+const canRedo = inject<any>('canRedo')
+
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
   nodes,
@@ -357,11 +362,11 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
          <label class="sr-only" for="node-type-select">Node type</label>
          <div class="buttons">
 
-           <button title="Undo (coming soon)">
-             <Icon name="undo" />
+           <button title="Undo" @click="undo" :disabled="!canUndo">
+             <Icon name="undo"  />
            </button>
 
-           <button title="Redo (coming soon)">
+           <button title="Redo" @click="redo" :disabled="!canRedo">
              <Icon name="redo" />
            </button>
 
