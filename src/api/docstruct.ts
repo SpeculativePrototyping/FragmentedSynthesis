@@ -196,6 +196,7 @@ export function renderToLatex(
     "\\usepackage{graphicx}",
     "\\usepackage{hyperref}",
     "\\begin{document}",
+    "\\tableofcontents",
     body,
     bibBlock,
     "\\end{document}"
