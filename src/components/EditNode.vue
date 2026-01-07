@@ -61,6 +61,7 @@ const reviewerComment = ref('')
 const reviewerOutput = ref('')      // LLM-Ergebnis
 const status = ref<'idle'|'queued'|'processing'|'done'|'error'>('idle')
 const error = ref<string|null>(null)
+const showReviewer = ref(false)  // steuert die Sichtbarkeit
 const incomingEdge = computed(() => edges.value.find((edge) => edge.target === props.id))
 const incomingCitations = computed(() => {
   const edge = incomingEdge.value
@@ -92,6 +93,21 @@ const filteredFigures = computed(() => {
       img.refLabel.toLowerCase().includes(q)
   )
 })
+
+
+// NEU: Status Label für EditNode
+const statusLabel = computed(() => {
+  if (conflict.value) return 'Conflict: Manual edits differ from source'
+  switch (status.value) {
+    case 'queued': return 'Status: queued…'
+    case 'processing': return 'Status: processing…'
+    case 'done': return 'Status: done'
+    case 'error': return `Error: ${error.value ?? 'unknown'}`
+    default: return 'Status: idle'
+  }
+})
+
+
 
 /**
  * Reads text from whichever node is connected to the input handle.
@@ -483,29 +499,67 @@ function deleteNode() {
 </script>
 
 <template>
+
+
   <NodeToolbar>
     <div class="toolbar-buttons">
       <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
         🗑️
       </button>
+
+      <button type="button" class="toolbar-mini-btn" :disabled="!incomingEdge" @click="refreshFromSource" title="Refresh from source">
+        🔄
+      </button>
+
+      <button type="button" class="toolbar-mini-btn" :disabled="!hasManualEdit" @click="resetEdits" title="Reset to original">
+        ↩️
+      </button>
+
+      <!-- NEW: Citation Toggle -->
+      <button
+          class="toolbar-mini-btn"
+          :class="{ active: showSearch }"
+          @click="showSearch = !showSearch"
+          title="Cite Sources"
+      >
+        📚
+      </button>
+
+      <!-- NEW: Figure Toggle -->
+      <button
+          class="toolbar-mini-btn"
+          :class="{ active: showFigureSearch }"
+          @click="showFigureSearch = !showFigureSearch"
+          title="Reference Figures"
+      >
+        🖼️
+      </button>
+
+      <button
+          class="toolbar-mini-btn"
+          :class="{ active: showReviewer }"
+          @click="showReviewer = !showReviewer"
+          title="Apply review comment"
+      >
+        🔍
+      </button>
+
+
+
+
     </div>
   </NodeToolbar>
+
+
+
   <div class="edit-node doc-node" ref="nodeRef">
     <header class="doc-node__header" :class="{ 'doc-node__header-warning': conflict }">
       <strong>{{ props.data?.label ?? 'Text' }}</strong>
-      <span class="doc-node__hint">
-        {{ hasManualEdit ? 'Edited text' : incomingEdge ? 'Ready to edit incoming text' : 'No input connected' }}
-      </span>
+      <span class="doc-node__hint">{{ statusLabel }}</span>
     </header>
 
     <section class="doc-node__body edit-node__body">
       <label class="edit-node__label">
-        <button type="button" class="edit-node__reset" :disabled="!incomingEdge" @click="refreshFromSource">
-          Refresh from source
-        </button>
-        <button type="button" class="edit-node__reset" :disabled="!hasManualEdit" @click="resetEdits">
-          Reset to original
-        </button>
         <textarea
             ref="textAreaRef"
             @wheel.stop
@@ -522,10 +576,7 @@ function deleteNode() {
           <span :class="{ 'edit-node__summary--positive': additions }">+{{ additions }}</span>
           <span :class="{ 'edit-node__summary--negative': deletions }">-{{ deletions }}</span>
         </span>
-
         </div>
-
-
         <div  class="citations-ui">
           <div class="selected-citations">
             <span
@@ -539,8 +590,6 @@ function deleteNode() {
           </span>
           <button @click="removeCitation(key)">×</button>
           </span>
-
-
           </div>
 
           <div class="selected-citations">
@@ -554,10 +603,6 @@ function deleteNode() {
       <button class="remove-btn" @click.stop="removeFigureReference(key)">×</button>
     </span>
           </div>
-
-          <button @click="showSearch = !showSearch" class="citation-add-btn">
-            + Add New Citation
-          </button>
           <div v-if="showSearch" class="citation-search">
             <input
                 v-model="searchQuery"
@@ -573,11 +618,6 @@ function deleteNode() {
         </div>
 
         <div  class="figures-ui">
-          <!-- BUTTON -->
-          <button class="citation-add-btn" @click="showFigureSearch = !showFigureSearch">
-            + Add Figure Reference
-          </button>
-
           <!-- SEARCH DROPDOWN -->
           <div v-if="showFigureSearch" class="citation-search">
             <input
@@ -601,16 +641,18 @@ function deleteNode() {
 
         <textarea
           v-model="reviewerComment"
+          v-if="showReviewer"
           @wheel.stop
           class="edit-node__textarea2"
           rows="3"
           placeholder="Paste reviewer comment here to automatically rewrite the text based on comments from your professor, editor or reviewer.">
         </textarea>
         <button
+            v-if="showReviewer"
             class="citation-add-btn"
             :disabled="status==='processing' || !reviewerComment.trim()"
             @click="queueReview(true)">
-            {{ status==='processing' ? 'Processing...' : 'Apply Reviewer Comment' }}
+          Apply Reviewer Comment
         </button>
       </label>
     </section>
@@ -879,6 +921,37 @@ function deleteNode() {
 
 .delete-node-btn:hover {
   background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
+.citations-ui,
+.figures-ui {
+  gap: 8px;
+}
+
+.figures-ui {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-mini-btn {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-mini-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-mini-btn.active {
+  background: #374151;   /* dunkelgrau */
+  color: white;
+  border-color: #374151;
 }
 
 </style>

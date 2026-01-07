@@ -47,7 +47,9 @@ export function useDemo({
                 dimensions.value!.width / 2,
                 dimensions.value!.height / 2,
                 '👋 Hey! I am Steve the StickyNote.\nYou can place StickyNotes anywhere on the canvas as reminders, notes, or scratch paper. ' +
-                'Just drag one of my friends out of the control bar to your left! You can drag all the nodes around by the bar on the top (Where my face is).'
+                'Just drag one of my friends out of the control bar to your left! You can drag all the nodes around by the bar on the top (Where my face is).' +
+                'You can also scroll if you put your mouse over the text, in case the text is longer than me.' +
+                'Controls are at the bottom! Whenever you are ready :)'
             )
         },
         () => {
@@ -55,16 +57,21 @@ export function useDemo({
                 200,
                 100,
                 'Over here!' +
-                '\nThis is the control bar. The top-part has 6 control-elements:' +
-                '\n1. Undo: Undo your last change.' +
-                '\n2. Redo: Redo what you have just undone :D' +
-                '\n3. Trashcan: Deletes selected elements' +
-                '\n4. Floppydisk: Downloads your project' +
-                '\n5. Upload: Uploads a project' +
-                '\n6. Magic-Wand: Sorts your graph automatically' +
-                '\n7. Bibliography, Figures and Styles give you options to add references, refert to graphics and create style templates for LLM functions.' +
-                '\n8. TLDR MODE: Shrinks TextInput Nodes and FigureNodes for a better overview. You can also turn it on or off for each individual node. ' +
-                '\n8. Language: Select your language for the LLM-functions and outputs to work correctly. '
+                '\nThis is the control bar. The top-part has 5 control-elements:' +
+                '\n1. Snapshot: Take a snapshot of your current workspace so you can come back later if you want to go back to an earlier state.' +
+                '\n2. Delete: Delete multiple elements at the same time. Select multiple elements by holding CTRL.' +
+                '\n3. Download: Download your current project to your computer. This includes all your Snapshots as well, just to be sure.' +
+                '\n4. Upload: Upload a project from your computer.' +
+                '\n5. Unchaosify: Will automatically sort all your elements from left to right according to the flow of content. Use again after enabling TLDR-Mode!' +
+
+                '\nAfter those, there are 6 switches:' +
+
+                '\n1. Bibliography: In this panel, you can manage your references.' +
+                '\n2. Figures: A list of all your figures and their reference keys. You can open this panel if you want to reference a figure in your text.' +
+                '\n3. Style: In here, you can set style templates to use for LLM functionality in the Paraphrase Node.' +
+                '\n4. Snapshots: If you have taken a snapshot of your work, you can come back here and restore one of your saved states. A snapshot will be created once a minute automatically, in case you delete something important. ' +
+                '\n5. TLDR MODE: Collapses Text Input Nodes and Figure Nodes to a minimal size, so you can focus on high-level organization.' +
+                '\n6. Language: Select the language you work in. This does not change the UI language, but will exchange LLM prompts in the background to ensure proper implementation.'
 
         )
         },
@@ -74,79 +81,15 @@ export function useDemo({
                 400,
                 'Down here, you can drag nodes you would like to use onto the canvas.' +
                 '\nYou already know what the StickyNote is for.' +
-                '\n\nBy the way, that thing in the bottom right corner is a minimap. It shows an overview and marks selected elements in red.' +
+                '\n\nBy the way, that thing in the bottom right corner is a minimap. It shows an overview and marks currently selected elements in red.' +
                 '\nYou can select multiple elements by clicking them while holding down the CTRL key.' +
-                '\n\nNow lets explore all the nodes.'
+                '\n\nNow lets explore all the nodes. Drag one of each over here and take a look!'
             )
         },
         () => {
             if (!dimensions.value) return
 
-            const textNode1: Node = {
-                id: 'text-input-1',
-                type: 'textArea',
-                position: screenToFlowCoordinate({ x: 650, y: 50 }),
-                data: { label: 'Text Input Node', placeholder: 'This node is for text input. Basically, every node represents a paragraph.' +
-                        ' You can type, add citations and connect it to other nodes.' +
-                        ' That can be the Grammar Node, the Summary Node, the Edit Node, the Compose Node, or the TextView Node.'},
-                dragHandle: '.doc-node__header'
-            }
 
-            const textView1: Node = {
-                id: 'text-view-1',
-                type: 'textView',
-                position: screenToFlowCoordinate({ x: 300, y: 50 }),
-                data: { label: 'Text View Node', placeholder: 'This node displays everything that other nodes can output. It helps when you are confused about what goes where.'},
-                dragHandle: '.doc-node__header'
-            }
-
-            const composeNode: Node = {
-                id: 'compose-node',
-                type: 'compose',
-                position: screenToFlowCoordinate({ x: 300, y: 350 }),
-                data: { label: 'Compose Node' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const docNode: Node = {
-                id: 'doc-output',
-                type: 'docOutput',
-                position: screenToFlowCoordinate({ x: 300, y: 550 }),
-                data: { label: 'Document Output Node', value: 'Combines inputs' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const editNode: Node = {
-                id: 'edit',
-                type: 'edit',
-                position: screenToFlowCoordinate({ x: 800, y: 550 }),
-                data: { label: 'Edit Node' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const figureNode: Node = {
-                id: 'figure',
-                type: 'figure',
-                position: screenToFlowCoordinate({ x: 650, y: 300 }),
-                data: { label: 'Figure Node' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const summary: Node = {
-                id: 'summary',
-                type: 'summary',
-                position: screenToFlowCoordinate({ x: 800, y: 900 }),
-                data: { label: 'Paraphrase Node' },
-                dragHandle: '.doc-node__header'
-            }
-
-            const grammar: Node = {
-                id: 'grammar',
-                type: 'grammar',
-                position: screenToFlowCoordinate({ x: 1150, y: 900 }),
-                data: { label: 'Grammar Checker Node' },
-                dragHandle: '.doc-node__header'
-            }
 
             const tourGuideNode: Node = {
                 id: 'tourguide-step3',
@@ -154,9 +97,9 @@ export function useDemo({
                 position: screenToFlowCoordinate({ x: 700, y: 200 }),
                 data: {
                     label: 'Steve',
-                    value: 'Looks like i am in the way! Well not only me. Why don\'t you drag me to the side and zoom out a little?' +
+                    value: 'Looks like i am in the way!  Why don\'t you drag me to the side and zoom out a little?' +
                         '\nJust use your mousewheel outside a node. You should also resize me to read the rest of the instructions. Or you can scroll.' +
-                        '\nMost of the nodes you see are pretty self-explanatory and tell you what they do. ' +
+                        '\nAll of the nodes you see are pretty self-explanatory and tell you what they do. ' +
                         '\nThose are the basics. Find Peter using the MiniMap, he\'ll show you the rest!' +
                         '\nDon\'t forget to delete me please. I\'m tired.'
                 },
@@ -171,15 +114,14 @@ export function useDemo({
                     label: 'Peter',
                     value: 'Hey man! I\'m Peter the Post-It.' +
                         '\nNow that should be all the node types we currently have.' +
-                        '\nWhen you\'re done playing around, delete me and the others or just end the demo.' +
-                        '\nAnd then, why don\'t you use that upload button there and load the project we prepared for you?'
+                        ' When you are done, just end the demo and start from a blank page, or refresh your browser and import a LaTeX project!'
 
 
                 },
                 dragHandle: '.doc-node__header'
             }
 
-            setNodes([textNode1, textView1, figureNode, editNode, composeNode, summary, grammar, docNode, tourGuideNode, tourGuideNode2])
+            setNodes([tourGuideNode, tourGuideNode2])
         }
     ]
 

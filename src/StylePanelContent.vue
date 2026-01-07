@@ -107,7 +107,7 @@ function deleteTemplate(index: number) {
         <span>{{ t.templateName }}</span>
         <div class="template-buttons">
           <button @click="editTemplate(index)" title="Edit Template">✏️</button>
-          <button @click="deleteTemplate(index)" title="Delete Template" style="color: red;">×</button>
+          <button @click="deleteTemplate(index)" title="Delete Template" style="color: red;">🗑️</button>
         </div>
       </div>
 

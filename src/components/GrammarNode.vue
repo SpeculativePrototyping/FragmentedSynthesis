@@ -300,6 +300,12 @@ function deleteNode() {
       <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
         🗑️
       </button>
+
+      <button type="button" class="toolbar-mini-btn" @click="onRetry" title="Retry">
+        🔁
+      </button>
+
+
     </div>
   </NodeToolbar>
   <div class="grammar-node doc-node" ref="nodeRef">
@@ -321,16 +327,6 @@ function deleteNode() {
           :placeholder="status === 'idle' ? 'This node can correct your grammar and spelling. It will retain all of your inserted citations and does not change the word order, add new content or remove any existing content.' : ''"
       />
 
-      <div class="grammar-node__actions">
-        <button type="button" class="grammar-node__retry" @click="onRetry">Retry</button>
-      </div>
-
-      <p v-if="status === 'error'" class="grammar-node__status grammar-node__status--error" role="alert">
-        {{ error }}
-      </p>
-      <p v-else-if="status !== 'done'" class="grammar-node__status">
-        {{ status === 'processing' ? 'Working on it…' : status === 'queued' ? 'Queued…' : '' }}
-      </p>
     </section>
 
     <Handle id="input" type="target" :position="Position.Left" />
@@ -428,6 +424,27 @@ function deleteNode() {
 
 .delete-node-btn:hover {
   background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
+.toolbar-mini-btn {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-mini-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-mini-btn.active {
+  background: #374151;   /* dunkelgrau */
+  color: white;
+  border-color: #374151;
 }
 
 </style>

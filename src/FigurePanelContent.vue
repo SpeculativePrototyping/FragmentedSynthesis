@@ -32,7 +32,7 @@ function removeFigure(key: string) {
         </div>
         <div class="figure-info">
           Key: <strong>{{ img.refLabel }}</strong>
-          <button class="figure-delete" @click="removeFigure(key)">×</button>
+          <button class="figure-delete" @click="removeFigure(key)">🗑️</button>
         </div>
       </li>
     </ul>

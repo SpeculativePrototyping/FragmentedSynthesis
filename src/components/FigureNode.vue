@@ -319,6 +319,16 @@ function deleteNode() {
       <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
         🗑️
       </button>
+
+      <button
+          class="toolbar-mini-btn"
+          :class="{ active: showSearch }"
+          @click="showSearch = !showSearch"
+          title="Cite Sources"
+      >
+        📚
+      </button>
+
       <label class="toggle-switch" title="Compact view / TLDR">
         <input type="checkbox" v-model="isCompact"/>
         <span class="slider"></span>
@@ -352,6 +362,7 @@ function deleteNode() {
       <textarea
           type="text"
           v-model="latexLabel"
+          @wheel.stop
           placeholder="Upload a figure, give it a caption and add a reference. Type here..."
           class="figure-node__label-input"
       />
@@ -368,11 +379,6 @@ function deleteNode() {
             <button @click="removeCitation(key)">×</button>
           </span>
         </div>
-
-        <button @click="showSearch = !showSearch" class="citation-add-btn">
-          + Add Reference
-        </button>
-
         <div v-if="showSearch" class="citation-search">
           <input
               v-model="searchQuery"
@@ -437,7 +443,8 @@ function deleteNode() {
 
 
 .image-preview img {
-  max-width: 100%;   /* passt sich Containerbreite an */
+  width: 100%;   /* passt sich Containerbreite an */
+  max-width: 500px;
   height: auto;
   display: block;
   margin: 0 auto 6px;
@@ -613,7 +620,7 @@ function deleteNode() {
   background: #fff;
   font: inherit;
   line-height: 1.45;
-  resize: both;
+  resize: none;
   box-sizing: border-box;
 }
 
@@ -654,6 +661,37 @@ function deleteNode() {
 
 .delete-node-btn:hover {
   background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
+.citations-ui,
+.figures-ui {
+  gap: 8px;
+}
+
+.figures-ui {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-mini-btn {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-mini-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-mini-btn.active {
+  background: #374151;   /* dunkelgrau */
+  color: white;
+  border-color: #374151;
 }
 
 </style>

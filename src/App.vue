@@ -401,6 +401,25 @@ onUnmounted(() => {
 })
 
 
+
+watch(nodes, (newNodes) => {
+  const usedRefLabels = new Set(newNodes
+      .filter(n => n.type === 'figure')  // nur Figure Nodes
+      .map(n => n.data?.refLabel)
+      .filter(Boolean) as string[]
+  )
+
+  for (const key in imageCache.value) {
+    const cached = imageCache.value[key]
+    if (!usedRefLabels.has(cached.refLabel)) {
+      delete imageCache.value[key]
+      console.log(`Removed unused image from cache: ${key}`)
+    }
+  }
+}, { deep: true })
+
+
+
 </script>
 
 <template>

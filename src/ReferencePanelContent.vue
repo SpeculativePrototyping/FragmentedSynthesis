@@ -68,7 +68,7 @@ function removeReference(key: string) {
     <ul v-else>
       <li v-for="(entry, i) in bibliography" :key="entry.id" class="bib-entry">
         {{ i + 1 }}. {{ formatEntry(entry) }}
-        <button class="bib-entry-delete" @click="removeReference(entry.id)">×</button>
+        <button class="bib-entry-delete" @click="removeReference(entry.id)">🗑️</button>
       </li>
     </ul>
 

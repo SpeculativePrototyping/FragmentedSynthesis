@@ -464,6 +464,15 @@ watch(language, () => {
   }
 })
 
+function undo(textarea: HTMLTextAreaElement | null) {
+  if (!textarea) return
+  document.execCommand('undo') // ruft die Browser-Undo-Funktion auf
+}
+
+function redo(textarea: HTMLTextAreaElement | null) {
+  if (!textarea) return
+  document.execCommand('redo') // ruft die Browser-Redo-Funktion auf
+}
 
 
 </script>
@@ -472,16 +481,51 @@ watch(language, () => {
 
   <NodeToolbar>
     <div class="toolbar-buttons">
-      <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
+      <button
+          class="delete-node-btn"
+          @click="deleteNode"
+          title="Delete this node"
+      >
         🗑️
       </button>
+
+      <button class="toolbar-mini-btn" @click="undo" title="Undo">
+        ↶
+      </button>
+
+      <button class="toolbar-mini-btn" @click="redo" title="Redo">
+        ↷
+      </button>
+
+      <!-- NEW: Citation Toggle -->
+      <button
+          class="toolbar-mini-btn"
+          :class="{ active: showSearch }"
+          @click="showSearch = !showSearch"
+          title="Cite Sources"
+      >
+        📚
+      </button>
+
+      <!-- NEW: Figure Toggle -->
+      <button
+          class="toolbar-mini-btn"
+          :class="{ active: showFigureSearch }"
+          @click="showFigureSearch = !showFigureSearch"
+          title="Reference Figures"
+      >
+        🖼️
+      </button>
+
       <label class="toggle-switch" title="Show a short summary (TLDR).">
         <input type="checkbox" v-model="isCompact" />
         <span class="slider"></span>
       </label>
       <span class="toggle-label">TLDR</span>
+
     </div>
   </NodeToolbar>
+
 
   <div class="text-node doc-node node-wrapper" ref="nodeRef">
     <header class="doc-node__header">
@@ -528,10 +572,7 @@ watch(language, () => {
   </span>
   <button @click="removeCitation(key)">×</button>
 </span>
-
-
         </div>
-
         <div class="selected-citations">
     <span
         v-for="key in props.data.figures ?? []"
@@ -543,10 +584,6 @@ watch(language, () => {
       <button class="remove-btn" @click.stop="removeFigureReference(key)">×</button>
     </span>
         </div>
-
-        <button @click="showSearch = !showSearch" class="citation-add-btn">
-          + Add New Citation
-        </button>
         <div v-if="showSearch" class="citation-search">
           <input
               v-model="searchQuery"
@@ -563,11 +600,6 @@ watch(language, () => {
 
       <div v-if="!isCompact" class="figures-ui">
         <!-- BUTTON -->
-        <button class="citation-add-btn" @click="showFigureSearch = !showFigureSearch">
-          + Add Figure Reference
-        </button>
-
-        <!-- SEARCH DROPDOWN -->
         <div v-if="showFigureSearch" class="citation-search">
           <input
               v-model="searchFigureQuery"
@@ -582,7 +614,7 @@ watch(language, () => {
                 @click="addFigureReferenceByKey(key)"
             >
               <img :src="img.base64" width="40" />
-              <strong>{{ img.refLabel }}</strong> ({{ key }})
+              <strong>{{ img.refLabel }}</strong>
             </li>
           </ul>
         </div>
@@ -906,6 +938,44 @@ watch(language, () => {
 .delete-node-btn:hover {
   background-color: #dc2626; /* dunkleres Rot bei Hover */
 }
+
+.citation-add-btn.open {
+  background: #444;
+  color: white;
+  border-color: #444;
+}
+
+.citations-ui,
+.figures-ui {
+  gap: 8px;
+}
+
+.figures-ui {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-mini-btn {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-mini-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-mini-btn.active {
+  background: #374151;   /* dunkelgrau */
+  color: white;
+  border-color: #374151;
+}
+
 
 
 </style>

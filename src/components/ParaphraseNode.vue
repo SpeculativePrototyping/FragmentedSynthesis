@@ -332,6 +332,12 @@ function deleteNode() {
       <button class="delete-node-btn" @click="deleteNode" title="Delete this node">
         🗑️
       </button>
+
+      <button type="button" class="toolbar-mini-btn" @click="onRetry" title="Retry">
+        🔁
+      </button>
+
+
     </div>
   </NodeToolbar>
   <div class="summary-node doc-node" ref="nodeRef">
@@ -342,19 +348,13 @@ function deleteNode() {
 
     <section class="doc-node__body summary-node__body">
       <label class="summary-node__field">
-        <span>Style Template</span>
         <select v-model="selectedTemplate">
-          <option :value="null">No template / default</option>
+          <option :value="null">Choose a style template (default selected)</option>
           <option v-for="tpl in styleTemplates" :key="tpl.templateName" :value="tpl.templateName">
             {{ tpl.templateName }}
           </option>
         </select>
       </label>
-
-      <div class="summary-node__actions">
-        <button type="button" class="summary-node__retry" @click="onRetry">Retry</button>
-      </div>
-
       <textarea
           @wheel.stop
           class="summary-node__textarea"
@@ -363,13 +363,6 @@ function deleteNode() {
           aria-label="Summary output"
           :placeholder="status === 'idle' ? 'This node can paraphrase incoming text for you. Choose a style template to influence tone and length.' : ''"
       />
-
-      <p v-if="status === 'error'" class="summary-node__status summary-node__status--error" role="alert">
-        {{ error }}
-      </p>
-      <p v-else-if="status !== 'done'" class="summary-node__status">
-        {{ status === 'processing' ? 'Working on it…' : status === 'queued' ? 'Queued…' : '' }}
-      </p>
     </section>
 
     <Handle id="input" type="target" :position="Position.Left" />
@@ -470,6 +463,27 @@ function deleteNode() {
 
 .delete-node-btn:hover {
   background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
+.toolbar-mini-btn {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.15);
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-mini-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-mini-btn.active {
+  background: #374151;   /* dunkelgrau */
+  color: white;
+  border-color: #374151;
 }
 
 </style>
