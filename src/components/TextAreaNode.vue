@@ -10,7 +10,6 @@ import { textNodePrompts } from '@/nodes/prompts'
 
 
 
-
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
 
 interface BibEntry {
@@ -103,6 +102,7 @@ async function generateSummary() {
   if (!txt) {
     summary.value = ''
     status.value = 'idle'
+    return
     return
   }
 

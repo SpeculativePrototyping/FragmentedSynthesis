@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import {ref, watch, provide, computed, nextTick, onMounted} from 'vue'
 import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
-import { VueFlow, addEdge, type EdgeMouseEvent } from '@vue-flow/core'
+import { VueFlow, addEdge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
 import {MiniMap} from "@vue-flow/minimap";
-import {applyNodeChanges, applyEdgeChanges, type NodeChange, type EdgeChange} from '@vue-flow/core'
+import {type NodeChange, type EdgeChange} from '@vue-flow/core'
+import html2canvas from 'html2canvas'
 
 
 //Import every node-component:
@@ -37,6 +38,17 @@ interface ImageCacheEntry {
   base64: string
   refLabel: string
 }
+
+interface Snapshot {
+  id: string
+  name: string
+  createdAt: number
+  data: any
+  screenshot?: string // optional, base64 image
+}
+
+const snapshots = ref<Snapshot[]>([])
+provide('snapshots', snapshots)
 
 export type Language = 'en' | 'de'
 const language = ref<Language>('en')
@@ -69,6 +81,10 @@ provide('setStyleTemplates', (newList) => {
   templates.value = newList
 })
 
+const screenshotInProgress = ref(false)
+provide('screenshotInProgress', screenshotInProgress)
+
+
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
 
@@ -85,134 +101,6 @@ const edgeMenu = ref<{
 })
 
 let nodeCounter = 0
-
-interface FlowSnapshot {
-  nodes: Node[]
-  edges: Edge[]
-}
-
-const undoStack = ref<FlowSnapshot[]>([])
-const redoStack = ref<FlowSnapshot[]>([])
-
-const canUndo = computed(() => undoStack.value.length > 0)
-const canRedo = computed(() => redoStack.value.length > 0)
-
-const isRestoring = ref(false)
-
-let snapshotTimeout: number | null = null
-let nodesDirty = false
-let edgesDirty = false
-
-const SNAPSHOT_DELAY = 300 // ms – fühlt sich sehr gut an
-
-function createSnapshot(): FlowSnapshot {
-  return {
-    nodes: JSON.parse(JSON.stringify(nodes.value)),
-    edges: JSON.parse(JSON.stringify(edges.value)),
-  }
-}
-
-function pushSnapshot() {
-  undoStack.value.push(createSnapshot())
-  redoStack.value.length = 0
-}
-
-const MAX_HISTORY = 200
-function trimHistory() {
-  if (undoStack.value.length > MAX_HISTORY) {
-    undoStack.value.shift()
-  }
-}
-
-function onNodesChange(changes: NodeChange[]) {
-  nodesDirty = true
-  scheduleSnapshot()
-}
-
-function onEdgesChange(changes: EdgeChange[]) {
-  edgesDirty = true
-  scheduleSnapshot()
-}
-
-
-function scheduleSnapshot() {
-  if (isRestoring.value) return
-
-  if (snapshotTimeout !== null) {
-    clearTimeout(snapshotTimeout)
-  }
-
-  snapshotTimeout = window.setTimeout(() => {
-    // 🔒 NUR wenn wirklich eine Änderung stattgefunden hat
-    if (nodesDirty || edgesDirty) {
-      pushSnapshot()
-      trimHistory()
-    }
-
-    nodesDirty = false
-    edgesDirty = false
-    snapshotTimeout = null
-  }, SNAPSHOT_DELAY)
-}
-
-
-
-
-function undo() {
-  if (!canUndo.value) return
-
-  if (snapshotTimeout !== null) {
-    clearTimeout(snapshotTimeout)
-    snapshotTimeout = null
-  }
-
-  isRestoring.value = true
-
-  redoStack.value.push(createSnapshot())
-  const snapshot = undoStack.value.pop()!
-
-  nodes.value = JSON.parse(JSON.stringify(snapshot.nodes))
-  edges.value = JSON.parse(JSON.stringify(snapshot.edges))
-
-  nextTick(() => {
-    isRestoring.value = false
-  })
-}
-
-
-
-function redo() {
-  if (!canRedo.value) return
-
-  //  laufenden Snapshot abbrechen
-  if (snapshotTimeout !== null) {
-    clearTimeout(snapshotTimeout)
-    snapshotTimeout = null
-  }
-
-  isRestoring.value = true
-
-  // aktuellen Zustand für Undo sichern
-  undoStack.value.push(createSnapshot())
-
-  const snapshot = redoStack.value.pop()!
-
-  // 🔒 deep clone beim Restore
-  nodes.value = JSON.parse(JSON.stringify(snapshot.nodes))
-  edges.value = JSON.parse(JSON.stringify(snapshot.edges))
-
-  nextTick(() => {
-    isRestoring.value = false
-  })
-}
-
-
-provide('undo', undo)
-provide('redo', redo)
-provide('canUndo', canUndo)
-provide('canRedo', canRedo)
-
-
 
 function onEdgeClick(event: EdgeMouseEvent) {
   event.event.stopPropagation() // das eigentliche MouseEvent
@@ -363,12 +251,84 @@ function insertNodeOnEdge(templateType: string) {
 }
 
 
+async function createSnapshot() {
+
+  // Blitz starten
+  screenshotInProgress.value = true
+
+  // 1. Export der Flow-Daten
+  const exportData = {
+    nodes: JSON.parse(JSON.stringify(nodes.value)),
+    edges: JSON.parse(JSON.stringify(edges.value)),
+    bibliography: bibliography.value,
+    TLDR: TLDR.value,
+    templates: templates.value
+  }
+
+  // Optional: nodes enthalten Bilder → Bild-Cache einfügen
+  exportData.nodes.forEach((node: any) => {
+    if (node.data?.imageName && imageCache.value[node.data.imageName]) {
+      node.data.image = imageCache.value[node.data.imageName].base64
+    }
+  })
+
+  // 2. Screenshot erzeugen
+  let screenshot: string | undefined
+  try {
+    const flowEl = document.querySelector('.vue-flow') as HTMLElement
+    if (flowEl) {
+      const canvas = await html2canvas(flowEl)
+      screenshot = canvas.toDataURL('image/png')
+    }
+  } catch (err) {
+    console.warn('Snapshot screenshot failed', err)
+  }
+
+  // Blitz kurz verzögern, damit der Effekt sichtbar ist
+  await new Promise(r => setTimeout(r, 150))
+  screenshotInProgress.value = false
+
+  // 3. Snapshot speichern
+  const timestamp = new Date()
+  snapshots.value.unshift({
+    id: crypto.randomUUID(),
+    name: timestamp.toLocaleString(),
+    createdAt: timestamp.getTime(),
+    data: exportData,
+    screenshot
+  })
+}
+
+function restoreSnapshot(id: string) {
+  const snap = snapshots.value.find(s => s.id === id)
+  if (!snap) return
+
+  nodes.value = []
+  edges.value = []
+
+  nextTick(() => {
+    nodes.value = snap.data.nodes
+    edges.value = snap.data.edges
+    TLDR.value = snap.data.TLDR
+    templates.value = snap.data.templates
+    bibliography.value = snap.data.bibliography
+  })
+}
+
+function deleteSnapshot(id: string) {
+  snapshots.value = snapshots.value.filter(s => s.id !== id)
+}
+
+provide('createSnapshot', createSnapshot)
+provide('restoreSnapshot', restoreSnapshot)
+provide('deleteSnapshot', deleteSnapshot)
 
 
 </script>
 
 <template>
   <div style="width: 100%; height: 100vh">
+
     <div
         v-if="edgeMenu.visible"
         class="edge-toolbar"
@@ -379,6 +339,10 @@ function insertNodeOnEdge(templateType: string) {
       <button @click="insertNodeOnEdge('paraphrase')">Insert Paraphrase Node</button>
       <button @click="insertNodeOnEdge('grammar')">Insert Grammar Node</button>
     </div>
+
+    <div v-if="screenshotInProgress" class="screenshot-overlay"></div>
+
+
     <VueFlow
         v-model:nodes="nodes"
         v-model:edges="edges"
@@ -389,9 +353,6 @@ function insertNodeOnEdge(templateType: string) {
         @edge-update="onEdgeUpdate"
         @edge-click="onEdgeClick"
         @pane-click="closeEdgeMenu"
-        @nodes-change="onNodesChange"
-        @edges-change="onEdgesChange"
-
     >
       <SaveRestoreControls />
 
@@ -518,6 +479,23 @@ function insertNodeOnEdge(templateType: string) {
 
 .edge-toolbar .delete-btn:hover {
   background-color: #dc2626; /* dunkleres Rot beim Hover */
+}
+
+/* Screenshot flash */
+.screenshot-overlay {
+  position: fixed;
+  inset: 0;
+  background: white;
+  opacity: 0.9;
+  z-index: 99999; /* über allem */
+  pointer-events: none;
+  animation: flash 0.3s ease-in-out;
+}
+
+@keyframes flash {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 

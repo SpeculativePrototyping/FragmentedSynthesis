@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, inject, nextTick} from 'vue'
+import { computed, ref, watch, inject, nextTick, provide} from 'vue'
 import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
 import { nodeTemplates } from './nodes/templates'
@@ -13,6 +13,8 @@ import JSZip from 'jszip'
 import FigurePanelContent from "@/FigurePanelContent.vue";
 import ReferencePanelContent from "@/ReferencePanelContent.vue";
 import StylePanelContent from "@/StylePanelContent.vue";
+import SnapshotsPanelContent from "@/SnapshotsPanelContent.vue";
+
 
 interface StyleTemplate {
   templateName: string
@@ -27,6 +29,15 @@ interface ZipFileEntry {
   content: string | ArrayBuffer
 }
 
+interface Snapshot {
+  id: string
+  name: string
+  createdAt: number
+  data: any
+  screenshot?: string
+}
+
+
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const updateBibliography = inject<(newBib: BibEntry[]) => void>('updateBibliography')!
@@ -36,7 +47,7 @@ const TLDR = inject<Ref<boolean>>('TLDR')!
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const activeSidebar = ref<null | 'bibliography' | 'figures' | 'style'>(null)
+const activeSidebar = ref<null | 'bibliography' | 'figures' | 'style' | 'snapshots'>(null)
 const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
 const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
 const language = inject<Ref<'en' | 'de'>>('language')!
@@ -44,12 +55,10 @@ const languageLabel = computed(() => language.value.toUpperCase())
 const uploadedFiles = ref<ZipFileEntry[]>([])
 const selectedMainTex = ref<string | null>(null)
 const showLatexFilePicker = ref(false)
+const createSnapshot = inject<() => Promise<void>>('createSnapshot')!
+const snapshots = inject<Ref<Snapshot[]>>('snapshots')!
 
 
-const undo = inject<() => void>('undo')!
-const redo = inject<() => void>('redo')!
-const canUndo = inject<any>('canUndo')
-const canRedo = inject<any>('canRedo')
 
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
@@ -84,9 +93,11 @@ function onDeleteSelected() {
   setNodes(remainingNodes)
 }
 
-function onSaveToFile(): void {
+async function onSaveToFile(): Promise<void> {
+  // Optional: vorher einen neuen Snapshot erstellen
 
   const exportData = JSON.parse(JSON.stringify(toObject()))
+
   exportData.nodes.forEach((node: any) => {
     if (node.data?.imageName && imageCache?.value[node.data.imageName]) {
       node.data.image = imageCache.value[node.data.imageName]
@@ -97,6 +108,14 @@ function onSaveToFile(): void {
   exportData.TLDR = TLDR.value
   exportData.templates = templates.value
 
+  // Snapshots komplett einfügen
+  exportData.snapshots = snapshots.value.map(snap => ({
+    id: snap.id,
+    name: snap.name,
+    createdAt: snap.createdAt,
+    data: snap.data,
+    screenshot: snap.screenshot
+  }))
 
   const dataStr = JSON.stringify(exportData, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
@@ -107,6 +126,7 @@ function onSaveToFile(): void {
   a.click()
   URL.revokeObjectURL(url)
 }
+
 
 
 function onRestoreFromFile(event: Event): void {
@@ -144,6 +164,11 @@ function onRestoreFromFile(event: Event): void {
 
       if (data.templates && setTemplates) {
         setTemplates(data.templates)
+      }
+
+      // Snapshots wiederherstellen
+      if (data.snapshots) {
+        snapshots.value = data.snapshots
       }
 
     } catch (err) {
@@ -258,21 +283,13 @@ function importLatexProject() {
 }
 
 
-
-
-
-
-
-function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
+function togglePanel(panel: 'bibliography' | 'figures' | 'style' | 'snapshots') {
   if (activeSidebar.value === panel) {
     activeSidebar.value = null // Schaltet aus, wenn nochmal geklickt
   } else {
     activeSidebar.value = panel
   }
 }
-
-
-
 
 </script>
 
@@ -362,28 +379,23 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
          <label class="sr-only" for="node-type-select">Node type</label>
          <div class="buttons">
 
-           <button title="Undo" @click="undo" :disabled="!canUndo">
-             <Icon name="undo"  />
+           <button title="Snapshot (Save your progress. Restore using the Snapshots-Panel)" @click="createSnapshot">
+             📸
            </button>
-
-           <button title="Redo" @click="redo" :disabled="!canRedo">
-             <Icon name="redo" />
-           </button>
-
            <button
-               title="Delete selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL."
+               title="Delete (Delete all selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL.)"
                @click="onDeleteSelected">
-             <Icon name="trash" />
+             🗑️
            </button>
-          <button title="Save project to file" @click="onSaveToFile">
-            <Icon name="save" />
+          <button title="Download (Save project to file)" @click="onSaveToFile">
+            💾
           </button>
-          <button title="Load project from file" class="upload-label">
-            <Icon name="upload" />
+          <button title="Upload (Load project from file)" class="upload-label">
+            📂
             <input type="file" accept=".json" @change="onRestoreFromFile" />
           </button>
-           <button title="Unchaosify - This will automatically sort your elements according to the flow of the content." @click="onAutoLayout" >
-             <Icon name="wand" />
+           <button title="Unchaosify (This will automatically sort your elements according to the flow of the content)" @click="onAutoLayout" >
+             🔮
            </button>
 
 
@@ -391,11 +403,11 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
          </div>
 
       <div class="toggle-switches">
-        <div class="toggle-switch" v-for="panel in ['bibliography','figures','style']" :key="panel">
+        <div class="toggle-switch" v-for="panel in ['bibliography','figures','style', 'snapshots']" :key="panel">
           <label>
             <input type="checkbox"
                    :checked="activeSidebar === panel"
-                   @change="() => togglePanel(panel as 'bibliography' | 'figures' | 'style')" />
+                   @change="() => togglePanel(panel as 'bibliography' | 'figures' | 'style' | 'snapshots')" />
             <span class="slider purple"></span>
           </label>
           <span class="toggle-label">
@@ -412,7 +424,7 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
           </label>
           <span
               class="toggle-label"
-              title="Enables or disables TLDR mode for all nodes">
+              title="Enable or disable TLDR mode for all Text Input Nodes and Figure Nodes for a better overview.">
               TLDR-Mode
           </span>
         </div>
@@ -428,7 +440,7 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
           </label>
           <span
               class="toggle-label"
-              title="Switch between English and German">
+              title="Switch LLM-prompts between English and German">
               Language: {{ languageLabel }}
   </span>
         </div>
@@ -506,9 +518,12 @@ function togglePanel(panel: 'bibliography' | 'figures' | 'style') {
     </div>
   </Panel>
 
-
-
-
+  <Panel v-if="activeSidebar === 'snapshots'" position="top-right">
+    <div class="side-panel">
+      <h4>Snapshots</h4>
+      <SnapshotsPanelContent />
+    </div>
+  </Panel>
 
 
 </template>
