@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, type Ref } from 'vue'
+import { inject, type Ref, ref, computed } from 'vue'
 
 interface Snapshot {
   id: string
@@ -7,11 +7,19 @@ interface Snapshot {
   createdAt: number
   data: any
   screenshot?: string
+  isAutoSave?: boolean
 }
 
 const snapshots = inject<Ref<Snapshot[]>>('snapshots')!
 const restoreSnapshot = inject<(id: string) => void>('restoreSnapshot')!
 const deleteSnapshot = inject<(id: string) => void>('deleteSnapshot')!
+
+const showAutosaves = ref(true)
+
+const filteredSnapshots = computed(() => {
+  if (showAutosaves.value) return snapshots.value
+  return snapshots.value.filter(s => !s.isAutoSave)
+})
 
 function handleRestore(snap: Snapshot) {
   restoreSnapshot(snap.id)
@@ -28,7 +36,16 @@ function handleDelete(snap: Snapshot) {
       No snapshots yet 📸
     </div>
 
-    <div v-for="snap in snapshots" :key="snap.id" class="snapshot-card">
+    <!-- Autosave Toggle -->
+    <div class="autosave-toggle">
+      <label>
+        <input type="checkbox" v-model="showAutosaves" />
+        Show autosaves
+      </label>
+    </div>
+
+
+    <div v-for="snap in filteredSnapshots" :key="snap.id" class="snapshot-card">
       <!-- Screenshot -->
       <img v-if="snap.screenshot" :src="snap.screenshot" class="snapshot-image" />
 
@@ -42,6 +59,7 @@ function handleDelete(snap: Snapshot) {
       </div>
     </div>
   </div>
+
 </template>
 
 <style scoped>
@@ -91,5 +109,29 @@ function handleDelete(snap: Snapshot) {
   font-size: 0.9rem; /* Größe bleibt wie vorher */
   padding: 6px 10px;
 }
+
+.autosave-toggle {
+  position: sticky;
+  top: 0; /* bleibt oben sichtbar */
+
+  z-index: 2;
+  margin-bottom: 4px;
+  padding: 6px 8px;
+
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+
+  font-size: 0.75rem;
+  color: #ddd;
+}
+
+
+.autosave-toggle input {
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+
 </style>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch, provide, computed, nextTick, onMounted} from 'vue'
+import {ref, watch, provide, computed, nextTick, onMounted, onUnmounted} from 'vue'
 import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
 import { VueFlow, addEdge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -8,6 +8,7 @@ import { findNodeTemplate} from './nodes/templates'
 import {MiniMap} from "@vue-flow/minimap";
 import {type NodeChange, type EdgeChange} from '@vue-flow/core'
 import html2canvas from 'html2canvas'
+
 
 
 //Import every node-component:
@@ -21,6 +22,10 @@ import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
+
+const AUTOSAVE_INTERVAL = 60_000 // 60 Sekunden
+const MAX_AUTOSAVES = 20
+
 
 interface EdgeMouseEvent {
   edge: Edge
@@ -45,6 +50,7 @@ interface Snapshot {
   createdAt: number
   data: any
   screenshot?: string // optional, base64 image
+  isAutoSave?: boolean
 }
 
 const snapshots = ref<Snapshot[]>([])
@@ -322,6 +328,77 @@ function deleteSnapshot(id: string) {
 provide('createSnapshot', createSnapshot)
 provide('restoreSnapshot', restoreSnapshot)
 provide('deleteSnapshot', deleteSnapshot)
+
+
+async function createAutosaveSnapshot() {
+  const timestamp = new Date()
+
+  const exportData = {
+    nodes: JSON.parse(JSON.stringify(nodes.value)),
+    edges: JSON.parse(JSON.stringify(edges.value)),
+    bibliography: bibliography.value,
+    TLDR: TLDR.value,
+    templates: templates.value
+  }
+
+  exportData.nodes.forEach((node: any) => {
+    if (node.data?.imageName && imageCache.value[node.data.imageName]) {
+      node.data.image = imageCache.value[node.data.imageName].base64
+    }
+  })
+
+  let screenshot: string | undefined
+  try {
+    const flowEl = document.querySelector('.vue-flow') as HTMLElement
+    if (flowEl) {
+      const canvas = await html2canvas(flowEl)
+      screenshot = canvas.toDataURL('image/png')
+    }
+  } catch (err) {
+    console.warn('Autosave screenshot failed', err)
+  }
+
+  // 🔹 neuen Autosave vorne einfügen
+  snapshots.value.unshift({
+    id: crypto.randomUUID(),
+    name: `🕒 Autosave - ${timestamp.toLocaleTimeString()}`,
+    createdAt: timestamp.getTime(),
+    data: exportData,
+    screenshot,
+    isAutoSave: true
+  })
+
+  // 🔹 alte Autosaves begrenzen (nur Autosaves!)
+  const autosaves = snapshots.value.filter(s => s.isAutoSave)
+
+  if (autosaves.length > MAX_AUTOSAVES) {
+    const autosavesSorted = autosaves
+        .sort((a, b) => a.createdAt - b.createdAt)
+
+    const toRemove = autosavesSorted.slice(
+        0,
+        autosaves.length - MAX_AUTOSAVES
+    )
+
+    snapshots.value = snapshots.value.filter(
+        s => !toRemove.some(r => r.id === s.id)
+    )
+  }
+}
+
+
+let autosaveInterval: number | undefined
+
+onMounted(() => {
+  autosaveInterval = window.setInterval(
+      createAutosaveSnapshot,
+      AUTOSAVE_INTERVAL
+  )
+})
+
+onUnmounted(() => {
+  if (autosaveInterval) clearInterval(autosaveInterval)
+})
 
 
 </script>
