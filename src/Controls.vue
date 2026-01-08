@@ -5,7 +5,7 @@ import Icon from './Icon.vue'
 import { nodeTemplates } from './nodes/templates'
 import { applyDagreLayout } from './nodes/layouts'
 import type { Ref } from 'vue'
-import { useDemo } from './demo'
+import { useDemo } from './api/demo.ts'
 import type {BibEntry, Language} from "@/App.vue";
 import {parseLatexToNodesAndEdges} from '@/api/latexParser'
 import JSZip from 'jszip'
@@ -40,7 +40,6 @@ interface Snapshot {
 
 const demoActive = inject<Ref<boolean>>('demoActive', ref(false))!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
-const updateBibliography = inject<(newBib: BibEntry[]) => void>('updateBibliography')!
 const { nodes, edges, setNodes, setEdges, screenToFlowCoordinate, addNodes, dimensions, toObject, fromObject} = useVueFlow()
 const availableTemplates = computed(() => nodeTemplates)
 const TLDR = inject<Ref<boolean>>('TLDR')!
@@ -70,6 +69,7 @@ const { startDemo, skipDemo, nextStep } = useDemo({
 })
 
 
+
 function onDragStart(type: string, event: DragEvent) {
   if (!event.dataTransfer) return
   event.dataTransfer.setData('node/type', type)
@@ -93,7 +93,6 @@ function onDeleteSelected() {
 }
 
 async function onSaveToFile(): Promise<void> {
-  // Optional: vorher einen neuen Snapshot erstellen
 
   const exportData = JSON.parse(JSON.stringify(toObject()))
 
@@ -125,7 +124,6 @@ async function onSaveToFile(): Promise<void> {
   a.click()
   URL.revokeObjectURL(url)
 }
-
 
 
 function onRestoreFromFile(event: Event): void {
@@ -292,11 +290,10 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
 
 </script>
 
-//HTML
 
 <template>
 
-  <!-- Overlay -->
+  <!-- Demo Overlay -->
   <div v-if="showIntro" class="demo-overlay">
     <div class="demo-box">
       <h1>👋 Hey there! Looks like you're new here.</h1>
@@ -363,15 +360,13 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
   </div>
 
 
-
-
-
-
   <!-- BOTTOM DEMO CONTROLS -->
   <div v-if="demoActive" class="demo-controls">
     <button class="next-step-btn" @click="nextStep">➡️ Next Step</button>
     <button class="end-demo-btn" @click="skipDemo">🛑 End Demo</button>
   </div>
+
+  <!-- Main Control Interface (Left Side) -->
 
   <Panel position="top-left">
     <div class="panel-content">
@@ -396,9 +391,6 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
            <button title="Unchaosify (This will automatically sort your elements according to the flow of the content)" @click="onAutoLayout" >
              🔮
            </button>
-
-
-
          </div>
 
       <div class="toggle-switches">
@@ -415,36 +407,38 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
         </div>
       </div>
 
-      <div class="drag-nodes">
-        <div class="toggle-switch">
-          <label>
-            <input type="checkbox" v-model="TLDR" />
-            <span class="slider"></span>
-          </label>
-          <span
-              class="toggle-label"
-              title="Enable or disable TLDR mode for all Text Input Nodes and Figure Nodes for a better overview.">
+      <div class="toggle-switch-group">
+      <div class="toggle-switch">
+        <label>
+          <input type="checkbox" v-model="TLDR" />
+          <span class="slider"></span>
+        </label>
+        <span
+            class="toggle-label"
+            title="Enable or disable TLDR mode for all Text Input Nodes and Figure Nodes for a better overview.">
               TLDR-Mode
           </span>
-        </div>
-
-        <div class="toggle-switch">
-          <label>
-            <input
-                type="checkbox"
-                :checked="language === 'de'"
-                @change="toggleLanguage"
-            />
-            <span class="slider flag"></span>
-          </label>
-          <span
-              class="toggle-label"
-              title="Switch LLM-prompts between English and German">
+      </div>
+      <div class="toggle-switch">
+        <label>
+          <input
+              type="checkbox"
+              :checked="language === 'de'"
+              @change="toggleLanguage"
+          />
+          <span class="slider flag"></span>
+        </label>
+        <span
+            class="toggle-label"
+            title="Switch LLM-prompts between English and German">
               Language: {{ languageLabel }}
-  </span>
-        </div>
+        </span>
+      </div>
+      </div>
 
-        <!-- Text Nodes -->
+
+      <div class="drag-nodes">
+        <!-- Content Nodes -->
         <h4
             class="drag-category"
         >
@@ -496,6 +490,7 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
     </div>
    </Panel>
 
+  <!-- Floating Control Panels (Right Side) -->
 
 
   <Panel v-if="activeSidebar === '📚bibliography'" position="top-right">
@@ -529,7 +524,6 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
 
 </template>
 
-//CSS
 
 <style scoped>
 .panel-content {
@@ -619,18 +613,25 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
   gap: 4px;
   padding: 4px 0;
   margin-top: 8px;
+  align-items: center;
 }
 
 .draggable-node {
   padding: 6px 8px;
-  background-color: #eee;
-  border: 1px solid #ccc;
+  background: #f7f7f7;
+  border: 1px solid rgba(15,23,42,.15);
   border-radius: 4px;
   cursor: grab;
   user-select: none;
   font-size: 0.85rem;
-  width: 120px; /* optional: feste Breite für eine "Spalte" */
+  width: 130px; /* optional: feste Breite für eine "Spalte" */
   text-align: center; /* optional: Text zentrieren */
+  transition: background 0.15s, color 0.15s;
+}
+
+.draggable-node:hover {
+  background: #e5e7eb;
+  box-shadow: 0 2px 4px rgba(29, 31, 33, 0.12);
 }
 
 .drag-category {
@@ -952,11 +953,6 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
 }
 
 
-
-/* ===============================
-   LATEX FILE PICKER OVERLAY
-   =============================== */
-
 .latex-overlay {
   position: fixed;
   inset: 0;
@@ -982,7 +978,6 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
   overflow: hidden;
 }
 
-/* Rainbow border, same as demo */
 .latex-box::before {
   pointer-events: none;
   content: "";
@@ -1052,7 +1047,6 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
   pointer-events: none;
 }
 
-/* reuse existing button */
 .latex-box .start-button {
   margin-top: 1rem;
 }
@@ -1061,9 +1055,5 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
   opacity: 0.4;
   cursor: not-allowed;
 }
-
-
-
-
 
 </style>
