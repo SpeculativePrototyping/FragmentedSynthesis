@@ -3,17 +3,17 @@ import { computed, ref, watch, inject, nextTick, provide} from 'vue'
 import { Panel, useVueFlow } from '@vue-flow/core'
 import Icon from './Icon.vue'
 import { nodeTemplates } from './nodes/templates'
-import { applyDagreLayout } from './nodes/layouts'
+import { applyDagreLayout } from './api/layouts.ts'
 import type { Ref } from 'vue'
 import { useDemo } from './api/demo.ts'
 import type {BibEntry, Language} from "@/App.vue";
 import {parseLatexToNodesAndEdges} from '@/api/latexParser'
 import JSZip from 'jszip'
 
-import FigurePanelContent from "@/FigurePanelContent.vue";
-import ReferencePanelContent from "@/ReferencePanelContent.vue";
-import StylePanelContent from "@/StylePanelContent.vue";
-import SnapshotsPanelContent from "@/SnapshotsPanelContent.vue";
+import FigurePanelContent from "@/Panels/FigurePanelContent.vue";
+import ReferencePanelContent from "@/Panels/ReferencePanelContent.vue";
+import StylePanelContent from "@/Panels/StylePanelContent.vue";
+import SnapshotsPanelContent from "@/Panels/SnapshotsPanelContent.vue";
 
 
 interface StyleTemplate {
@@ -46,7 +46,7 @@ const TLDR = inject<Ref<boolean>>('TLDR')!
 const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const activeSidebar = ref<null | '📚bibliography' | '🖼️figures' | '✏️style' | '📸snapshots'>(null)
+const activeSidebar = ref<null | '📚 bibliography' | '🖼️ figures' | '✏️ style' | '📸 snapshots'>(null)
 const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
 const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
 const language = inject<Ref<'en' | 'de'>>('language')!
@@ -280,7 +280,7 @@ function importLatexProject() {
 }
 
 
-function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style' | '📸snapshots') {
+function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ style' | '📸 snapshots') {
   if (activeSidebar.value === panel) {
     activeSidebar.value = null // Schaltet aus, wenn nochmal geklickt
   } else {
@@ -394,11 +394,11 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
          </div>
 
       <div class="toggle-switches">
-        <div class="toggle-switch" v-for="panel in ['📚bibliography','🖼️figures','✏️style', '📸snapshots']" :key="panel">
+        <div class="toggle-switch" v-for="panel in ['📚 bibliography','🖼️ figures','✏️ style', '📸 snapshots']" :key="panel">
           <label>
             <input type="checkbox"
                    :checked="activeSidebar === panel"
-                   @change="() => togglePanel(panel as '📚bibliography' | '🖼️figures' | '✏️style' | '📸snapshots')" />
+                   @change="() => togglePanel(panel as '📚 bibliography' | '🖼️ figures' | '✏️ style' | '📸 snapshots')" />
             <span class="slider purple"></span>
           </label>
           <span class="toggle-label">
@@ -493,28 +493,28 @@ function togglePanel(panel: '📚bibliography' | '🖼️figures' |'✏️style'
   <!-- Floating Control Panels (Right Side) -->
 
 
-  <Panel v-if="activeSidebar === '📚bibliography'" position="top-right">
+  <Panel v-if="activeSidebar === '📚 bibliography'" position="top-right">
     <div class="side-panel">
       <h4>Reference Tracker</h4>
       <ReferencePanelContent />
     </div>
   </Panel>
 
-  <Panel v-if="activeSidebar === '🖼️figures'" position="top-right">
+  <Panel v-if="activeSidebar === '🖼️ figures'" position="top-right">
     <div class="side-panel">
       <h4>Figure Tracker</h4>
       <FigurePanelContent />
     </div>
   </Panel>
 
-  <Panel v-if="activeSidebar === '✏️style'" position="top-right">
+  <Panel v-if="activeSidebar === '✏️ style'" position="top-right">
     <div class="side-panel">
       <h4>Style Specifications</h4>
       <StylePanelContent />
     </div>
   </Panel>
 
-  <Panel v-if="activeSidebar === '📸snapshots'" position="top-right">
+  <Panel v-if="activeSidebar === '📸 snapshots'" position="top-right">
     <div class="side-panel">
       <h4>Snapshots</h4>
       <SnapshotsPanelContent />
