@@ -108,9 +108,27 @@ const edgeMenu = ref<{
 
 let nodeCounter = 0
 
+
+
+
+
+const allowedSourceTypes = ['textArea', 'grammar', 'paraphrase', 'edit']
+
+function canInsertOnEdge(edge: Edge) {
+  const sourceNode = nodes.value.find(n => n.id === edge.source)
+  if (!sourceNode) return false
+  return allowedSourceTypes.includes(sourceNode.type)
+}
+
 function onEdgeClick(event: EdgeMouseEvent) {
-  event.event.stopPropagation() // das eigentliche MouseEvent
+  event.event.stopPropagation()
   const edge = event.edge
+
+  // Sicherheits-Check
+  if (!canInsertOnEdge(edge)) {
+    // Menü wird nicht angezeigt
+    return
+  }
 
   edgeMenu.value = {
     visible: true,
@@ -226,8 +244,9 @@ function insertNodeOnEdge(templateType: string) {
   edges.value = edges.value.filter(e => e.id !== edge.id);
 
   // Default Handles definieren
-  const sourceHandle = 'output';
-  const targetHandle = 'input';
+
+  const oldSourceHandle = edge.sourceHandle ?? 'output';
+  const oldTargetHandle = edge.targetHandle ?? 'input';
 
   // Neue Edges erstellen
   const newEdges: Edge[] = [
@@ -235,21 +254,24 @@ function insertNodeOnEdge(templateType: string) {
       id: `edge-${edge.source}-${newNodeId}-${Date.now()}`,
       source: edge.source,
       target: newNodeId,
-      targetHandle,      // Target des neuen Nodes
+      sourceHandle: oldSourceHandle,
+      targetHandle: 'input', // neuer Node erhält 'input'
       animated: true,
       style: { strokeWidth: 4 },
-      markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6, },
+      markerEnd: { type: 'arrowclosed', color: '#000', width: 6, height: 6 },
     },
     {
       id: `edge-${newNodeId}-${edge.target}-${Date.now()}`,
       source: newNodeId,
-      sourceHandle,      // Source des neuen Nodes
       target: edge.target,
+      sourceHandle: 'output',   // neuer Node liefert an alte Edge
+      targetHandle: oldTargetHandle,
       animated: true,
       style: { strokeWidth: 4 },
-      markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6, },
+      markerEnd: { type: 'arrowclosed', color: '#000', width: 6, height: 6 },
     },
   ];
+
 
   edges.value.push(...newEdges);
 
