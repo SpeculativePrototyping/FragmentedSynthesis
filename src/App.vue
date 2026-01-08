@@ -108,27 +108,21 @@ const edgeMenu = ref<{
 
 let nodeCounter = 0
 
-
-
-
-
 const allowedSourceTypes = ['textArea', 'grammar', 'paraphrase', 'edit']
 
-function canInsertOnEdge(edge: Edge) {
-  const sourceNode = nodes.value.find(n => n.id === edge.source)
+const canInsertNodes = computed(() => {
+  if (!edgeMenu.value.edge) return false
+  const sourceNode = nodes.value.find(n => n.id === edgeMenu.value.edge!.source)
   if (!sourceNode) return false
   return allowedSourceTypes.includes(sourceNode.type)
-}
+})
+
+
+
 
 function onEdgeClick(event: EdgeMouseEvent) {
-  event.event.stopPropagation()
+  event.event.stopPropagation() // das eigentliche MouseEvent
   const edge = event.edge
-
-  // Sicherheits-Check
-  if (!canInsertOnEdge(edge)) {
-    // Menü wird nicht angezeigt
-    return
-  }
 
   edgeMenu.value = {
     visible: true,
@@ -452,10 +446,15 @@ watch(nodes, (newNodes) => {
         class="edge-toolbar"
         :style="{ top: `${edgeMenu.y}px`, left: `${edgeMenu.x}px` }"
     >
+      <!-- Löschen geht immer -->
       <button class="delete-btn" @click="deleteEdge">🗑️</button>
-      <button @click="insertNodeOnEdge('edit')">Insert Edit Node</button>
-      <button @click="insertNodeOnEdge('paraphrase')">Insert Paraphrase Node</button>
-      <button @click="insertNodeOnEdge('grammar')">Insert Grammar Node</button>
+
+      <!-- Insert-Buttons nur, wenn erlaubt -->
+      <template v-if="canInsertNodes">
+        <button @click="insertNodeOnEdge('edit')">Insert Edit Node</button>
+        <button @click="insertNodeOnEdge('paraphrase')">Insert Paraphrase Node</button>
+        <button @click="insertNodeOnEdge('grammar')">Insert Grammar Node</button>
+      </template>
     </div>
 
     <div v-if="screenshotInProgress" class="screenshot-overlay"></div>
