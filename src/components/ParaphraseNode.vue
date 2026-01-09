@@ -93,6 +93,14 @@ const statusLabel = computed(() => {
   }
 })
 
+
+// TLDR / Compact
+const TLDR = inject('TLDR')
+const isCompact = ref(false)
+watch(TLDR, (val) => {
+  if (typeof val === 'boolean') isCompact.value = val
+})
+
 /* ----------------------
    queueing / debounce
    ---------------------- */
@@ -337,6 +345,12 @@ function deleteNode() {
         🔁
       </button>
 
+      <label class="toggle-switch" title="Compact view / TLDR">
+        <input type="checkbox" v-model="isCompact"/>
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">TLDR</span>
+
 
     </div>
   </NodeToolbar>
@@ -346,7 +360,7 @@ function deleteNode() {
       <span class="doc-node__hint">{{ statusLabel }}</span>
     </header>
 
-    <section class="doc-node__body summary-node__body">
+    <section class="doc-node__body summary-node__body" v-if="!isCompact">
       <label class="summary-node__field">
         <select v-model="selectedTemplate">
           <option :value="null">Choose a style template (default selected)</option>
@@ -484,6 +498,56 @@ function deleteNode() {
   background: #374151;   /* dunkelgrau */
   color: white;
   border-color: #374151;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 12px;
+  transition: 0.2s;
+}
+
+.toggle-switch .slider::before {
+  content: "";
+  position: absolute;
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #22ff00;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(12px);
+}
+
+.toggle-label {
+  font-size: 0.75rem;
+  color: #000;
 }
 
 </style>
