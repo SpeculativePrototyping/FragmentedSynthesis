@@ -33,7 +33,7 @@ export function applyDagreLayout(
     const g = new dagre.graphlib.Graph()
     g.setGraph({
         rankdir: direction ,
-        ranksep: 150,
+        ranksep: 250,
     })
     g.setDefaultEdgeLabel(() => ({}))
 

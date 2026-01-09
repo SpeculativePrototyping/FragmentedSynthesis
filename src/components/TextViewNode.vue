@@ -191,6 +191,7 @@ function deleteNode() {
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+
 }
 
 .delete-node-btn:hover {

@@ -119,14 +119,21 @@ const SECTION_COMMAND_BY_LEVEL: Record<number, string> = {
 };
 
 const escLaTeXPreserveCites = (s = "") => {
-  return s.replace(/~\\(cite|autoref)\{[^}]+\}|([#$%&_{}])/g, (match, group1) => {
-    // cite/autoref bleiben unescaped
-    if (match.startsWith("~\\cite{") || match.startsWith("~\\autoref{")) {
-      return match;
-    }
-    return "\\" + group1;
-  });
+  return s.replace(
+      /~\\(?:cite|autoref)\{[^}]+\}|([#\$%&_])/g,
+      (match, specialChar, offset, full) => {
+        if (match.startsWith("~\\cite{") || match.startsWith("~\\autoref{")) return match;
+
+        // wenn das Zeichen bereits escaped ist, nicht nochmal escapen
+        const prev = full[offset - 1];
+        if (prev === "\\") return match;
+
+        return "\\" + specialChar;
+      }
+  );
 };
+
+
 
 export interface LatexRenderOptions {
   includeDocument?: boolean;
@@ -193,10 +200,23 @@ export function renderToLatex(
 
   return [
     "\\documentclass{article}",
+    "\\usepackage[T1]{fontenc}",
+    "\\usepackage[utf8]{inputenc}",
+    "\\usepackage{lmodern}",
     "\\usepackage{graphicx}",
+    "\\usepackage{rotating}",
+    "\\usepackage{xcolor}",
+    "\\usepackage{array}",
+    "\\usepackage{booktabs}",
+    "\\usepackage{microtype}",
+    "\\usepackage{setspace}",
+    "\\usepackage{enumitem}",
+    "\\usepackage{amsmath}",
+    "\\usepackage{amssymb}",
     "\\usepackage{hyperref}",
     "\\begin{document}",
     "\\tableofcontents",
+
     body,
     bibBlock,
     "\\end{document}"

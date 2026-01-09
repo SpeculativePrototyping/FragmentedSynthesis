@@ -106,8 +106,8 @@ function cleanLatex(latex: string): string {
     }
 
     return latex
-        // Kommentare entfernen
-        .replace(/%.*/g, '')
+        // Kommentare entfernen aber % behalten
+        .replace(/(?<!\\)%.*/g, '')  // echte Kommentare
         // Präambel und Header-Befehle entfernen (\documentclass, \usepackage, \title, \author, \date)
         .replace(/\\(documentclass|usepackage|title|author|date)\{[^}]*\}/g, '')
         .replace(/\\begin\{document\}/g, '')
@@ -115,15 +115,15 @@ function cleanLatex(latex: string): string {
         // Kapitel & Section-Befehle beibehalten, andere Formatierungen entfernen
         .replace(/\\(textbf|textit|emph|underline)\{([^}]*)\}/g, '$2')
         // Listen vereinfachen
-    //    .replace(/\\begin\{(itemize|enumerate)\}/g, '')
-    //    .replace(/\\end\{(itemize|enumerate)\}/g, '')
-    //    .replace(/\\item\s*/g, '- ')
+        //.replace(/\\begin\{(itemize|enumerate)\}/g, '')
+        //.replace(/\\end\{(itemize|enumerate)\}/g, '')
+        //.replace(/\\item\s*/g, '- ')
         // Labels / Refs / Pagerefs entfernen
-    //    .replace(/\\(label|ref|pageref)\{[^}]*\}/g, '')
+        .replace(/\\(label|ref|pageref)\{[^}]*\}/g, '')
         // Glossar / Akronyme entfernen
-    //    .replace(/\\(gls|acrshort|acrfull|newacronym|newglossaryentry)\{[^}]*\}/g, '')
+        .replace(/\\(gls|acrshort|acrfull|newacronym|newglossaryentry)\{[^}]*\}/g, '')
         // Mehrfach-Leerzeilen zusammenführen
-        .replace(/\n\s*\n/g, '\n')
+ //       .replace(/\n\s*\n/g, '\n')
         .trim();
 }
 
