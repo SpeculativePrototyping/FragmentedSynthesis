@@ -257,7 +257,7 @@ function deleteNode() {
             {{row.preview || 'Connect paragraph or figure...' }}
           </span>
           <span v-else-if="row.type === 'figure'">
-            📷 {{row.preview || 'Connect figure...' }}
+            🖼️ {{row.preview || 'Connect figure...' }}
           </span>
         </div>
         <Handle

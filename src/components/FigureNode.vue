@@ -340,7 +340,7 @@ function deleteNode() {
   <div class="text-node doc-node node-wrapper" ref="nodeRef">
     <header class="doc-node__header">
       <strong>
-        {{ isCompact ? "📷  " + latexLabel || 'Figure Node' : props.data?.label ?? 'Figure Node' }}
+        {{ isCompact ? "🖼️  " + latexLabel || 'Figure Node' : props.data?.label ?? 'Figure Node' }}
       </strong>
     </header>
 
