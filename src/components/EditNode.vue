@@ -779,6 +779,7 @@ function deleteNode() {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 8px;
+  max-width: 350px;
 }
 
 .citation-tag {

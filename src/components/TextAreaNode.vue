@@ -1,13 +1,11 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {ref, watch, computed, inject, nextTick, onMounted, onBeforeUnmount} from 'vue'
-import { Handle, Position, useVueFlow } from '@vue-flow/core'
-import type { NodeProps } from '@vue-flow/core'
-import { enqueueLlmJob } from '../api/llmQueue'
-import { NodeToolbar } from '@vue-flow/node-toolbar'
-import type { Ref } from 'vue'
-import { textNodePrompts } from '@/nodes/prompts'
-
-
+import {Handle, Position, useVueFlow} from '@vue-flow/core'
+import type {NodeProps} from '@vue-flow/core'
+import {enqueueLlmJob} from '../api/llmQueue'
+import {NodeToolbar} from '@vue-flow/node-toolbar'
+import type {Ref} from 'vue'
+import {textNodePrompts} from '@/nodes/prompts'
 
 
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
@@ -22,6 +20,7 @@ interface ImageCacheEntry {
   base64: string
   refLabel: string
 }
+
 type ImageCache = Record<string, ImageCacheEntry>
 
 const imageCache = inject<Ref<ImageCache>>('imageCache')!
@@ -44,7 +43,7 @@ interface TextNodeProps extends NodeProps<TextNodeData> {
 
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const props = defineProps<TextNodeProps>()
-const { updateNodeData, nodes, edges, removeNodes } = useVueFlow()
+const {updateNodeData, nodes, edges, removeNodes} = useVueFlow()
 const isCompact = ref(false)
 const text = ref<string>(String(props.data?.value ?? ''))
 const summary = ref("")
@@ -52,7 +51,7 @@ const status = ref<SummaryStatus>((props.data?.status as SummaryStatus) ?? 'idle
 const availableSources = computed(() => bibliography.value)
 const TLDR = inject('TLDR')
 const textAreaRef = ref<HTMLTextAreaElement | null>(null)
-const cursorPos = ref<{ start: number; end: number }>({ start: 0, end: 0 })
+const cursorPos = ref<{ start: number; end: number }>({start: 0, end: 0})
 const searchQuery = ref('')
 const showSearch = ref(false)
 const COMPLETE_CITATION_REGEX = /~\\cite\{([^\}]+)\}(?=\s|$)/g;
@@ -111,21 +110,26 @@ async function generateSummary() {
   status.value = "queued"
 
   // Hier holen wir dynamisch die Prompts
-  const { basePrompt, responseFormat } = getPrompts()
+  const {basePrompt, responseFormat} = getPrompts()
 
   try {
     const result = await enqueueLlmJob({
       sys: basePrompt,
       user: txt,
       responseFormat,
-      onStart: () => {},
+      onStart: () => {
+      },
     })
 
     if (token !== requestToken) return
 
     const msg = result.message || ''
     const parsed = (() => {
-      try { return JSON.parse(msg) } catch { return null }
+      try {
+        return JSON.parse(msg)
+      } catch {
+        return null
+      }
     })()
 
     summary.value = parsed?.summary?.trim() ?? msg.trim()
@@ -137,12 +141,10 @@ async function generateSummary() {
 }
 
 
-
-
 function addCitationByKey(key: string) {
   const textarea = textAreaRef.value
   const citationText = `~\\cite{${key}}`
-  const { start, end } = cursorPos.value
+  const {start, end} = cursorPos.value
 
   // Falls keine gespeicherte Position -> an Ende anhängen
   if (!textarea || start === undefined) {
@@ -162,7 +164,7 @@ function addCitationByKey(key: string) {
   const citations = props.data.citations ? [...props.data.citations] : []
   if (!citations.includes(key)) {
     citations.push(key)
-    updateNodeData(props.id, { ...props.data, citations })
+    updateNodeData(props.id, {...props.data, citations})
   }
 
   searchQuery.value = ''
@@ -187,7 +189,7 @@ function removeCitation(key: string) {
   text.value = newText.replace(/\s{2,}/g, ' ').trim()
 
   // 3️⃣ Update Node-Daten
-  updateNodeData(props.id, { ...props.data, citations: newCitations, value: text.value })
+  updateNodeData(props.id, {...props.data, citations: newCitations, value: text.value})
 }
 
 
@@ -234,7 +236,7 @@ function scanCitationsFromText() {
 function reinsertCitation(key: string) {
   const textarea = textAreaRef.value
   const citationText = `~\\cite{${key}}`
-  const { start, end } = cursorPos.value
+  const {start, end} = cursorPos.value
 
   if (!textarea || start === undefined) {
     text.value += citationText
@@ -249,7 +251,7 @@ function reinsertCitation(key: string) {
       textarea.selectionStart = textarea.selectionEnd = start + citationText.length
     })
   }
-  updateNodeData(props.id, { ...props.data, value: text.value })
+  updateNodeData(props.id, {...props.data, value: text.value})
 }
 
 onMounted(() => {
@@ -293,7 +295,6 @@ onBeforeUnmount(() => {
 })
 
 
-
 // --- Watchers ---
 watch(isCompact, v => {
   if (v) generateSummary()
@@ -312,7 +313,7 @@ watch(bibliography, (newBib) => {
 
   // Alle ungültigen Zitate entfernen
   invalidCitations.forEach(key => removeCitation(key));
-}, { deep: true })
+}, {deep: true})
 
 
 watch(TLDR, (val) => {
@@ -331,7 +332,7 @@ let timer: number | undefined
 watch(text, (v) => {
   window.clearTimeout(timer)
   timer = window.setTimeout(() => {
-    updateNodeData(props.id, { ...props.data, value: v })
+    updateNodeData(props.id, {...props.data, value: v})
   }, 150)
 })
 
@@ -357,7 +358,6 @@ watch(text, (currentText) => {
     });
   }, 5000);
 });
-
 
 
 let figureTimer: number | undefined;
@@ -394,7 +394,7 @@ function addFigureReferenceByKey(imageName: string) {
   const insertText = `~\\autoref{${label}}`
 
   const textarea = textAreaRef.value
-  const { start, end } = cursorPos.value
+  const {start, end} = cursorPos.value
 
   if (!textarea || start == null) {
     text.value += insertText
@@ -414,7 +414,7 @@ function addFigureReferenceByKey(imageName: string) {
   const figs = new Set(props.data.figures ?? [])
   figs.add(imageName)
 
-  updateNodeData(props.id, { ...props.data, figures: [...figs] })
+  updateNodeData(props.id, {...props.data, figures: [...figs]})
 }
 
 
@@ -483,42 +483,42 @@ function redo(textarea: HTMLTextAreaElement | null) {
     <div class="toolbar-buttons">
       <button
           class="delete-node-btn"
-          @click="deleteNode"
           title="Delete this node"
+          @click="deleteNode"
       >
         🗑️
       </button>
 
-      <button class="toolbar-mini-btn" @click="undo" title="Undo">
+      <button class="toolbar-mini-btn" title="Undo" @click="undo">
         ↶
       </button>
 
-      <button class="toolbar-mini-btn" @click="redo" title="Redo">
+      <button class="toolbar-mini-btn" title="Redo" @click="redo">
         ↷
       </button>
 
       <!-- NEW: Citation Toggle -->
       <button
-          class="toolbar-mini-btn"
           :class="{ active: showSearch }"
-          @click="showSearch = !showSearch"
+          class="toolbar-mini-btn"
           title="Cite Sources"
+          @click="showSearch = !showSearch"
       >
         📚
       </button>
 
       <!-- NEW: Figure Toggle -->
       <button
-          class="toolbar-mini-btn"
           :class="{ active: showFigureSearch }"
-          @click="showFigureSearch = !showFigureSearch"
+          class="toolbar-mini-btn"
           title="Reference Figures"
+          @click="showFigureSearch = !showFigureSearch"
       >
         🖼️
       </button>
 
       <label class="toggle-switch" title="Show a short summary (TLDR).">
-        <input type="checkbox" v-model="isCompact" />
+        <input v-model="isCompact" type="checkbox"/>
         <span class="slider"></span>
       </label>
       <span class="toggle-label">TLDR</span>
@@ -527,32 +527,32 @@ function redo(textarea: HTMLTextAreaElement | null) {
   </NodeToolbar>
 
 
-  <div class="text-node doc-node node-wrapper" ref="nodeRef">
+  <div ref="nodeRef" class="text-node doc-node node-wrapper">
     <header class="doc-node__header">
       <strong :class="{ 'compact-summary-text': isCompact }">
         {{ isCompact ? (summary || 'Text Input Node') : (props.data?.label ?? 'Text Node') }}
       </strong>
-      <span class="doc-node__hint" v-if="!isCompact">{{ statusLabel }}</span>
+      <span v-if="!isCompact" class="doc-node__hint">{{ statusLabel }}</span>
     </header>
 
-    <section class="doc-node__body" v-if="!isCompact">
+    <section v-if="!isCompact" class="doc-node__body">
       <textarea
-          ref="textAreaRef"
           v-if="!isCompact"
+          ref="textAreaRef"
           v-model="text"
-          @wheel.stop
-          rows="6"
-          class="text-node__textarea"
           :placeholder="props.data?.placeholder ?? 'This node is for text input. Type here and connect it to other nodes...'"
-          spellcheck="true"
+          aria-label="Text node editor"
           autocapitalize="sentences"
           autocomplete="on"
+          class="text-node__textarea"
           data-gramm="true"
           data-gramm_editor="true"
-          aria-label="Text node editor"
-          @select="updateCursorPosition"
-          @keyup="updateCursorPosition"
+          rows="6"
+          spellcheck="true"
           @click="updateCursorPosition"
+          @keyup="updateCursorPosition"
+          @select="updateCursorPosition"
+          @wheel.stop
       />
 
       <div v-else class="compact-summary">
@@ -564,10 +564,10 @@ function redo(textarea: HTMLTextAreaElement | null) {
 <span
     v-for="key in props.data.citations ?? []"
     :key="key"
-    class="citation-tag"
     :class="{ 'citation-unknown': invalidCitations.has(key) }"
+    class="citation-tag"
 >
-  <span @click="reinsertCitation(key)" style="cursor: pointer;">
+  <span style="cursor: pointer;" @click="reinsertCitation(key)">
     {{ key }}
   </span>
   <button @click="removeCitation(key)">×</button>
@@ -603,8 +603,8 @@ function redo(textarea: HTMLTextAreaElement | null) {
         <div v-if="showFigureSearch" class="citation-search">
           <input
               v-model="searchFigureQuery"
-              placeholder="Search figures..."
               class="citation-search-input"
+              placeholder="Search figures..."
           />
 
           <ul class="citation-search-list" @wheel.stop>
@@ -613,7 +613,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
                 :key="key"
                 @click="addFigureReferenceByKey(key)"
             >
-              <img :src="img.base64" width="40" />
+              <img :src="img.base64" width="40"/>
               <strong>{{ img.refLabel }}</strong>
             </li>
           </ul>
@@ -621,7 +621,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
       </div>
 
     </section>
-    <Handle id="output" type="source" :position="Position.Right" />
+    <Handle id="output" :position="Position.Right" type="source"/>
   </div>
 </template>
 
@@ -642,9 +642,8 @@ function redo(textarea: HTMLTextAreaElement | null) {
 }
 
 
-
 .compact-summary-text {
-  font-size: 0.75rem;  /* kleiner als normale Schrift */
+  font-size: 0.75rem; /* kleiner als normale Schrift */
   line-height: 1.0;
   max-width: 600px;
 }
@@ -676,7 +675,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
   height: 100px;
   margin: 0 auto;
   padding: 10px 12px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   border-radius: 10px;
   background: #fff;
   font: inherit;
@@ -686,15 +685,15 @@ function redo(textarea: HTMLTextAreaElement | null) {
 }
 
 .text-node__textarea:focus {
-  outline: 2px solid rgba(99,102,241,.45);
-  border-color: rgba(99,102,241,.45);
+  outline: 2px solid rgba(99, 102, 241, .45);
+  border-color: rgba(99, 102, 241, .45);
 }
 
 .compact-summary {
   width: 600px;
   max-height: 240px;
   padding: 10px 12px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   border-radius: 10px;
   background: #fff;
   font: inherit;
@@ -772,7 +771,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
 
 .citation-item input {
   padding: 10px 12px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   border-radius: 10px;
   background: #fff;
   font: inherit;
@@ -780,14 +779,14 @@ function redo(textarea: HTMLTextAreaElement | null) {
 }
 
 .citation-item input:focus {
-  outline: 2px solid rgba(99,102,241,.45);
-  border-color: rgba(99,102,241,.45);
+  outline: 2px solid rgba(99, 102, 241, .45);
+  border-color: rgba(99, 102, 241, .45);
 }
 
 .citation-item button {
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   background: #f7f7f7;
   cursor: pointer;
 }
@@ -811,6 +810,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 8px;
+  max-width: 350px;
 }
 
 .citation-tag {
@@ -852,7 +852,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
   height: 35px;
   padding: 8px;
   border-radius: 6px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   margin-bottom: 8px;
   box-sizing: border-box;
 }
@@ -862,7 +862,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
   min-height: 35px;
   overflow-y: auto;
   background: #fff;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   border-radius: 6px;
   padding: 4px;
   box-sizing: border-box;
@@ -924,7 +924,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
 .delete-node-btn {
   padding: 4px 8px;
   border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   background-color: #f87171; /* hellrot */
   color: white;
   cursor: pointer;
@@ -959,7 +959,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
   padding: 4px 8px;
   font-size: 0.85rem;
   border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
+  border: 1px solid rgba(15, 23, 42, .15);
   background: #f7f7f7;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -971,11 +971,10 @@ function redo(textarea: HTMLTextAreaElement | null) {
 }
 
 .toolbar-mini-btn.active {
-  background: #374151;   /* dunkelgrau */
+  background: #374151; /* dunkelgrau */
   color: white;
   border-color: #374151;
 }
-
 
 
 </style>
