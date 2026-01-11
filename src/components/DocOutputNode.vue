@@ -809,4 +809,17 @@ function deleteNode() {
   background-color: #dc2626; /* dunkleres Rot bei Hover */
 }
 
+
+.doc-output__item--section {
+  font-weight: 700;
+}
+
+.doc-output__label {
+  text-align: left;
+}
+
+.doc-output__level-label {
+  text-align: left;
+}
+
 </style>
