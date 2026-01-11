@@ -157,8 +157,15 @@ export function renderToLatex(
     section(section: SectionElement, ctx: Ctx) {
       const heading = section.title ? escLaTeX(section.title) : "Untitled section";
       const command = SECTION_COMMAND_BY_LEVEL[section.level] ?? SECTION_COMMAND_BY_LEVEL[4];
-      const self = [`\\${command}{${heading}}`];
 
+      const self: string[] = [];
+
+
+      if (section.level === 1) {
+        self.push("\\newpage");
+      }
+
+      self.push(`\\${command}{${heading}}`);
       if (section.body) self.push(escLaTeX(section.body));
 
       if (section.children.length) {
