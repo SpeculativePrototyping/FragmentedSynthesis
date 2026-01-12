@@ -14,6 +14,15 @@ interface BibEntry {
     raw?: string
 }
 
+function randomFigureKey(length = 5) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let result = ''
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return `Figure-${result}`
+}
+
 
 
 function parseBibtex(input: string): BibEntry[] {
@@ -208,6 +217,8 @@ export function parseLatexToNodesAndEdges(
     // === Textarea- und Figure-Nodes zwischen Sections erzeugen ===
     // === Text- und Figure-Nodes zwischen Sections erzeugen ===
 
+    const usedFigureKeys = new Set<string>()
+
     for (let i = 0; i < sections.length; i++) {
         const start = sections[i].start + (`\\${sections[i].type}{${sections[i].title}}`).length
         const end = i + 1 < sections.length ? sections[i + 1].start : latex.length
@@ -293,31 +304,49 @@ export function parseLatexToNodesAndEdges(
             }
 
             // Figure
+// Figure
             if (match[3] !== undefined) {
                 const imagePath = match[3]
                 let caption = (match[4] ?? '').trim()
-                if (!caption) {
-                    caption = `Unnamed Figure` // Platzhalter, falls keine Caption vorhanden
-                }
+                if (!caption) caption = 'Unnamed Figure'
 
                 const imgFile = files.find(f => f.path === imagePath && f.type === 'image')
                 if (imgFile && typeof imgFile.content === 'string') {
-                    const fileName = imgFile.path.split(/[/\\]/).pop() || imgFile.path
+                    // 🔹 Key genau wie beim manuellen Upload: Figure-XXXXX (ohne Dateiname)
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+                    const randomFigureKey = (length = 5) => {
+                        let result = ''
+                        for (let i = 0; i < length; i++) {
+                            result += chars.charAt(Math.floor(Math.random() * chars.length))
+                        }
+                        return `Figure-${result}`
+                    }
+
+                    // 🔹 optional: Kollisionen vermeiden (sehr selten, aber safe)
+                    // Wir nutzen idCounter als Extra-Salt, falls es doch mal knallt.
+                    let figKey = randomFigureKey()
+                    // falls du irgendwo schon keys trackst, kannst du das hier durch Set-check ersetzen
+                    // hier minimalistisch:
+                    if (nodes.some(n => n.type === 'figure' && (n.data as any)?.imageName === figKey)) {
+                        figKey = `${randomFigureKey()}-${idCounter}`
+                    }
+
                     const figNode: Node = {
                         id: `figure-${idCounter++}`,
                         type: 'figure',
                         position: { x: 0, y: 0 },
                         data: {
-                            image: imgFile.content,
-                            imageName: fileName,
-                            latexLabel: caption, // Caption oder Platzhalter
+                            image: imgFile.content,   // Base64 bleibt beim Import im Node
+                            imageName: figKey,        // ✅ hier steht jetzt der Key (nicht Dateiname)
+                            refLabel: figKey,         // ✅ damit der Node das auch als RefLabel übernimmt
+                            latexLabel: caption,
                             citations: []
                         },
-                        label: 'Figure Node',
-                        category: 'text',
                         dragHandle: '.doc-node__header'
                     }
+
                     nodes.push(figNode)
+
                     edges.push({
                         id: `e-${composeNodes[i].id}-${figNode.id}`,
                         source: figNode.id,
@@ -325,16 +354,11 @@ export function parseLatexToNodesAndEdges(
                         targetHandle: `child-${childIndex++}`,
                         animated: true,
                         style: { strokeWidth: 4 },
-                        markerEnd: {
-                            type: 'arrowclosed',
-                            color: '#000000',
-                            width: 6,
-                            height: 6,
-                        },
+                        markerEnd: { type: 'arrowclosed', color: '#000000', width: 6, height: 6 }
                     })
-
                 }
             }
+
 
 
             idx = match.index + match[0].length

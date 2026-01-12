@@ -369,7 +369,7 @@ async function downloadZip() {
     if (mime.includes("svg")) ext = "svg"
     if (mime.includes("pdf")) ext = "pdf"
 
-    imgFolder.file(`${key}`, b64data, { base64: true })
+    imgFolder.file(`${key}.${ext}`, b64data, { base64: true })
   }
 
   //

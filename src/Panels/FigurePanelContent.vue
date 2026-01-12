@@ -4,19 +4,14 @@ import {inject, ref, type Ref} from 'vue'
 interface ImageCacheEntry {
   base64: string
   refLabel: string
+  latexLabel?: string
 }
 
 type ImageCache = Record<string, ImageCacheEntry>
 
 // Inject den bestehenden imageCache
 const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))!
-const updateImageCache = inject<(newCache: ImageCache) => void>('updateImageCache', () => {})!
 
-// Funktion zum Löschen eines Eintrags
-function removeFigure(key: string) {
-  if (!imageCache) return
-  delete imageCache.value[key]
-}
 </script>
 
 <template>
@@ -31,8 +26,12 @@ function removeFigure(key: string) {
           <img :src="img.base64" alt="Figure preview" />
         </div>
         <div class="figure-info">
-          Key: <strong>{{ img.refLabel }}</strong>
-          <button class="figure-delete" @click="removeFigure(key)">🗑️</button>
+          <div class="figure-key">
+            RefKey: <strong>{{ key }}</strong>
+          </div>
+          <div class="figure-caption">
+            Caption:{{ img.latexLabel || '(no caption)' }}
+          </div>
         </div>
       </li>
     </ul>
@@ -77,19 +76,28 @@ function removeFigure(key: string) {
 .figure-info {
   font-size: 0.85rem;
   display: flex;
+  flex-direction: column;   /* untereinander */
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
   align-items: center;
-  gap: 8px;
 }
 
-.figure-delete {
-  border: none;
-  background: transparent;
-  color: #ff4444;
-  cursor: pointer;
-  font-weight: bold;
+.figure-key {
+  font-weight: 600;
 }
-.figure-delete:hover {
-  color: #ff0000;
-  background: rgba(238, 238, 238, 0.5);
+
+.figure-caption {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ffffff;
 }
+
+
+
+
+
+
 </style>

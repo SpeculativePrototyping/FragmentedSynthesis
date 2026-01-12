@@ -57,6 +57,7 @@ function randomRefLabel(length = 5) {
 interface ImageCacheEntry {
   base64: string
   refLabel: string
+  latexLabel?: string
 }
 
 type ImageCache = Record<string, ImageCacheEntry>
@@ -149,9 +150,14 @@ watch(bibliography, (newBib) => {
 
 
 watch(latexLabel, () => {
-  syncDataDownstream({ refLabel: refLabel.value })
+  const key = props.data?.imageName
+  if (key && imageCache?.value?.[key]) {
+    imageCache.value[key].latexLabel = latexLabel.value
+  }
 
+  syncDataDownstream({ refLabel: refLabel.value })
 })
+
 
 function scanCitationsFromLatexLabel() {
   if (!props.data) return
@@ -183,21 +189,21 @@ function onFileChange(event: Event) {
       delete imageCache.value[props.data.imageName]
     }
 
-    // Cache-Key: refLabel + originaler Dateiname
-    const cacheKey = `${refLabel.value}-${file.name}`
+    const cacheKey = `${refLabel.value}` // kanonischer Key
 
-    // Base64 zentral speichern
     imageCache.value[cacheKey] = {
       base64: reader.result as string,
-      refLabel: refLabel.value
+      refLabel: refLabel.value,
+      latexLabel: latexLabel.value,
     }
 
-    // Node speichert nur den Key
     syncDataDownstream({
       imageName: cacheKey,
-      image: undefined // Base64 nicht im Node-State
+      image: undefined,
+      refLabel: refLabel.value,
     })
   }
+
   reader.readAsDataURL(file)
 }
 
@@ -273,11 +279,13 @@ watch(latexLabel, (currentLabel) => {
 })
 
 onMounted(() => {
+
   // Wenn Node beim Laden schon ein Bild hat, in den Cache eintragen
   if (props.data?.image && props.data.imageName && imageCache) {
     imageCache.value[props.data.imageName] = {
       base64: props.data.image,
-      refLabel: refLabel.value
+      refLabel: refLabel.value,
+      latexLabel: latexLabel.value,
     }
 
     // Optional: Node selbst speichert dann nur den Key

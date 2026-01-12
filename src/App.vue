@@ -42,6 +42,7 @@ export interface BibEntry {
 interface ImageCacheEntry {
   base64: string
   refLabel: string
+  latexLabel?: string
 }
 
 interface Snapshot {
