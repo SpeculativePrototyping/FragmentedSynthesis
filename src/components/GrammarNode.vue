@@ -6,7 +6,7 @@ import { enqueueLlmJob } from '../api/llmQueue'
 import { grammarPrompts } from '@/nodes/prompts'
 import { inject } from 'vue'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 
 
 const NODE_LABEL = 'Grammar Check'

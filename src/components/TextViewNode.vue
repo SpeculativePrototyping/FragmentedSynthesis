@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 
 
 interface TextViewNodeData {

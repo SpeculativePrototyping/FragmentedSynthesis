@@ -6,7 +6,7 @@ import {enqueueLlmJob} from '../api/llmQueue'
 import {NodeToolbar} from '@vue-flow/node-toolbar'
 import type {Ref} from 'vue'
 import {textNodePrompts} from '@/nodes/prompts'
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 
 
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
@@ -629,10 +629,6 @@ function redo(textarea: HTMLTextAreaElement | null) {
 
 <style scoped>
 
-.text-node {
-  overflow: visible;
-}
-
 .node-wrapper {
   display: flex;
   overflow: hidden;
@@ -642,18 +638,12 @@ function redo(textarea: HTMLTextAreaElement | null) {
   width: auto;
 }
 
-
 .compact-summary-text {
   font-size: 0.75rem; /* kleiner als normale Schrift */
   line-height: 1.0;
   max-width: 600px;
 }
 
-
-
-.doc-node__body {
-  display: flex;
-}
 
 .text-node__textarea {
   min-width: 350px;
@@ -693,6 +683,5 @@ function redo(textarea: HTMLTextAreaElement | null) {
   opacity: 1;
   pointer-events: auto;
 }
-
 
 </style>

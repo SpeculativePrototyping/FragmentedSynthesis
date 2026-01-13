@@ -4,7 +4,7 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
 import type { DocElement, ParagraphElement, FigureElement, SectionElement } from '../api/docstruct'
 import { renderToLatex } from '../api/docstruct'
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 import type {BibEntry} from "@/App.vue";
 import JSZip from "jszip"
 import {NodeToolbar} from "@vue-flow/node-toolbar";

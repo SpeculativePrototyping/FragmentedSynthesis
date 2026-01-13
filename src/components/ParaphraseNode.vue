@@ -5,7 +5,7 @@ import type { NodeProps } from '@vue-flow/core'
 import { enqueueLlmJob } from '../api/llmQueue'
 import {summaryPrompts} from "@/nodes/prompts.ts";
 import {NodeToolbar} from "@vue-flow/node-toolbar";
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 
 /* ----------------------
    Typen / Interfaces
@@ -386,6 +386,8 @@ function deleteNode() {
 </template>
 
 <style scoped>
+
+
 .summary-node__body {
   gap: 10px;
 }

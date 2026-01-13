@@ -5,7 +5,7 @@ import type { Edge, NodeProps } from '@vue-flow/core'
 import { reviewPrompts } from '@/nodes/prompts'
 import { enqueueLlmJob } from '../api/llmQueue'
 
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 
 interface DiffSegment {

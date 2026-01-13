@@ -3,7 +3,7 @@ import {ref, computed, watch, inject, type Ref, onMounted, onBeforeUnmount} from
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
-import '../styles/docNodes.css'
+import '../styles/NodeDesign.css'
 
 interface BibEntry {
   id: string
@@ -338,11 +338,11 @@ function deleteNode() {
         📚
       </button>
 
-      <label class="toggle-switch" title="Compact view / TLDR">
+      <label class="mini-toggle-switch" title="Compact view / TLDR">
         <input type="checkbox" v-model="isCompact"/>
         <span class="slider"></span>
       </label>
-      <span class="toggle-label">TLDR</span>
+      <span class="mini-toggle-label">TLDR</span>
     </div>
   </NodeToolbar>
 
