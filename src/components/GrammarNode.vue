@@ -6,6 +6,7 @@ import { enqueueLlmJob } from '../api/llmQueue'
 import { grammarPrompts } from '@/nodes/prompts'
 import { inject } from 'vue'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
+import '../styles/docNodes.css'
 
 
 const NODE_LABEL = 'Grammar Check'
@@ -391,113 +392,6 @@ function deleteNode() {
   line-height: 1.45;
   resize: both;
   box-sizing: border-box;
-}
-
-
-
-.toolbar-buttons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  /* Header-Stil übernehmen */
-  background-color: rgba(99, 102, 241, 0.1);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  padding: 10px 14px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-
-}
-
-.delete-node-btn {
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
-  background-color: #f87171; /* hellrot */
-  color: white;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.delete-node-btn:hover {
-  background-color: #dc2626; /* dunkleres Rot bei Hover */
-}
-
-.toolbar-mini-btn {
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
-  background: #f7f7f7;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.toolbar-mini-btn:hover {
-  background: #e5e7eb;
-}
-
-.toolbar-mini-btn.active {
-  background: #374151;   /* dunkelgrau */
-  color: white;
-  border-color: #374151;
-}
-
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 28px;
-  height: 16px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-switch .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  border-radius: 12px;
-  transition: 0.2s;
-}
-
-.toggle-switch .slider::before {
-  content: "";
-  position: absolute;
-  height: 12px;
-  width: 12px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.2s;
-}
-
-.toggle-switch input:checked + .slider {
-  background-color: #22ff00;
-}
-
-.toggle-switch input:checked + .slider::before {
-  transform: translateX(12px);
-}
-
-.toggle-label {
-  font-size: 0.75rem;
-  color: #000;
 }
 
 </style>

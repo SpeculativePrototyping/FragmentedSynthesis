@@ -3,6 +3,7 @@ import {ref, watch, inject, type Ref} from 'vue'
 import { Handle, Position,  useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
+import '../styles/docNodes.css'
 
 interface StickyNoteData {
   value?: string
@@ -88,40 +89,6 @@ function deleteNode() {
 
 .text-node__textarea:focus {
   outline: none;
-}
-
-.toolbar-buttons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  /* Header-Stil übernehmen */
-  background-color: rgb(248, 210, 0);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  padding: 10px 14px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-
-}
-
-.delete-node-btn {
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
-  background-color: #f87171; /* hellrot */
-  color: white;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.delete-node-btn:hover {
-  background-color: #dc2626; /* dunkleres Rot bei Hover */
 }
 
 </style>

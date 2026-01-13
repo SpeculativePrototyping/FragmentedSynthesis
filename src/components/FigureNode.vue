@@ -3,6 +3,7 @@ import {ref, computed, watch, inject, type Ref, onMounted, onBeforeUnmount} from
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
+import '../styles/docNodes.css'
 
 interface BibEntry {
   id: string
@@ -418,21 +419,7 @@ function deleteNode() {
   max-width: 650px;
   height: 100%;
 }
-.toolbar-buttons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 
-  /* Header-Stil übernehmen */
-  background-color: rgba(99, 102, 241, 0.1);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  padding: 10px 14px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-
-}
 
 .doc-node__header strong {
   display: block;
@@ -441,7 +428,6 @@ function deleteNode() {
   overflow: hidden;         /* überschüssigen Text ausblenden */
   text-overflow: ellipsis;  /* "..." am Ende */
 }
-
 
 .doc-node__body {
   display: flex;
@@ -475,148 +461,6 @@ function deleteNode() {
   pointer-events: auto;
 }
 
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 28px;
-  height: 16px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-switch .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  border-radius: 12px;
-  transition: 0.2s;
-}
-
-.toggle-switch .slider::before {
-  content: "";
-  position: absolute;
-  height: 12px;
-  width: 12px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.2s;
-}
-
-.toggle-switch input:checked + .slider {
-  background-color: #22ff00;
-}
-
-.toggle-switch input:checked + .slider::before {
-  transform: translateX(12px);
-}
-
-.toggle-label {
-  font-size: 0.75rem;
-  color: #000;
-}
-
-.citations-ui {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 auto;
-}
-
-.selected-citations {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-  max-width: 350px;
-}
-
-.citation-tag {
-  background: #e0e7ff;
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.citation-tag button {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.citation-add-btn {
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background: #f7f7f7;
-  padding: 8px;
-  cursor: pointer;
-}
-
-.citation-add-btn:hover {
-  background: #eee;
-}
-
-.citation-search-input {
-  width: 100%;
-  height: 35px;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(15,23,42,.15);
-  margin-bottom: 8px;
-  box-sizing: border-box;
-}
-
-.citation-search-list {
-  max-height: 160px;
-  min-height: 35px;
-  overflow-y: auto;
-  background: #fff;
-  border: 1px solid rgba(15,23,42,.15);
-  border-radius: 6px;
-  padding: 4px;
-  box-sizing: border-box;
-}
-
-.citation-search-list li {
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  width: 100%;
-  cursor: pointer;
-  padding: 6px;
-  box-sizing: border-box;
-}
-
-.citation-search-list li:hover {
-  background: #eee;
-}
-
-.citation-search-list li span.key {
-  font-weight: bold;
-  flex-shrink: 0;
-}
-
-.citation-search-list li span.title {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .figure-node__label-input {
   min-width: 350px;
   width: 100%;
@@ -638,69 +482,5 @@ function deleteNode() {
   border-color: rgba(99,102,241,.45);
 }
 
-.toolbar-buttons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  /* Header-Stil übernehmen */
-  background-color: rgba(99, 102, 241, 0.1);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  padding: 10px 14px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-
-}
-
-.delete-node-btn {
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
-  background-color: #f87171; /* hellrot */
-  color: white;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.delete-node-btn:hover {
-  background-color: #dc2626; /* dunkleres Rot bei Hover */
-}
-
-.citations-ui,
-.figures-ui {
-  gap: 8px;
-}
-
-.figures-ui {
-  display: flex;
-  flex-direction: column;
-}
-
-.toolbar-mini-btn {
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
-  background: #f7f7f7;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.toolbar-mini-btn:hover {
-  background: #e5e7eb;
-}
-
-.toolbar-mini-btn.active {
-  background: #374151;   /* dunkelgrau */
-  color: white;
-  border-color: #374151;
-}
 
 </style>
