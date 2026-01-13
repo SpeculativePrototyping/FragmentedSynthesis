@@ -17,11 +17,11 @@ export interface NodeTemplate {
 export const nodeTemplates: NodeTemplate[] = [
   {
     type: 'textArea',       // tells vueflow what component to load
-    label: 'TextInput Node', // readable label for what the node is called in the drag and drop menu
+    label: 'Paragraph', // readable label for what the node is called in the drag and drop menu
     category: 'text',
     data: {
       value: '',
-      label: 'Text Input Node',   // label the actual node in the UI gets
+      label: 'Paragraph',   // label the actual node in the UI gets
       placeholder: 'This node is for text input. Basically, every node represents a paragraph.' +
           ' You can type, add citations and connect it to other nodes.' +
           ' That can be the Grammar Node, the Summary Node, the Edit Node, the Compose Node, or the TextView Node.',
@@ -31,20 +31,22 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'textView',
-    label: 'TextView Node',
-    category: 'text',
+    type: 'figure',       // Vue Flow Component Type
+    label: 'Figure',     // Name im Drag & Drop Menü
+    category: 'text',         // oder 'utility'
     data: {
-      label: 'Text View',
-      placeholder: 'This node displays everything that other nodes can output. It helps when you are confused about what goes where.',
-    },
+      image: '' as string,        // fallback: inline base64 (optional)
+      imageName: '' as string,    // fallback: cache key
+      latexLabel: '' as string,   // caption/label
+      citations: [] as string[]
+    }
   },
   {
     type: 'edit',
-    label: 'Edit Node',
+    label: 'Edit',
     category: 'llm',
     data: {
-      label: 'Edit Node',
+      label: 'Edit',
       original: '',
       value: '',
       diff: [],
@@ -52,10 +54,10 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'paraphrase',
-    label: 'Paraphrase Node',
+    label: 'Paraphrase',
     category: 'llm',
     data: {
-      label: 'Paraphrase Node',
+      label: 'Paraphrase',
       length: '1-2 sentences',
       value: 'This is a summary.',
       status: 'idle',
@@ -64,10 +66,10 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'grammar',
-    label: 'Grammar Checker Node',
+    label: 'Grammar',
     category: 'llm',
     data: {
-      label: 'Grammar Checker Node',
+      label: 'Grammar',
       value: '',
       status: 'idle',
       error: null,
@@ -75,10 +77,10 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'compose',
-    label: 'Compose Node',
+    label: 'Compose',
     category: 'text',
     data: {
-      label: 'Compose Node',
+      label: 'Compose',
       title: '',
       json: '',
       value: '',
@@ -87,8 +89,8 @@ export const nodeTemplates: NodeTemplate[] = [
   },
   {
     type: 'docOutput',
-    label: 'Document Output Node',
-    category: 'text',
+    label: 'Document Output',
+    category: 'utility',
     data: {
       bibliography: [] as BibEntry[],
       json: '',
@@ -104,15 +106,13 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'figure',       // Vue Flow Component Type
-    label: 'Figure Node',     // Name im Drag & Drop Menü
-    category: 'text',         // oder 'utility'
+    type: 'textView',
+    label: 'Debug',
+    category: 'utility',
     data: {
-      image: '' as string,        // fallback: inline base64 (optional)
-      imageName: '' as string,    // fallback: cache key
-      latexLabel: '' as string,   // caption/label
-      citations: [] as string[]
-    }
+      label: 'Debug',
+      placeholder: 'This node displays everything that other nodes can output. It helps when you are confused about what goes where.',
+    },
   },
   {
     type: 'tourGuide',       // Vue Flow Component Type

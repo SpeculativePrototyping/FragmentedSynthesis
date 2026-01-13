@@ -376,11 +376,6 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
            <button title="Snapshot (Save your progress. Restore using the Snapshots-Panel)" @click="createSnapshot">
              📸
            </button>
-           <button
-               title="Delete (Delete all selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL.)"
-               @click="onDeleteSelected">
-             🗑️
-           </button>
           <button title="Download (Save project to file)" @click="onSaveToFile">
             💾
           </button>
@@ -388,10 +383,18 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
             📂
             <input type="file" accept=".json" @change="onRestoreFromFile" />
           </button>
-           <button title="Unchaosify (This will automatically sort your elements according to the flow of the content)" @click="onAutoLayout" >
-             🔮
-           </button>
          </div>
+      <div class="buttons">
+
+        <button
+            title="Delete (Delete all selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL.)"
+            @click="onDeleteSelected">
+          🗑️
+        </button>
+        <button title="Unchaosify (This will automatically sort your elements according to the flow of the content)" @click="onAutoLayout" >
+          🔮
+        </button>
+      </div>
 
       <div class="toggle-switches">
         <div class="toggle-switch" v-for="panel in ['📚 bibliography','🖼️ figures','✏️ style', '📸 snapshots']" :key="panel">
@@ -447,7 +450,7 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
         <div
             v-for="template in availableTemplates.filter(t => t.category === 'text')"
             :key="template.type"
-            class="draggable-node"
+            class="draggable-node content-node"
             draggable="true"
             @dragstart="onDragStart(template.type, $event)"
             title="Drag and drop nodes you would like to add over to the canvas"
@@ -463,7 +466,7 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
         <div
             v-for="template in availableTemplates.filter(t => t.category === 'utility')"
             :key="template.type"
-            class="draggable-node"
+            class="draggable-node utility-node"
             draggable="true"
             @dragstart="onDragStart(template.type, $event)"
             title="Drag and drop nodes you would like to add over to the canvas"
@@ -479,7 +482,7 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
         <div
             v-for="template in availableTemplates.filter(t => t.category === 'llm')"
             :key="template.type"
-            class="draggable-node"
+            class="draggable-node llm-node"
             draggable="true"
             @dragstart="onDragStart(template.type, $event)"
             title="Drag and drop nodes you would like to add over to the canvas"
@@ -533,10 +536,11 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
 }
 
 .buttons {
-  display: flex;
-
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
+  grid-auto-rows: 36px;
   gap: 0.5rem;
+  justify-content: center;
 }
 
 .buttons button {
@@ -634,6 +638,37 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
   box-shadow: 0 2px 4px rgba(29, 31, 33, 0.12);
 }
 
+/* LLM-based Nodes */
+.llm-node {
+  border: 2px solid #38bdf8;
+  font-weight: 600;
+}
+
+.llm-node:hover {
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+/* Utility Nodes */
+.utility-node {
+  border: 2px solid #fd7a35;
+  font-weight: 600;
+}
+
+.utility-node:hover {
+  box-shadow: 0 0 8px rgba(253, 122, 53, 0.6);
+}
+
+/* Content  Nodes */
+.content-node {
+  border: 2px solid #37b329;
+  font-weight: 600;
+}
+
+.content-node:hover {
+  box-shadow: 0 0 8px rgba(55, 179, 41, 0.6);
+}
+
+
 .drag-category {
   font-size: 0.75rem;
   font-weight: 600;
@@ -643,7 +678,6 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
   margin-top: 10px;
   margin-bottom: 4px;
   padding-left: 2px;
-  border-bottom: 1px solid rgb(255, 255, 255);
 }
 
 /* Animated Toggle-Switch experimental */
@@ -879,10 +913,10 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
 /* New Sidebar and Switches */
 
 .toggle-switch .slider.purple {
-  background-color: #9b59b6;
+  /*background-color: #9b59b6;*/
 }
 .toggle-switch input:checked + .slider.purple {
-  background-color: #8e44ad;
+  /*background-color: #8e44ad;*/
 }
 .toggle-switch input:checked + .slider.purple::before {
   transform: translateX(16px);
@@ -892,16 +926,6 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
   transform: translateX(16px);
 }
 
-
-.right-panels {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  z-index: 9999;
-}
 
 .side-panel {
   width: 500px;

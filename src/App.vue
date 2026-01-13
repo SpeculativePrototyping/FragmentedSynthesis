@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import {ref, watch, provide, computed, nextTick, onMounted, onUnmounted} from 'vue'
-import {type Node, type Edge, type Connection, useVueFlow} from '@vue-flow/core'
+import {type Node, type Edge, type Connection, useVueFlow, Panel} from '@vue-flow/core'
 import { VueFlow, addEdge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
 import {MiniMap} from "@vue-flow/minimap";
-import {type NodeChange, type EdgeChange} from '@vue-flow/core'
 import html2canvas from 'html2canvas'
+import { llmBusy, llmQueueSize } from '@/api/llmQueue'
 
 
 
@@ -22,6 +22,7 @@ import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
+import LlmQueuePanelContent from "@/Panels/LlmQueuePanelContent.vue";
 
 const AUTOSAVE_INTERVAL = 60_000 // 60 Sekunden
 const MAX_AUTOSAVES = 20
@@ -522,6 +523,15 @@ watch(nodes, (newNodes) => {
     </VueFlow>
 
   </div>
+
+  <Panel
+      v-if="llmBusy"
+      position="bottom-center"
+      class="llm-queue-panel"
+  >
+    <LlmQueuePanelContent />
+  </Panel>
+
 </template>
 
 

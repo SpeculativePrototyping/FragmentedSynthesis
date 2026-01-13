@@ -1,7 +1,14 @@
+import {ref} from 'vue'
+
+
+
 const API_URL = import.meta.env.VITE_LLM_API_URL || '/api/llm';
 const API_KEY = import.meta.env.VITE_LLM_API_KEY || '';
 const DEFAULT_MODEL = import.meta.env.VITE_LLM_MODEL || 'deepseek/deepseek-r1-0528-qwen3-8b';
 const DEFAULT_TEMPERATURE = Number(import.meta.env.VITE_LLM_TEMPERATURE ?? 0.2);
+
+export const llmQueueSize = ref(0)
+export const llmBusy = ref(false)
 
 export interface LlmJobOptions {
   user: string;
@@ -27,11 +34,17 @@ interface InternalJob {
 const queue: InternalJob[] = [];
 let busy = false;
 
+export function discardPendingLlmJobs() {
+  queue.length = 0
+  llmQueueSize.value = 0
+}
+
 export function enqueueLlmJob(options: LlmJobOptions): Promise<LlmResult> {
   return new Promise((resolve, reject) => {
     // Park the job so calls are handled in order.
     queue.push({ options, resolve, reject });
     // Kick the worker loop in case it is idle.
+    llmQueueSize.value = queue.length
     processQueue();
   });
 }
@@ -39,8 +52,10 @@ export function enqueueLlmJob(options: LlmJobOptions): Promise<LlmResult> {
 async function processQueue() {
   if (busy) return;
   busy = true;
+  llmBusy.value = true
   try {
     while (queue.length) {
+      llmQueueSize.value = queue.length
       const job = queue.shift()!;
       // Let callers update their UI the moment we start.
       job.options.onStart?.();
@@ -55,6 +70,8 @@ async function processQueue() {
     }
   } finally {
     busy = false;
+    llmBusy.value = false
+    llmQueueSize.value = 0
   }
 }
 
