@@ -613,17 +613,17 @@ function deleteNode() {
         </div>
       </div>
 
-      <button type="button" class="doc-output__export" :disabled="!latexSource" @click="onExport">
+      <button type="button" class="align-btn" :disabled="!latexSource" @click="onExport">
         Export .tex
       </button>
-      <button type="button" class="doc-output__export"
+      <button type="button" class="align-btn"
               :disabled="!bibliography?.length"
               @click="downloadBib">
         Export .bib
       </button>
       <button
           type="button"
-          class="doc-output__export"
+          class="align-btn"
           :disabled="!latexSource && !(bibliography?.length)"
           @click="downloadZip"
       >
@@ -631,7 +631,7 @@ function deleteNode() {
       </button>
       <button
           type="button"
-          class="doc-output__export"
+          class="align-btn"
           :disabled="!latexSource && !(bibliography?.length)"
           @click="onOpenInOverleaf"
       >
@@ -741,19 +741,7 @@ function deleteNode() {
   font-style: italic;
 }
 
-.doc-output__export {
-  align-self: flex-end;
-  border: 1px solid rgba(15,23,42,0.2);
-  border-radius: 6px;
-  background: white;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
 
-.doc-output__export:hover {
-  background: rgba(99,102,241,0.08);
-}
 
 .doc-output__level-controls {
   display: flex;

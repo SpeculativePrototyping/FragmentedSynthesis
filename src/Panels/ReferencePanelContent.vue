@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
 
+
 interface BibEntry {
   id: string
   type: string
@@ -78,7 +79,7 @@ function removeReference(key: string) {
         class="reftracker__textarea"
         placeholder="Paste BibTeX entries here..."
     />
-    <button type="button" class="reftracker__import-btn" @click="importBibtex">
+    <button class="import-btn" @click="importBibtex">
       Import BibTeX
     </button>
   </div>
@@ -106,22 +107,7 @@ function removeReference(key: string) {
   box-sizing: border-box;
 }
 
-.reftracker__import-btn {
-  width: 100%;
-  height: 50px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background: rgba(0, 0, 0, 0);
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 10px;
-  box-sizing: border-box;
-  color: white;
-}
 
-.reftracker__import-btn:hover {
-  background: rgba(238, 238, 238, 0.5);
-}
 
 .bib-entry {
   display: flex;
@@ -131,14 +117,51 @@ function removeReference(key: string) {
 }
 
 .bib-entry-delete {
-  border: none;
-  background: transparent;
-  color: #ff4444;
+  margin: 4px;
+  background: rgb(255, 255, 255);
   cursor: pointer;
-  font-weight: bold;
-  margin-left: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 10px;
 }
 .bib-entry-delete:hover {
-  color: #ff0000;
+  background: rgba(0, 0, 0, 0);
 }
+
+.import-btn {
+  width: 100%;
+  border-radius: 10px;
+  background: rgb(255, 255, 255);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: 10px;
+  box-sizing: border-box;
+  color: #000000;
+  padding: 8px 12px;
+
+}
+
+.import-btn:hover {
+  background: rgba(0, 0, 0, 0);
+}
+
+.template-buttons button {
+  margin: 4px;
+  background: rgb(255, 255, 255);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 10px;
+
+}
+
+.template-buttons button:hover {
+  background: rgba(0, 0, 0, 0);
+}
+
 </style>

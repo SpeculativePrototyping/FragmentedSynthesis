@@ -363,7 +363,7 @@ function deleteNode() {
 
     <section class="doc-node__body summary-node__body" v-if="!isCompact">
       <label class="summary-node__field">
-        <select v-model="selectedTemplate">
+        <select v-model="selectedTemplate" class="fullsize-select">
           <option :value="null">Choose a style template (default selected)</option>
           <option v-for="tpl in styleTemplates" :key="tpl.templateName" :value="tpl.templateName">
             {{ tpl.templateName }}

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
 
+
 interface StyleTemplate {
   templateName: string
   tone: string
@@ -79,9 +80,20 @@ function deleteTemplate(index: number) {
     <!-- Formular für neues oder bearbeitetes Template -->
     <div v-if="templates.length === 0 || addingNew || editingIndex !== null" class="form-group-wrapper">
       <div class="form-group">
-        <label>Template Name</label>
-        <textarea v-model="templateName" placeholder="Give your style template a designation. You can choose a template later when using the Paraphrase Node."></textarea>
+        <label>
+          Template Name
+          <span class="char-counter">
+      {{ templateName.length }}/40
+    </span>
+        </label>
+
+        <textarea
+            v-model="templateName"
+            maxlength="40"
+            placeholder="Give your style template a designation. You can choose a template later when using the Paraphrase Node."
+        ></textarea>
       </div>
+
 
       <div class="form-group">
         <label>Tone / Style / Target Audience</label>
@@ -98,7 +110,7 @@ function deleteTemplate(index: number) {
         <textarea v-model="emphasizePoints" placeholder="Snippet or example for how you'd like your text to be written. The example will determine the length of your paragraph in case you did not set a paragraph length above." rows="4"></textarea>
       </div>
 
-      <button class="save-btn" @click="saveTemplate">💾 Save Template</button>
+      <button class="import-btn" @click="saveTemplate">💾 Save Template</button>
     </div>
 
     <!-- Liste vorhandener Templates -->
@@ -111,7 +123,7 @@ function deleteTemplate(index: number) {
         </div>
       </div>
 
-      <button class="save-btn" @click="addingNew = true; clearFields()">➕ Add New Template</button>
+      <button class="import-btn" @click="addingNew = true; clearFields()">➕ Add New Template</button>
     </div>
   </div>
 </template>
@@ -147,33 +159,6 @@ textarea {
   resize: vertical;
 }
 
-button {
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-  background: rgba(0, 0, 0, 0);
-  color: rgb(255, 255, 255);
-  font-size: 0.9rem;
-}
-
-button:hover {
-  background: rgba(238, 238, 238, 0.5);
-}
-
-.save-btn {
-  width: 100%;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0);
-  color: white;
-  font-weight: 600;
-  border-radius: 6px;
-}
-
-.save-btn:hover {
-  background: rgba(238, 238, 238, 0.5);
-}
-
 
 .template-list {
   display: flex;
@@ -191,7 +176,36 @@ button:hover {
 }
 
 .template-buttons button {
-  margin-left: 4px;
-  font-size: 0.9rem;
+  margin: 4px;
+  background: rgb(255, 255, 255);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 10px;
+
+}
+
+.template-buttons button:hover {
+  background: rgba(0, 0, 0, 0);
+}
+
+.import-btn {
+  width: 100%;
+  border-radius: 10px;
+  background: rgb(255, 255, 255);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: 10px;
+  box-sizing: border-box;
+  color: #000000;
+  padding: 8px 12px;
+
+}
+
+.import-btn:hover {
+  background: rgba(0, 0, 0, 0);
 }
 </style>

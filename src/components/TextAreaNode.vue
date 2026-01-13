@@ -648,7 +648,6 @@ function redo(textarea: HTMLTextAreaElement | null) {
 .text-node__textarea {
   min-width: 350px;
   min-height: 180px;
-  height: 100px;
   margin: 0 auto;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, .15);

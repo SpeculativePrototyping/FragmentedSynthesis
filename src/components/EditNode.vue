@@ -659,7 +659,7 @@ function deleteNode() {
         </textarea>
         <button
             v-if="showReviewer"
-            class="citation-add-btn"
+            class="fullsize-btn"
             :disabled="status==='processing' || !reviewerComment.trim()"
             @click="queueReview(true)">
           Apply Reviewer Comment
@@ -702,6 +702,7 @@ function deleteNode() {
 .edit-node__textarea2 {
   margin-top: 20px;
   width: 100%;
+  min-width: 350px;
   min-height: 180px;
   padding: 10px 12px;
   border: 1px solid rgba(15, 23, 42, 0.15);
@@ -734,18 +735,8 @@ function deleteNode() {
   color: #b91c1c;
 }
 
-.edit-node__reset {
-  border: 1px solid rgba(15, 23, 42, 0.2);
-  border-radius: 6px;
-  background: white;
-  padding: 4px 10px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
 
-.edit-node__reset:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+
+
 
 </style>

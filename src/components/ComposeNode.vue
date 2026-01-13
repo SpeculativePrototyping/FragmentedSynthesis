@@ -278,7 +278,6 @@ function deleteNode() {
 
 <style scoped>
 
-
 .compose {
   box-sizing: border-box;
   inline-size: min(36rem, 90%);

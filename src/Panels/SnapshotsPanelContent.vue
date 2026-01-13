@@ -55,7 +55,7 @@ function handleDelete(snap: Snapshot) {
       <!-- Buttons -->
       <div class="template-buttons">
         <button @click="handleRestore(snap)" title="Restore">♻️</button>
-        <button @click="handleDelete(snap)" title="Delete" style="color:red">🗑️</button>
+        <button @click="handleDelete(snap)" title="Delete" >🗑️</button>
       </div>
     </div>
   </div>
@@ -106,8 +106,19 @@ function handleDelete(snap: Snapshot) {
 }
 
 .template-buttons button {
-  font-size: 0.9rem; /* Größe bleibt wie vorher */
-  padding: 6px 10px;
+  margin: 4px;
+  background: rgb(255, 255, 255);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 10px;
+
+}
+
+.template-buttons button:hover {
+  background: rgba(0, 0, 0, 0);
 }
 
 .autosave-toggle {
