@@ -346,11 +346,11 @@ function deleteNode() {
         🔁
       </button>
 
-      <label class="toggle-switch" title="Compact view / TLDR">
+      <label class="mini-toggle-switch" title="Compact view / TLDR">
         <input type="checkbox" v-model="isCompact"/>
         <span class="slider"></span>
       </label>
-      <span class="toggle-label">TLDR</span>
+      <span class="mini-toggle-label">TLDR</span>
 
 
     </div>

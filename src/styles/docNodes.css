@@ -31,48 +31,48 @@
 }
 
 .doc-node__hint {
-color: rgba(15, 23, 42, 0.65);
-font-size: 0.75rem;
-font-weight: 500;
+  color: rgba(15, 23, 42, 0.65);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .doc-node__body {
-display: flex;
-flex-direction: column;
-gap: var(--doc-node-row-gap);
-padding: var(--doc-node-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--doc-node-row-gap);
+  padding: var(--doc-node-padding);
 }
 
 .doc-node__row {
-align-items: center;
-display: grid;
-gap: 12px;
-grid-template-columns: 100% 1fr;
-padding: 4px 12px 4px 4px;
-position: relative;
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 100% 1fr;
+  padding: 4px 12px 4px 4px;
+  position: relative;
 
 }
 
 .doc-node__row--connected {
-background-color: rgba(39, 23, 186, 0.08);
-border-radius: 12px;
+  background-color: rgba(39, 23, 186, 0.08);
+  border-radius: 12px;
 }
 
 .doc-node__header-warning {
-background-color: rgba(239, 68, 68, 0.15);
-border-bottom-color: rgba(220, 38, 38, 0.35);
+  background-color: rgba(239, 68, 68, 0.15);
+  border-bottom-color: rgba(220, 38, 38, 0.35);
 }
 
 .doc-node__preview {
-color: rgba(57, 57, 57, 0.8);
-font-size: 0.8rem;
-line-height: 1.2;
-display: block;
-flex: 1 1 auto;
-overflow: hidden;
-white-space: nowrap;
-text-overflow: ellipsis;
-text-align: left;
+  color: rgba(57, 57, 57, 0.8);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  display: block;
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 /*  NODE TOOLBAR DESIGN, BUTTONS AND SLIDER */
@@ -134,20 +134,20 @@ text-align: left;
   background-color: #dc2626; /* dunkleres Rot bei Hover */
 }
 
-.toggle-switch {
+.mini-toggle-switch {
   position: relative;
   display: inline-block;
   width: 28px;
   height: 16px;
 }
 
-.toggle-switch input {
+.mini-toggle-switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.toggle-switch .slider {
+.mini-toggle-switch .slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -159,7 +159,7 @@ text-align: left;
   transition: 0.2s;
 }
 
-.toggle-switch .slider::before {
+.mini-toggle-switch .slider::before {
   content: "";
   position: absolute;
   height: 12px;
@@ -171,15 +171,15 @@ text-align: left;
   transition: 0.2s;
 }
 
-.toggle-switch input:checked + .slider {
+.mini-toggle-switch input:checked + .slider {
   background-color: #22ff00;
 }
 
-.toggle-switch input:checked + .slider::before {
+.mini-toggle-switch input:checked + .slider::before {
   transform: translateX(12px);
 }
 
-.toggle-label {
+.mini-toggle-label {
   font-size: 0.75rem;
   color: #000;
 }

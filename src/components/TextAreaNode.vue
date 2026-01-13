@@ -518,7 +518,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
         🖼️
       </button>
 
-      <label class="toggle-switch" title="Show a short summary (TLDR).">
+      <label class="mini-toggle-switch" title="Show a short summary (TLDR).">
         <input v-model="isCompact" type="checkbox"/>
         <span class="slider"></span>
       </label>
@@ -688,18 +688,7 @@ function redo(textarea: HTMLTextAreaElement | null) {
   overflow: auto;
 }
 
-.node-hover-toggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
+.
 .node-wrapper:hover .node-hover-toggle {
   opacity: 1;
   pointer-events: auto;

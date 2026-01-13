@@ -5,6 +5,7 @@ import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 import '../styles/docNodes.css'
 
+
 interface TextViewNodeData {
   value?: string
   label?: string
