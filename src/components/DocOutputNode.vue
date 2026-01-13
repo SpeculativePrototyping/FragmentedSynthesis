@@ -775,41 +775,6 @@ function deleteNode() {
   background: rgba(79,70,229,0.2);
 }
 
-.toolbar-buttons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  /* Header-Stil übernehmen */
-  background-color: rgba(99, 102, 241, 0.1);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  padding: 10px 14px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-
-}
-
-.delete-node-btn {
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,.15);
-  background-color: #f87171; /* hellrot */
-  color: white;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.delete-node-btn:hover {
-  background-color: #dc2626; /* dunkleres Rot bei Hover */
-}
-
-
 .doc-output__item--section {
   font-weight: 700;
 }

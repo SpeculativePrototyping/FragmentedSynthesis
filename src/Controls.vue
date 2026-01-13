@@ -650,12 +650,12 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
 
 /* Utility Nodes */
 .utility-node {
-  border: 2px solid #fd7a35;
+  border: 2px solid #df6a2d;
   font-weight: 600;
 }
 
 .utility-node:hover {
-  box-shadow: 0 0 8px rgba(253, 122, 53, 0.6);
+  box-shadow: 0 0 8px rgba(223, 106, 45, 0.6);
 }
 
 /* Content  Nodes */
