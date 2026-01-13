@@ -179,7 +179,7 @@ export function parseLatexToNodesAndEdges(
             type: 'compose',
             position: { x: 0, y: 0 },
             data: {
-                label: 'Compose',
+                label: 'Compose Node',
                 title,
                 level: levelMap[type] || 1,
                 json: '',
@@ -196,7 +196,7 @@ export function parseLatexToNodesAndEdges(
         id: 'doc-output',
         type: 'docOutput',
         position: { x: 0, y: 0 },
-        data: { label: 'Document Output' },
+        data: { label: 'Document Output Node' },
         dragHandle: '.doc-node__header'
     }
     nodes.push(docNode)
@@ -242,7 +242,7 @@ export function parseLatexToNodesAndEdges(
                     position: { x: 0, y: 0 },
                     data: {
                         value: inBetweenText,
-                        label: 'Paragraph',
+                        label: 'Text Input Node',
                         placeholder: '',
                         citations: [],
                         status: 'idle',
@@ -277,7 +277,7 @@ export function parseLatexToNodesAndEdges(
                         position: { x: 0, y: 0 },
                         data: {
                             value: paraText,
-                            label: 'Paragraph',
+                            label: 'Text Input Node',
                             placeholder: '',
                             citations: [],
                             status: 'idle',
@@ -336,7 +336,6 @@ export function parseLatexToNodesAndEdges(
                         type: 'figure',
                         position: { x: 0, y: 0 },
                         data: {
-                            label: 'Figure',
                             image: imgFile.content,   // Base64 bleibt beim Import im Node
                             imageName: figKey,        // ✅ hier steht jetzt der Key (nicht Dateiname)
                             refLabel: figKey,         // ✅ damit der Node das auch als RefLabel übernimmt
@@ -374,7 +373,7 @@ export function parseLatexToNodesAndEdges(
                 position: { x: 0, y: 0 },
                 data: {
                     value: restText,
-                    label: 'Paragraph',
+                    label: 'Text Input Node',
                     placeholder: '',
                     citations: [],
                     status: 'idle',
