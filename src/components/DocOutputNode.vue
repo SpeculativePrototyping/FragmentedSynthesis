@@ -8,7 +8,7 @@ import '../styles/NodeDesign.css'
 import type {BibEntry} from "@/App.vue";
 import JSZip from "jszip"
 import {NodeToolbar} from "@vue-flow/node-toolbar";
-
+import type {ImageCacheEntry} from "@/App.vue";
 
 
 interface DocOutputNodeData {
@@ -34,10 +34,6 @@ interface HandleRow {
   preview: string
 }
 
-interface ImageCacheEntry {
-  base64: string
-  refLabel: string
-}
 
 type ImageCache = Record<string, ImageCacheEntry>
 

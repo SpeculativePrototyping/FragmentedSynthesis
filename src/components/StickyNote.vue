@@ -67,10 +67,8 @@ function deleteNode() {
 
 <style scoped>
 .text-node {
-  overflow: visible;
   background: rgb(248,210,0);
 }
-
 
 .text-node__textarea {
   width: 240px;

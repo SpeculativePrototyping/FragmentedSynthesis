@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
+import type {StyleTemplate} from "@/App.vue";
 
 
-interface StyleTemplate {
-  templateName: string
-  tone: string
-  sectionLength: number
-  emphasizePoints: string
-}
 
 // Inject global templates
 const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!

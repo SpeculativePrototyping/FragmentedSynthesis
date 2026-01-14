@@ -6,9 +6,8 @@ import { Background } from '@vue-flow/background'
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
 import {MiniMap} from "@vue-flow/minimap";
-import html2canvas from 'html2canvas'
 import { llmBusy, llmQueueSize } from '@/api/llmQueue'
-
+import { useSnapshots } from '@/api/Snapshots'
 
 
 //Import every node-component:
@@ -24,14 +23,7 @@ import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
 import LlmQueuePanelContent from "@/Panels/LlmQueuePanelContent.vue";
 
-const AUTOSAVE_INTERVAL = 60_000 // 60 Sekunden
-const MAX_AUTOSAVES = 20
-
-
-interface EdgeMouseEvent {
-  edge: Edge
-  event: MouseEvent
-}
+//Interfaces for globally provided Data:
 
 export interface BibEntry {
   id: string
@@ -40,19 +32,31 @@ export interface BibEntry {
   raw?: string
 }
 
-interface ImageCacheEntry {
+export interface ImageCacheEntry {
   base64: string
   refLabel: string
   latexLabel?: string
 }
 
-interface Snapshot {
+export interface Snapshot {
   id: string
   name: string
   createdAt: number
   data: any
   screenshot?: string // optional, base64 image
   isAutoSave?: boolean
+}
+
+export interface StyleTemplate {
+  templateName: string
+  tone: string
+  sectionLength: number
+  emphasizePoints: string
+}
+
+interface EdgeMouseEvent {
+  edge: Edge
+  event: MouseEvent
 }
 
 const snapshots = ref<Snapshot[]>([])
@@ -64,12 +68,12 @@ provide('language', language)
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
+provide('nodes', nodes)
+provide('edges', edges)
 
 const bibliography = ref<BibEntry[]>([])  // <- global bibliography
 provide('bibliography', bibliography)
-const updateBibliography = (newBib: BibEntry[]) => {
-  bibliography.value = newBib
-}
+const updateBibliography = (newBib: BibEntry[]) => {bibliography.value = newBib}
 provide('updateBibliography', updateBibliography)
 
 const TLDR = ref(false) // <- for shrinking some nodes
@@ -89,12 +93,20 @@ provide('setStyleTemplates', (newList) => {
   templates.value = newList
 })
 
-const screenshotInProgress = ref(false)
-provide('screenshotInProgress', screenshotInProgress)
+const snapshotInProgress = ref(false)
+provide('snapshotInProgress', snapshotInProgress)
 
 
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
+
+const {
+  createSnapshot,
+  restoreSnapshot,
+  deleteSnapshot,
+  createAutosaveSnapshot,
+} = useSnapshots()
+
 
 const edgeMenu = ref<{
   visible: boolean
@@ -118,6 +130,7 @@ const canInsertNodes = computed(() => {
   if (!sourceNode) return false
   return allowedSourceTypes.includes(sourceNode.type)
 })
+
 
 
 
@@ -275,151 +288,6 @@ function insertNodeOnEdge(templateType: string) {
 }
 
 
-async function createSnapshot() {
-
-  // Blitz starten
-  screenshotInProgress.value = true
-
-  // 1. Export der Flow-Daten
-  const exportData = {
-    nodes: JSON.parse(JSON.stringify(nodes.value)),
-    edges: JSON.parse(JSON.stringify(edges.value)),
-    bibliography: bibliography.value,
-    TLDR: TLDR.value,
-    templates: templates.value
-  }
-
-  // Optional: nodes enthalten Bilder → Bild-Cache einfügen
-  exportData.nodes.forEach((node: any) => {
-    if (node.data?.imageName && imageCache.value[node.data.imageName]) {
-      node.data.image = imageCache.value[node.data.imageName].base64
-    }
-  })
-
-  // 2. Screenshot erzeugen
-  let screenshot: string | undefined
-  try {
-    const flowEl = document.querySelector('.vue-flow') as HTMLElement
-    if (flowEl) {
-      const canvas = await html2canvas(flowEl)
-      screenshot = canvas.toDataURL('image/png')
-    }
-  } catch (err) {
-    console.warn('Snapshot screenshot failed', err)
-  }
-
-  // Blitz kurz verzögern, damit der Effekt sichtbar ist
-  await new Promise(r => setTimeout(r, 150))
-  screenshotInProgress.value = false
-
-  // 3. Snapshot speichern
-  const timestamp = new Date()
-  snapshots.value.unshift({
-    id: crypto.randomUUID(),
-    name: timestamp.toLocaleString(),
-    createdAt: timestamp.getTime(),
-    data: exportData,
-    screenshot
-  })
-}
-
-function restoreSnapshot(id: string) {
-  const snap = snapshots.value.find(s => s.id === id)
-  if (!snap) return
-
-  nodes.value = []
-  edges.value = []
-
-  nextTick(() => {
-    nodes.value = snap.data.nodes
-    edges.value = snap.data.edges
-    TLDR.value = snap.data.TLDR
-    templates.value = snap.data.templates
-    bibliography.value = snap.data.bibliography
-  })
-}
-
-function deleteSnapshot(id: string) {
-  snapshots.value = snapshots.value.filter(s => s.id !== id)
-}
-
-provide('createSnapshot', createSnapshot)
-provide('restoreSnapshot', restoreSnapshot)
-provide('deleteSnapshot', deleteSnapshot)
-
-
-async function createAutosaveSnapshot() {
-  const timestamp = new Date()
-
-  const exportData = {
-    nodes: JSON.parse(JSON.stringify(nodes.value)),
-    edges: JSON.parse(JSON.stringify(edges.value)),
-    bibliography: bibliography.value,
-    TLDR: TLDR.value,
-    templates: templates.value
-  }
-
-  exportData.nodes.forEach((node: any) => {
-    if (node.data?.imageName && imageCache.value[node.data.imageName]) {
-      node.data.image = imageCache.value[node.data.imageName].base64
-    }
-  })
-
-  let screenshot: string | undefined
-  try {
-    const flowEl = document.querySelector('.vue-flow') as HTMLElement
-    if (flowEl) {
-      const canvas = await html2canvas(flowEl)
-      screenshot = canvas.toDataURL('image/png')
-    }
-  } catch (err) {
-    console.warn('Autosave screenshot failed', err)
-  }
-
-  // 🔹 neuen Autosave vorne einfügen
-  snapshots.value.unshift({
-    id: crypto.randomUUID(),
-    name: `🕒 Autosave - ${timestamp.toLocaleTimeString()}`,
-    createdAt: timestamp.getTime(),
-    data: exportData,
-    screenshot,
-    isAutoSave: true
-  })
-
-  // 🔹 alte Autosaves begrenzen (nur Autosaves!)
-  const autosaves = snapshots.value.filter(s => s.isAutoSave)
-
-  if (autosaves.length > MAX_AUTOSAVES) {
-    const autosavesSorted = autosaves
-        .sort((a, b) => a.createdAt - b.createdAt)
-
-    const toRemove = autosavesSorted.slice(
-        0,
-        autosaves.length - MAX_AUTOSAVES
-    )
-
-    snapshots.value = snapshots.value.filter(
-        s => !toRemove.some(r => r.id === s.id)
-    )
-  }
-}
-
-
-let autosaveInterval: number | undefined
-
-onMounted(() => {
-  autosaveInterval = window.setInterval(
-      createAutosaveSnapshot,
-      AUTOSAVE_INTERVAL
-  )
-})
-
-onUnmounted(() => {
-  if (autosaveInterval) clearInterval(autosaveInterval)
-})
-
-
-
 watch(nodes, (newNodes) => {
   const usedRefLabels = new Set(newNodes
       .filter(n => n.type === 'figure')  // nur Figure Nodes
@@ -435,7 +303,6 @@ watch(nodes, (newNodes) => {
     }
   }
 }, { deep: true })
-
 
 
 </script>
@@ -459,7 +326,7 @@ watch(nodes, (newNodes) => {
       </template>
     </div>
 
-    <div v-if="screenshotInProgress" class="screenshot-overlay"></div>
+    <div v-if="snapshotInProgress" class="screenshot-overlay"></div>
 
 
     <VueFlow

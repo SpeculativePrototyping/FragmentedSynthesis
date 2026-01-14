@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { ref, inject, type Ref } from 'vue'
+import type {BibEntry} from "@/App.vue";
 
 
-interface BibEntry {
-  id: string
-  type: string
-  fields: Record<string, string>
-  raw?: string
-}
 
 // inject die bestehende Bibliography
 const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))!

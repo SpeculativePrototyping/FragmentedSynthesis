@@ -4,7 +4,7 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
 import { reviewPrompts } from '@/nodes/prompts'
 import { enqueueLlmJob } from '../api/llmQueue'
-
+import type {ImageCacheEntry, BibEntry} from "@/App.vue";
 import '../styles/NodeDesign.css'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 
@@ -24,16 +24,7 @@ interface EditNodeData {
   height?: number
 }
 
-interface BibEntry {
-  id: string
-  type: string
-  fields: Record<string, string>
-}
 
-interface ImageCacheEntry {
-  base64: string
-  refLabel: string
-}
 type ImageCache = Record<string, ImageCacheEntry>
 
 const props = defineProps<NodeProps<EditNodeData>>()

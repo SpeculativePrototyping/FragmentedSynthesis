@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { inject, type Ref, ref, computed } from 'vue'
+import type {Snapshot} from "@/App.vue";
 
-interface Snapshot {
-  id: string
-  name: string
-  createdAt: number
-  data: any
-  screenshot?: string
-  isAutoSave?: boolean
-}
 
 const snapshots = inject<Ref<Snapshot[]>>('snapshots')!
-const restoreSnapshot = inject<(id: string) => void>('restoreSnapshot')!
-const deleteSnapshot = inject<(id: string) => void>('deleteSnapshot')!
+
+import { useSnapshots } from '@/api/Snapshots'
+
+const {
+  createSnapshot,
+  restoreSnapshot,
+  deleteSnapshot,
+  createAutosaveSnapshot,
+  snapshotInProgress,
+} = useSnapshots()
+
+
+
 
 const showAutosaves = ref(true)
 

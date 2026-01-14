@@ -137,9 +137,7 @@ function deleteNode() {
 </template>
 
 <style scoped>
-.text-view-node {
-  overflow: visible;
-}
+
 
 .text-view-node__body {
   position: relative;

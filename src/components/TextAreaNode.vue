@@ -7,20 +7,11 @@ import {NodeToolbar} from '@vue-flow/node-toolbar'
 import type {Ref} from 'vue'
 import {textNodePrompts} from '@/nodes/prompts'
 import '../styles/NodeDesign.css'
+import type {ImageCacheEntry, BibEntry} from "@/App.vue";
 
 
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
 
-interface BibEntry {
-  id: string
-  type: string
-  fields: Record<string, string>
-}
-
-interface ImageCacheEntry {
-  base64: string
-  refLabel: string
-}
 
 type ImageCache = Record<string, ImageCacheEntry>
 

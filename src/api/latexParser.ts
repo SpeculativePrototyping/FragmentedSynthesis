@@ -1,5 +1,6 @@
 // api/latexParser.ts
 import type { Node, Edge } from '@vue-flow/core'
+import type {BibEntry} from "@/App.vue";
 
 interface ZipFileEntry {
     path: string
@@ -7,12 +8,7 @@ interface ZipFileEntry {
     content: string | ArrayBuffer
 }
 
-interface BibEntry {
-    id: string
-    type: string
-    fields: Record<string, string>
-    raw?: string
-}
+
 
 function randomFigureKey(length = 5) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -22,7 +18,6 @@ function randomFigureKey(length = 5) {
     }
     return `Figure-${result}`
 }
-
 
 
 function parseBibtex(input: string): BibEntry[] {

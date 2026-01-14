@@ -6,16 +6,13 @@ import { enqueueLlmJob } from '../api/llmQueue'
 import {summaryPrompts} from "@/nodes/prompts.ts";
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 import '../styles/NodeDesign.css'
+import type {StyleTemplate} from "@/App.vue";
+
 
 /* ----------------------
    Typen / Interfaces
    ---------------------- */
-interface StyleTemplate {
-  templateName: string
-  tone: string
-  sectionLength: number
-  emphasizePoints: string
-}
+
 
 type SummaryStatus = 'idle' | 'queued' | 'processing' | 'done' | 'error'
 

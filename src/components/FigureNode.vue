@@ -4,12 +4,8 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 import '../styles/NodeDesign.css'
+import type {BibEntry, ImageCacheEntry} from "@/App.vue";
 
-interface BibEntry {
-  id: string
-  type: string
-  fields: Record<string, string>
-}
 
 interface FigureNodeData {
   label?: string
@@ -54,12 +50,6 @@ function randomRefLabel(length = 5) {
   return `Figure-${result}`
 }
 
-
-interface ImageCacheEntry {
-  base64: string
-  refLabel: string
-  latexLabel?: string
-}
 
 type ImageCache = Record<string, ImageCacheEntry>
 

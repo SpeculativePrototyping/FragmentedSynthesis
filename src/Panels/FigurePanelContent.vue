@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import {inject, ref, type Ref} from 'vue'
+import type {ImageCacheEntry} from "@/App.vue";
 
-interface ImageCacheEntry {
-  base64: string
-  refLabel: string
-  latexLabel?: string
-}
+
 
 type ImageCache = Record<string, ImageCacheEntry>
 

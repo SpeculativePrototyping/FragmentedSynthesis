@@ -1,14 +1,27 @@
 <script setup lang="ts">
-import { computed, ref, watch, inject, nextTick, provide} from 'vue'
+import { computed, ref, watch, inject, nextTick, provide, type Ref} from 'vue'
 import { Panel, useVueFlow } from '@vue-flow/core'
-import Icon from './Icon.vue'
 import { nodeTemplates } from './nodes/templates'
-import { applyDagreLayout } from './api/layouts.ts'
-import type { Ref } from 'vue'
-import { useDemo } from './api/demo.ts'
-import type {BibEntry, Language} from "@/App.vue";
-import {parseLatexToNodesAndEdges} from '@/api/latexParser'
+import { onMounted, onUnmounted } from 'vue'
+
+import type {BibEntry} from "@/App.vue";
 import JSZip from 'jszip'
+
+import { useLoadAndSave } from './api/LoadAndSave.ts'
+import { applyDagreLayout } from './api/layouts.ts'
+import { useDemo } from './api/demo.ts'
+import {parseLatexToNodesAndEdges} from '@/api/latexParser'
+
+
+import { useSnapshots } from '@/api/Snapshots'
+
+const {
+  createSnapshot,
+  restoreSnapshot,
+  deleteSnapshot,
+  createAutosaveSnapshot,
+} = useSnapshots()
+
 
 import FigurePanelContent from "@/Panels/FigurePanelContent.vue";
 import ReferencePanelContent from "@/Panels/ReferencePanelContent.vue";
@@ -16,25 +29,10 @@ import StylePanelContent from "@/Panels/StylePanelContent.vue";
 import SnapshotsPanelContent from "@/Panels/SnapshotsPanelContent.vue";
 
 
-interface StyleTemplate {
-  templateName: string
-  tone: string
-  sectionLength: number
-  emphasizePoints: string
-}
-
 interface ZipFileEntry {
   path: string
   type: 'tex' | 'bib' | 'image' | 'other'
   content: string | ArrayBuffer
-}
-
-interface Snapshot {
-  id: string
-  name: string
-  createdAt: number
-  data: any
-  screenshot?: string
 }
 
 
@@ -43,20 +41,14 @@ const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 const { nodes, edges, setNodes, setEdges, screenToFlowCoordinate, addNodes, dimensions, toObject, fromObject} = useVueFlow()
 const availableTemplates = computed(() => nodeTemplates)
 const TLDR = inject<Ref<boolean>>('TLDR')!
-const imageCache = inject<Ref<Record<string, string>>>('imageCache')
 const showIntro = ref(true) //Demo-Mode!!!
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const activeSidebar = ref<null | '📚 bibliography' | '🖼️ figures' | '✏️ style' | '📸 snapshots'>(null)
-const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
-const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
 const language = inject<Ref<'en' | 'de'>>('language')!
 const languageLabel = computed(() => language.value.toUpperCase())
 const uploadedFiles = ref<ZipFileEntry[]>([])
 const selectedMainTex = ref<string | null>(null)
 const showLatexFilePicker = ref(false)
-const createSnapshot = inject<() => Promise<void>>('createSnapshot')!
-const snapshots = inject<Ref<Snapshot[]>>('snapshots')!
-
 
 const { startDemo, skipDemo, nextStep } = useDemo({
   demoActive,
@@ -67,6 +59,9 @@ const { startDemo, skipDemo, nextStep } = useDemo({
   screenToFlowCoordinate,
   dimensions
 })
+
+const { saveToFile, restoreFromFile } = useLoadAndSave()
+
 
 
 
@@ -92,89 +87,6 @@ function onDeleteSelected() {
   setNodes(remainingNodes)
 }
 
-async function onSaveToFile(): Promise<void> {
-
-  const exportData = JSON.parse(JSON.stringify(toObject()))
-
-  exportData.nodes.forEach((node: any) => {
-    if (node.data?.imageName && imageCache?.value[node.data.imageName]) {
-      node.data.image = imageCache.value[node.data.imageName]
-    }
-  })
-
-  exportData.bibliography = bibliography.value
-  exportData.TLDR = TLDR.value
-  exportData.templates = templates.value
-
-  // Snapshots komplett einfügen
-  exportData.snapshots = snapshots.value.map(snap => ({
-    id: snap.id,
-    name: snap.name,
-    createdAt: snap.createdAt,
-    data: snap.data,
-    screenshot: snap.screenshot
-  }))
-
-  const dataStr = JSON.stringify(exportData, null, 2)
-  const blob = new Blob([dataStr], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'graph.json'
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-
-function onRestoreFromFile(event: Event): void {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = async () => {
-    try {
-      const data = JSON.parse(reader.result as string)
-
-      setNodes([])
-      setEdges([])
-
-      await nextTick()
-
-      data.nodes.forEach((node: any) => {
-        if (node.data?.image && node.data.imageName && imageCache) {
-          imageCache.value[node.data.imageName] = node.data.image
-          node.data.image = undefined
-        }
-      })
-
-      if (data.bibliography) {
-        bibliography.value = data.bibliography
-      }
-
-      fromObject(data)
-
-      await nextTick()
-      if (typeof data.TLDR === 'boolean') {
-        TLDR.value = data.TLDR
-      }
-
-      if (data.templates && setTemplates) {
-        setTemplates(data.templates)
-      }
-
-      // Snapshots wiederherstellen
-      if (data.snapshots) {
-        snapshots.value = data.snapshots
-      }
-
-    } catch (err) {
-      console.error('read error', err)
-    }
-
-  }
-  reader.readAsText(file)
-}
 
 function handleStartDemo() {
   showIntro.value = false
@@ -186,9 +98,11 @@ function handleSkipDemo() {
   skipDemo()
 }
 
-function UploadFile() {
+function handleUploadFile() {
   showIntro.value = false
 }
+
+
 
 async function onLatexZipUpload(file: File) {
   if (!file || !file.name.endsWith('.zip')) return
@@ -237,7 +151,7 @@ async function onLatexZipUpload(file: File) {
 
     await processZip(zip)
 
-    // ✅ HIER der entscheidende Schritt
+
     uploadedFiles.value = files
     selectedMainTex.value = null
     showLatexFilePicker.value = true
@@ -246,6 +160,9 @@ async function onLatexZipUpload(file: File) {
 
   reader.readAsArrayBuffer(file)
 }
+
+
+
 
 
 function importLatexProject() {
@@ -288,6 +205,24 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
   }
 }
 
+
+let autosaveInterval: number | undefined
+
+onMounted(() => {
+  autosaveInterval = window.setInterval(() => {
+      createAutosaveSnapshot()
+  }, 60_000) // 60 Sekunden
+})
+
+onUnmounted(() => {
+  if (autosaveInterval) {
+    clearInterval(autosaveInterval)
+  }
+})
+
+
+
+
 </script>
 
 
@@ -301,7 +236,7 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
       <div class="demo-buttons">
         <label class="skip-button upload-label" @click="handleSkipDemo">Start Empty Project</label>
 
-        <label class="skip-button upload-label" @change="onRestoreFromFile" @click="UploadFile">
+        <label class="skip-button upload-label" @change="restoreFromFile" @click="handleUploadFile">
           Upload Project from File
           <input type="file" accept=".json"/>
         </label>
@@ -376,12 +311,12 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' |'✏️ sty
            <button title="Snapshot (Save your progress. Restore using the Snapshots-Panel)" @click="createSnapshot">
              📸
            </button>
-          <button title="Download (Save project to file)" @click="onSaveToFile">
+          <button title="Download (Save project to file)" @click="saveToFile">
             💾
           </button>
           <button title="Upload (Load project from file)" class="upload-label">
             📂
-            <input type="file" accept=".json" @change="onRestoreFromFile" />
+            <input type="file" accept=".json" @change="restoreFromFile" />
           </button>
          </div>
       <div class="buttons">
