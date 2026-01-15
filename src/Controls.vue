@@ -93,6 +93,9 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' | '✏️ st
   }
 }
 
+function reloadApp() {
+  window.location.reload()
+}
 
 
 
@@ -136,8 +139,8 @@ onUnmounted(() => {
       <!-- First Button Row -->
 
         <div class="buttons">
-          <button title="Snapshot (Save your progress. Restore using the Snapshots-Panel)" @click="createSnapshot">
-          📸
+          <button title="Reload WebApp" @click="reloadApp">
+            🔄
           </button>
           <button title="Download (Save project to file)" @click="saveToFile">
             💾
@@ -152,13 +155,14 @@ onUnmounted(() => {
 
       <div class="buttons">
         <button
-            title="Delete (Delete all selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL.)"
-            @click="onDeleteSelected">
-            🗑️
+            title="Delete (Delete all selected nodes or edges. Currently selected nodes appear red in the minimap. Select multiple elements by holding CTRL.)" @click="onDeleteSelected">
+          🗑️
         </button>
-        <button title="Unchaosify (This will automatically sort your elements according to the flow of the content)"
-                @click="onAutoLayout">
-            🔮
+        <button title="Unchaosify (This will automatically sort your elements according to the flow of the content.)" @click="onAutoLayout">
+          🔮
+        </button>
+        <button title="Snapshot (Save your progress. Restore using the Snapshots-Panel. Autosaves are made once a Minute.)" @click="createSnapshot">
+          📸
         </button>
       </div>
 

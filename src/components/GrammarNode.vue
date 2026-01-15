@@ -309,7 +309,7 @@ function deleteNode() {
       </button>
 
       <button type="button" class="toolbar-mini-btn" @click="onRetry" title="Retry">
-        🔁
+        🔄
       </button>
 
       <label class="mini-toggle-switch" title="Compact view / TLDR">

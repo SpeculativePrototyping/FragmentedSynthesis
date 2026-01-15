@@ -9,14 +9,16 @@ import type {ZipFileEntry} from "@/App.vue";
 import {useLoadAndSave} from "@/api/LoadAndSave.ts";
 
 
-// 🔑 globale Steuerung
+// global variables
 const demoActive = inject<Ref<boolean>>('demoActive')!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 
 
-// 🧠 lokaler UI-State (war vorher in Controls.vue)
+// local ui state
 const showIntro = ref(true)
 const showLatexFilePicker = ref(false)
+
+//file upload variables
 
 const uploadedFiles = ref<any[]>([])
 const selectedMainTex = ref<string | null>(null)
@@ -34,7 +36,7 @@ const {
   fromObject
 } = useVueFlow()
 
-// Demo
+
 const {startDemo, skipDemo, nextStep} = useDemo({
   demoActive,
   nodes,
@@ -46,6 +48,8 @@ const {startDemo, skipDemo, nextStep} = useDemo({
 })
 
 const {saveToFile, restoreFromFile} = useLoadAndSave()
+
+
 
 
 async function onLatexZipUpload(file: File) {
@@ -105,6 +109,8 @@ async function onLatexZipUpload(file: File) {
   reader.readAsArrayBuffer(file)
 }
 
+
+
 function importLatexProject() {
   if (!selectedMainTex.value) return
 
@@ -136,6 +142,7 @@ function importLatexProject() {
   showLatexFilePicker.value = false
 }
 
+
 function handleStartDemo() {
   showIntro.value = false
   startDemo()
@@ -156,13 +163,13 @@ function handleUploadFile() {
 <template>
 
   <!-- Startup Overlay -->
+
   <div v-if="showIntro" class="demo-overlay">
     <div class="demo-box">
       <h1>👋 Hey there! Looks like you're new here.</h1>
       <p>What would you like to do?</p>
       <div class="demo-buttons">
         <label class="skip-button upload-label" @click="handleSkipDemo">Start Empty Project</label>
-
         <label class="skip-button upload-label" @change="restoreFromFile" @click="handleUploadFile">
           Upload Project from File
           <input accept=".json" type="file"/>
@@ -175,12 +182,11 @@ function handleUploadFile() {
               accept=".zip"
               type="file"
               @change="(e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) onLatexZipUpload(file);
-    }"
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) onLatexZipUpload(file);
+              }"
           />
         </label>
-
         <label class="start-button upload-label" @click="handleStartDemo">🎬 Start Tour</label>
       </div>
     </div>
@@ -223,33 +229,21 @@ function handleUploadFile() {
 
 
   <!-- BOTTOM DEMO CONTROLS -->
+
   <div v-if="demoActive" class="demo-controls">
     <button class="next-step-btn" @click="nextStep">➡️ Next Step</button>
     <button class="end-demo-btn" @click="skipDemo">🛑 End Demo</button>
   </div>
 
-
-
 </template>
 
-
 <style scoped>
+
 
 
 .demo-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 15, 15, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(6px);
-  animation: fadeIn 0.6s ease forwards;
-}
-
-.demo-overlay {
-  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
