@@ -31,13 +31,13 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'figure',       // Vue Flow Component Type
-    label: 'Figure',     // Name im Drag & Drop Menü
-    category: 'text',         // oder 'utility'
+    type: 'figure',
+    label: 'Figure',
+    category: 'text',
     data: {
-      image: '' as string,        // fallback: inline base64 (optional)
-      imageName: '' as string,    // fallback: cache key
-      latexLabel: '' as string,   // caption/label
+      image: '' as string,
+      imageName: '' as string,
+      latexLabel: '' as string,
       citations: [] as string[]
     }
   },
@@ -115,9 +115,9 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
-    type: 'tourGuide',       // Vue Flow Component Type
-    label: 'Tour Guide',     // Name im Drag & Drop Menü
-    category: 'disabled',     // Utility, weil es nur für die Tour gedacht ist
+    type: 'tourGuide',
+    label: 'Tour Guide',
+    category: 'disabled',
     data: {
       value: '',
       label: 'Steve',

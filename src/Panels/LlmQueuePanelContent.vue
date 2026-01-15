@@ -6,7 +6,7 @@ import { discardPendingLlmJobs } from '@/api/llmQueue'
 </script>
 
 <template>
-  <div class="llm-panel-content">
+  <div class="llm-panel-content" >
     <div class="top-row">
       <div class="status">
         ⚙️ LLM is working…

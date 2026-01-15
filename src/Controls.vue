@@ -120,7 +120,12 @@ onUnmounted(() => {
 <template>
 
 
-  <StartupPanelContent />
+  <StartupPanelContent
+      @import-latex="({ nodes, edges }) => {
+    setNodes(nodes)
+    setEdges(edges)
+  }"
+  />
 
   <Panel
       v-if="llmBusy"
@@ -128,6 +133,7 @@ onUnmounted(() => {
       class="llm-queue-panel"
   >
     <LlmQueuePanelContent />
+
   </Panel>
 
   <!-- Main Control Interface (Left Side) -->
@@ -217,6 +223,7 @@ onUnmounted(() => {
       <!-- Draggable Nodes -->
 
       <div class="drag-nodes">
+
         <!-- Content Nodes -->
         <h4
             class="drag-category"
@@ -233,7 +240,9 @@ onUnmounted(() => {
         >
           {{ template.label }}
         </div>
+
         <!-- Utility Nodes -->
+
         <h4
             class="drag-category"
         >
@@ -249,7 +258,9 @@ onUnmounted(() => {
         >
           {{ template.label }}
         </div>
+
         <!-- LLM Nodes -->
+
         <h4
             class="drag-category"
         >

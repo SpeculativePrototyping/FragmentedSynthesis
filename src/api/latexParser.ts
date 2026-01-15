@@ -132,6 +132,23 @@ function cleanLatex(latex: string): string {
 }
 
 
+function resolveImageFile(
+    files: ZipFileEntry[],
+    imagePath: string
+): ZipFileEntry | undefined {
+
+    const exts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'pdf']
+    const base = imagePath.replace(/\.(png|jpe?g|gif|svg|pdf)$/i, '')
+
+    return files.find(f => {
+        if (f.type !== 'image') return false
+        const fileBase = f.path.replace(/\.(png|jpe?g|gif|svg|pdf)$/i, '')
+        return fileBase.endsWith(base)
+    })
+}
+
+
+
 export function parseLatexToNodesAndEdges(
     files: ZipFileEntry[],
     mainTexPath: string,
@@ -226,7 +243,12 @@ export function parseLatexToNodesAndEdges(
         const combinedRegex = /(\\paragraph\{[^}]*\}([\s\S]*?))(?=\\paragraph\{|\\begin\{figure\}|$)|\\begin\{figure\}[\s\S]*?\\includegraphics.*?\{([^}]+)\}[\s\S]*?\\caption\{((?:[^{}]|\{[^}]*\})*)\}[\s\S]*?\\end\{figure\}/g
         let match: RegExpExecArray | null
 
+
+        console.log('--- SECTION TEXT ---')
+        console.log(sectionText)
+        console.log('--------------------')
         while ((match = combinedRegex.exec(sectionText)) !== null) {
+
             const startIndex = match.index
             // Alles zwischen letztem Index und aktuellem Match = normaler Text
             const inBetweenText = sectionText.slice(idx, startIndex).trim()
@@ -299,13 +321,18 @@ export function parseLatexToNodesAndEdges(
             }
 
             // Figure
-// Figure
+            if (match[3] !== undefined) {
+                console.log('FIGURE FOUND')
+                console.log('imagePath:', match[3])
+                console.log('caption:', match[4])
+            }
+
             if (match[3] !== undefined) {
                 const imagePath = match[3]
                 let caption = (match[4] ?? '').trim()
                 if (!caption) caption = 'Unnamed Figure'
 
-                const imgFile = files.find(f => f.path === imagePath && f.type === 'image')
+                const imgFile = resolveImageFile(files, imagePath)
                 if (imgFile && typeof imgFile.content === 'string') {
                     // 🔹 Key genau wie beim manuellen Upload: Figure-XXXXX (ohne Dateiname)
                     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'

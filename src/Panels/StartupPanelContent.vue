@@ -4,15 +4,19 @@ import JSZip from 'jszip'
 import { parseLatexToNodesAndEdges } from '@/api/latexParser'
 import {useDemo} from "@/api/demo.ts";
 import type {BibEntry} from "@/App.vue";
-import {Panel, useVueFlow} from '@vue-flow/core'
+import {type Edge, Panel, useVueFlow} from '@vue-flow/core'
 import type {ZipFileEntry} from "@/App.vue";
 import {useLoadAndSave} from "@/api/LoadAndSave.ts";
+
 
 
 // global variables
 const demoActive = inject<Ref<boolean>>('demoActive')!
 const bibliography = inject<Ref<BibEntry[]>>('bibliography')!
 
+const emit = defineEmits<{
+  (e: 'import-latex', payload: { nodes: Node[], edges: Edge[] }): void
+}>()
 
 // local ui state
 const showIntro = ref(true)
@@ -36,6 +40,8 @@ const {
   fromObject
 } = useVueFlow()
 
+
+console.log('nodes before import', nodes.value.length)
 
 const {startDemo, skipDemo, nextStep} = useDemo({
   demoActive,
@@ -137,6 +143,7 @@ function importLatexProject() {
   })
 
   setNodes(parsedNodes)
+  console.log('nodes after import', nodes.value.length)
   setEdges(parsedEdges)
 
   showLatexFilePicker.value = false

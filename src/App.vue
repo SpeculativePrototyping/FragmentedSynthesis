@@ -6,10 +6,8 @@ import { Background } from '@vue-flow/background'
 import {MiniMap} from "@vue-flow/minimap";
 
 
-
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
-import { useSnapshots } from '@/api/Snapshots'
 
 
 //Import every node-component:
@@ -92,7 +90,7 @@ provide('TLDR', TLDR)
 const demoActive = ref(false)
 provide('demoActive', demoActive)
 
-type ImageCache = Record<string, ImageCacheEntry>
+export type ImageCache = Record<string, ImageCacheEntry>
 const imageCache = ref<ImageCache>({})
 provide('imageCache', imageCache)
 
@@ -366,18 +364,13 @@ watch(nodes, (newNodes) => {
       <template #node-stickyNote="stickyNoteProps">
         <StickyNote v-bind="stickyNoteProps" />
       </template>
-      <template #node-referenceTracker="trackerProps">
-        <ReferenceTrackerNode v-bind="trackerProps" />
-      </template>
       <template #node-figure="figureProps">
         <FigureNode v-bind="figureProps"/>
       </template>
       <template #node-tourGuide="tourGuideProps">
         <TourGuideNode v-bind="tourGuideProps" />
       </template>
-      <template #node-figureTracker="figureTrackerProps">
-        <FigureTrackerNode v-bind="figureTrackerProps" />
-      </template>
+
 
 
       <Background />

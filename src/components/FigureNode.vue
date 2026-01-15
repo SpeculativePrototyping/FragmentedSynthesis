@@ -4,7 +4,7 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 import '../styles/NodeDesign.css'
-import type {BibEntry, ImageCacheEntry} from "@/App.vue";
+import type {BibEntry, ImageCache} from "@/App.vue";
 
 
 interface FigureNodeData {
@@ -51,7 +51,6 @@ function randomRefLabel(length = 5) {
 }
 
 
-type ImageCache = Record<string, ImageCacheEntry>
 
 const imageCache = inject<Ref<ImageCache>>('imageCache')
 

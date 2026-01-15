@@ -8,7 +8,7 @@ import '../styles/NodeDesign.css'
 import type {BibEntry} from "@/App.vue";
 import JSZip from "jszip"
 import {NodeToolbar} from "@vue-flow/node-toolbar";
-import type {ImageCacheEntry} from "@/App.vue";
+import type {ImageCache} from "@/App.vue";
 
 
 interface DocOutputNodeData {
@@ -34,8 +34,6 @@ interface HandleRow {
   preview: string
 }
 
-
-type ImageCache = Record<string, ImageCacheEntry>
 
 
 let lastJson = ''
@@ -640,6 +638,8 @@ function deleteNode() {
 </template>
 
 <style scoped>
+
+
 
 .doc-output {
 }

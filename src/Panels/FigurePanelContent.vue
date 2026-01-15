@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {inject, ref, type Ref} from 'vue'
-import type {ImageCacheEntry} from "@/App.vue";
+import type {ImageCache} from "@/App.vue";
 
 
 
-type ImageCache = Record<string, ImageCacheEntry>
 
 // Inject den bestehenden imageCache
 const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))!
