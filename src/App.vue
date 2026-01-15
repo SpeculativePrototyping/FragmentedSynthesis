@@ -3,10 +3,12 @@ import {ref, watch, provide, computed, nextTick, onMounted, onUnmounted} from 'v
 import {type Node, type Edge, type Connection, useVueFlow, Panel} from '@vue-flow/core'
 import { VueFlow, addEdge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
+import {MiniMap} from "@vue-flow/minimap";
+
+
+
 import SaveRestoreControls from './Controls.vue'
 import { findNodeTemplate} from './nodes/templates'
-import {MiniMap} from "@vue-flow/minimap";
-import { llmBusy, llmQueueSize } from '@/api/llmQueue'
 import { useSnapshots } from '@/api/Snapshots'
 
 
@@ -21,9 +23,8 @@ import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
-import LlmQueuePanelContent from "@/Panels/LlmQueuePanelContent.vue";
 
-//Interfaces for globally provided Data:
+//Interfaces for globally provided data:
 
 export interface BibEntry {
   id: string
@@ -54,10 +55,19 @@ export interface StyleTemplate {
   emphasizePoints: string
 }
 
+export interface ZipFileEntry {
+  path: string
+  type: 'tex' | 'bib' | 'image' | 'other'
+  content: string | ArrayBuffer
+}
+
+
 interface EdgeMouseEvent {
   edge: Edge
   event: MouseEvent
 }
+
+//Globally provided data:
 
 const snapshots = ref<Snapshot[]>([])
 provide('snapshots', snapshots)
@@ -100,13 +110,6 @@ provide('snapshotInProgress', snapshotInProgress)
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
 
-const {
-  createSnapshot,
-  restoreSnapshot,
-  deleteSnapshot,
-  createAutosaveSnapshot,
-} = useSnapshots()
-
 
 const edgeMenu = ref<{
   visible: boolean
@@ -120,6 +123,7 @@ const edgeMenu = ref<{
   edge: null,
 })
 
+
 let nodeCounter = 0
 
 const allowedSourceTypes = ['textArea', 'grammar', 'paraphrase', 'edit']
@@ -130,9 +134,6 @@ const canInsertNodes = computed(() => {
   if (!sourceNode) return false
   return allowedSourceTypes.includes(sourceNode.type)
 })
-
-
-
 
 
 function onEdgeClick(event: EdgeMouseEvent) {
@@ -214,7 +215,6 @@ function deleteEdge() {
   edges.value = edges.value.filter(
       e => e.id !== edgeMenu.value.edge!.id
   )
-
   closeEdgeMenu()
 }
 
@@ -342,7 +342,6 @@ watch(nodes, (newNodes) => {
     >
       <SaveRestoreControls />
 
-
       <template #node-textArea="textAreaProps">
         <TextAreaNode v-bind="textAreaProps" />
       </template>
@@ -391,13 +390,6 @@ watch(nodes, (newNodes) => {
 
   </div>
 
-  <Panel
-      v-if="llmBusy"
-      position="bottom-center"
-      class="llm-queue-panel"
-  >
-    <LlmQueuePanelContent />
-  </Panel>
 
 </template>
 
