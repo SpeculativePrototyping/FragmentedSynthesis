@@ -104,6 +104,10 @@ provide('setStyleTemplates', (newList) => {
 const snapshotInProgress = ref(false)
 provide('snapshotInProgress', snapshotInProgress)
 
+const designMode = ref<'standard' | 'disco'>('standard')
+provide('designMode', designMode)
+let discoInterval: number | undefined
+
 
 const {addNodes, screenToFlowCoordinate} = useVueFlow()
 const { updateEdge, addEdges } = useVueFlow()
@@ -285,6 +289,56 @@ function insertNodeOnEdge(templateType: string) {
   closeEdgeMenu();
 }
 
+function startDiscoEdges() {
+  // Sicherheit: kein doppeltes Interval
+  if (discoInterval) return
+
+  discoInterval = window.setInterval(() => {
+    edges.value = edges.value.map(edge => {
+      const hue = Math.floor(Math.random() * 360)
+      const color = `hsl(${hue}, 100%, 50%)`
+
+      return {
+        ...edge,
+        style: {
+          ...(edge.style ?? {}),
+          stroke: color,
+          strokeWidth: 4,
+          transition: 'stroke 0.4s linear',
+        },
+        markerEnd: {
+          ...(edge.markerEnd ?? {}),
+          color,
+        },
+      }
+    })
+  }, 400) // 🎛️ Tempo (300–600ms fühlt sich gut an)
+}
+
+
+function stopDiscoEdges() {
+  if (!discoInterval) return
+
+  clearInterval(discoInterval)
+  discoInterval = undefined
+
+  edges.value = edges.value.map(edge => ({
+    ...edge,
+    animated: true,
+    interactionWidth: 20,
+    style: {
+      strokeWidth: 4
+      ,
+    },
+    markerEnd: { type: 'arrowclosed', color: '#000', width: 6, height: 6 },
+  }))
+}
+
+
+
+
+
+
 
 watch(nodes, (newNodes) => {
   const usedRefLabels = new Set(newNodes
@@ -303,10 +357,52 @@ watch(nodes, (newNodes) => {
 }, { deep: true })
 
 
+watch(designMode, (mode) => {
+  if (mode === 'disco') {
+    startDiscoEdges()
+  } else {
+    stopDiscoEdges()
+  }
+})
+
+
+onUnmounted(() => {
+  if (discoInterval) {
+    clearInterval(discoInterval)
+  }
+})
+
+
+
 </script>
 
 <template>
-  <div style="width: 100%; height: 100vh">
+
+
+
+  <div style="width: 100%; height: 100vh"   class="app-root" :class="{ 'disco-mode': designMode === 'disco' }">
+
+
+
+    <ul v-if="designMode === 'disco'" class="strand">
+      <li v-for="i in 100" :key="i"></li>
+    </ul>
+
+
+    <div v-if="designMode === 'disco'" class="disco-reflections">
+  <span
+      v-for="i in 160"
+      :key="i"
+      class="reflection"
+      :style="{
+      '--rx': Math.random() * 100,
+      '--ry': Math.random() * 100
+    }"
+  />
+    </div>
+
+
+
 
     <div
         v-if="edgeMenu.visible"
@@ -339,6 +435,8 @@ watch(nodes, (newNodes) => {
         @pane-click="closeEdgeMenu"
     >
       <SaveRestoreControls />
+
+
 
       <template #node-textArea="textAreaProps">
         <TextAreaNode v-bind="textAreaProps" />
@@ -477,6 +575,257 @@ watch(nodes, (newNodes) => {
   50% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+
+
+/* Disco Mode */
+
+
+body{
+}
+.strand{
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  position: absolute;
+  z-index: 1;
+  margin: -15px 0 0 0;
+  padding: 0;
+  pointer-events: none;
+  width: 100%;
+}
+.strand li{
+  position: relative;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+  -webkit-animation-iteration-count: infinite;
+  animation-iteration-count: infinite;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 12px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 20px;
+  display: inline-block;
+  background:#f02241;
+  box-shadow: 0px 4.66667px 24px 3px #f02241;
+  -webkit-animation-name: flash-1;
+  animation-name: flash-1;
+  -webkit-animation-duration: 2s;
+  animation-duration: 2s;
+}
+.strand li:nth-child(2n+1){
+  background: #22ff00;
+  box-shadow: 0px 4.66667px 24px 3px rgba(0, 255, 255, 0.5);
+  -webkit-animation-name: flash-2;
+  animation-name: flash-2;
+  -webkit-animation-duration: 0.4s;
+  animation-duration: 0.4s;
+}
+.strand li:nth-child(4n+2){
+  background: #dfff33;
+  box-shadow: 0px 4.66667px 24px 3px #fd7a35;
+  -webkit-animation-name: flash-3;
+  animation-name: flash-3;
+  -webkit-animation-duration: 1.1s;
+  animation-duration: 1.1s;
+}
+.strand li:nth-child(odd){
+  -webkit-animation-duration: 1.8s;
+  animation-duration: 1.8s;
+}
+.strand li:nth-child(3n+1){
+  -webkit-animation: 1.4s;
+  animation-duration: 1.4s;
+}
+.strand li:before{
+  content: "";
+  position: absolute;
+  background: #222;
+  width: 10px;
+  height: 9.33333px;
+  border-radius: 3px;
+  top: -4.66667px;
+  left: 1px;
+}
+.strand li:after{
+  content: "";
+  top: -14px;
+  left: 9px;
+  position: absolute;
+  width: 52px;
+  height: 18.66667px;
+  border-bottom: solid #222 2px;
+  border-radius: 50%;
+}
+.strand li:last-child:after{
+  content: none;
+}
+.strand li:first-child{
+  margin-left: 40px;
+}
+@-webkit-keyframes flash-1{
+  0%, 100%{
+    background: #f02241;
+    box-shadow: 0px 4.66667px 24px 3px #f02241;
+  }
+  50%{
+    background: rgba(240, 34, 65, 0.4);
+    box-shadow: 0px 4.66667px 24px 3px rgba(240, 35, 65, .02);
+  }
+}
+@keyframes flash-1{
+  0%,
+  100% {
+    background: #f02241;
+    box-shadow: 0px 4.66667px 24px 3px #f02241;
+  }
+  50% {
+    background: rgba(240, 34, 65, 0.4);
+    box-shadow: 0px 4.66667px 24px 3px rgba(240, 35, 65, 0.2);
+  }
+}
+@-webkit-keyframes flash-2{
+0,
+100%{
+  background: #42b261;
+  box-shadow: 0px 4.66667px 24px 3px #42b261;
+}
+50%{
+  background: rgba(66, 178, 97, 0.4);
+  box-shadow: 0px 4.6667px 24px 3px rgba(66, 178, 97, 0.2);
+}
+}
+@keyframes flash-2{
+  0%,
+  100% {
+    background: #42b261;
+    box-shadow: 0px 4.66667px 24px 3px #42b261;
+  }
+  50% {
+    background: rgba(66, 178, 97, 0.4);
+    box-shadow: 0px 4.66667px 24px 3px rgba(66, 178, 97, 0.2);
+  }
+}
+@-webkit-keyframes flash-3 {
+  0%,100%{
+    background: #fd7a35;
+    box-shadow: 0px 4.6667px 24px 3px #a318e1;
+  }
+  50%{
+    background: rgba(249, 251, 238, .4);
+    box-shadow: 0px 4.66667px 24px 3px rgba(249, 251, 238, .2);
+  }
+}
+
+@keyframes flash-3 {
+  0%,100% {
+    background: #d700f1;
+    box-shadow: 0px 4.66667px 24px 3px #c5ea00;
+  }
+  50% {
+    background: rgba(249, 251, 238, 0.4);
+    box-shadow: 0px 4.66667px 24px 3px rgba(249, 251, 238, 0.2);
+  }
+}
+
+.disco-mode .vue-flow__viewport {
+  background-color: rgb(0, 0, 0);
+}
+
+.vue-flow__pane,
+.vue-flow__viewport {
+  transition: background-color 0.4s ease;
+}
+
+.disco-mode .vue-flow__minimap {
+  box-shadow:
+      0 0 20px rgba(255, 0, 255, 0.77),
+      0 0 40px rgba(0, 255, 255, 0.84);
+}
+
+
+/* ===============================
+   🪩 Discoball Wall Reflections
+   =============================== */
+
+.disco-reflections {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+
+  /* langsame Gesamtrotation */
+  animation: disco-rotate 18s linear infinite;
+}
+
+/* Einzelne Lichtpunkte */
+.disco-reflections .reflection {
+  position: absolute;
+
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+
+  opacity: 0.8;
+  background: currentColor;
+
+  box-shadow:
+      0 0 6px currentColor,
+      0 0 12px currentColor;
+
+  animation:
+      disco-flicker 2.5s ease-in-out infinite,
+      disco-slide 12s linear infinite;
+}
+
+/* Farben wie echte Discokugel */
+.disco-reflections .reflection:nth-child(4n) { color: #ffffff; }
+.disco-reflections .reflection:nth-child(4n+1) { color: #00ffff; }
+.disco-reflections .reflection:nth-child(4n+2) { color: #ff00ff; }
+.disco-reflections .reflection:nth-child(4n+3) { color: #ffff66; }
+
+/* Zufällige Startpositionen */
+.disco-reflections .reflection {
+  top: calc(var(--ry) * 1vh);
+  left: calc(var(--rx) * 1vw);
+}
+
+/* Leichtes horizontales Wandern */
+@keyframes disco-slide {
+  0% {
+    transform: translateX(-30px);
+  }
+  50% {
+    transform: translateX(30px);
+  }
+  100% {
+    transform: translateX(-30px);
+  }
+}
+
+/* Funkeln */
+@keyframes disco-flicker {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* Gesamtdrehung wie Discokugel */
+@keyframes disco-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+
+
 
 
 </style>

@@ -26,6 +26,12 @@ const TLDR = inject<Ref<boolean>>('TLDR')!
 const activeSidebar = ref<null | '📚 bibliography' | '🖼️ figures' | '✏️ style' | '📸 snapshots'>(null)
 const language = inject<Ref<'en' | 'de'>>('language')!
 const languageLabel = computed(() => language.value.toUpperCase())
+const designMode = inject<Ref<'standard' | 'disco'>>('designMode')!
+
+let chaosClickCount = 0
+let chaosClickTimer: number | undefined
+let discoTimeout: number | undefined
+
 
 
 const {
@@ -60,6 +66,38 @@ const {startDemo, skipDemo, nextStep} = useDemo({
 
 const {saveToFile, restoreFromFile} = useLoadAndSave()
 
+function registerChaosClick() {
+  if (designMode.value === 'disco') return
+
+  chaosClickCount++
+
+  clearTimeout(chaosClickTimer)
+  chaosClickTimer = window.setTimeout(() => {
+    chaosClickCount = 0
+  }, 1500)
+
+  if (chaosClickCount === 5) {
+    triggerDiscoMode()
+    chaosClickCount = 0
+  }
+}
+
+
+
+function triggerDiscoMode() {
+  if (designMode.value === 'disco') return
+
+  console.log('🪩 Disco Mode unlocked')
+
+  designMode.value = 'disco'
+
+  clearTimeout(discoTimeout)
+  discoTimeout = window.setTimeout(() => {
+    designMode.value = 'standard'
+  }, 5000)
+}
+
+
 
 
 
@@ -79,6 +117,10 @@ function onDeleteSelected() {
 function onAutoLayout() {
   const newNodes = applyDagreLayout(nodes.value, edges.value, 'LR')
   setNodes(newNodes)
+
+  // 🪩 Easter Egg Logik
+  registerChaosClick()
+
 }
 
 function toggleLanguage() {
@@ -111,6 +153,8 @@ onUnmounted(() => {
   if (autosaveInterval) {
     clearInterval(autosaveInterval)
   }
+  if (chaosClickTimer) clearTimeout(chaosClickTimer)
+  if (discoTimeout) clearTimeout(discoTimeout)
 })
 
 
@@ -586,6 +630,33 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   pointer-events: all;
+}
+
+
+
+
+
+
+
+.disco-hotspot {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: auto;
+}
+
+.panel-content:hover .disco-hotspot {
+  opacity: 0.4;
+}
+
+.disco-hotspot:hover {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.2);
 }
 
 </style>
