@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, ref, watch, inject, nextTick, provide, type Ref} from 'vue'
 import JSZip from 'jszip'
-import { parseLatexToNodesAndEdges } from '@/api/latexParser'
+import { parseLatexToNodesAndEdges } from '@/api/NewLatexParser.ts'
 import {useDemo} from "@/api/demo.ts";
 import type {BibEntry} from "@/App.vue";
 import {type Edge, Panel, useVueFlow} from '@vue-flow/core'

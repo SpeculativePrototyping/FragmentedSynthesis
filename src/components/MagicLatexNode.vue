@@ -327,7 +327,7 @@ watch(latex, (v) => {
           v-model="latex"
           class="text-node__textarea"
           rows="6"
-          placeholder="Generated LaTeX structure will appear here…"
+          placeholder="This node is for generic LaTeX content."
           spellcheck="false"
           @wheel.stop
       />
@@ -338,7 +338,7 @@ watch(latex, (v) => {
           v-model="prompt"
           class="text-node__textarea prompt-textarea"
           rows="3"
-          placeholder="Describe what LaTeX structure you want (e.g. table with 3 columns and 5 rows)…"
+          placeholder="Describe what LaTeX structure you want (e.g. table with 3 columns and 5 rows) or what modifications you'd like to make to your LaTeX structure."
           @wheel.stop
       />
 

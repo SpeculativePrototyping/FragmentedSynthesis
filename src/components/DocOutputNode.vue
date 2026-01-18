@@ -186,7 +186,7 @@ function describeDoc(doc?: DocElement): string {
     case 'figure':
       return doc.latexLabel ?? 'Figure'
     case 'latex':
-      return `∑ ${doc.structureType ?? 'LaTeX'}`   // 👈 NEU
+      return `∑ ${doc.latex ?? 'LaTeX'}`   // 👈 NEU
     default:
       const _exhaustiveCheck: never = doc
       return _exhaustiveCheck
@@ -248,7 +248,7 @@ function buildOutline(doc: DocElement, currentSectionLevel: number, acc: Outline
   if (doc.kind === 'latex') {
     acc.push({
       id: doc.id,
-      label: doc.structureType ?? 'LaTeX',
+      label: doc.latex ?? 'LaTeX',
       depth: Math.max(0, currentSectionLevel),
       type: 'latex',
     })

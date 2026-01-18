@@ -190,7 +190,7 @@ const handleRows = computed<HandleRow[]>(() => {
       rows.push({
         handleId: `child-${index}`,
         connected: true,
-        preview: latex.structureType ?? 'LaTeX',
+        preview: latex.latex ?? 'LaTeX',
         type: 'latex',
       })
     }

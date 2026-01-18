@@ -22,10 +22,22 @@ export const nodeTemplates: NodeTemplate[] = [
     data: {
       value: '',
       label: 'Paragraph',   // label the actual node in the UI gets
-      placeholder: 'This node is for text input. Basically, every node represents a paragraph.' +
-          ' You can type, add citations and connect it to other nodes.' +
-          ' That can be the Grammar Node, the Summary Node, the Edit Node, the Compose Node, or the TextView Node.',
+      placeholder: 'This node represents a paragraph.' +
+          ' You can type, add citations and references and connect it to other nodes.',
       citations: [] as string[],
+      status: 'idle',
+      error: null,
+    },
+  },
+  {
+    type: 'magicLatex',
+    label: 'Raw LaTeX',
+    category: 'text',
+    data: {
+      label: 'Raw LaTeX',
+      latex: '',
+      prompt: '',
+      structureType: '',
       status: 'idle',
       error: null,
     },
@@ -112,19 +124,6 @@ export const nodeTemplates: NodeTemplate[] = [
     data: {
       label: 'Debug',
       placeholder: 'This node displays everything that other nodes can output. It helps when you are confused about what goes where.',
-    },
-  },
-  {
-    type: 'magicLatex',
-    label: 'Magic LaTeX',
-    category: 'llm',
-    data: {
-      label: 'Magic LaTeX',
-      latex: '',
-      prompt: '',
-      structureType: '',
-      status: 'idle',
-      error: null,
     },
   },
   {

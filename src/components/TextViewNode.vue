@@ -69,6 +69,7 @@ const displayText = computed(() => {
         if (payload.label) parts.push(`Label: ${payload.label}`)
         if (payload.value) parts.push(`Value: ${payload.value}`)
         if (payload.latexLabel) parts.push(`LaTeX: ${payload.latexLabel}`)
+        if (payload.latex) parts.push(`Raw LaTeX:\n${payload.latex}`)
         if (payload.refLabel) parts.push(`RefLabel: ${payload.refLabel}`)
         if (payload.citations) parts.push(`Citations: ${(payload.citations as string[]).join(', ')}`)
         if (payload.figures) parts.push(`Figures: ${(payload.figures as string[]).join(', ')}`)
