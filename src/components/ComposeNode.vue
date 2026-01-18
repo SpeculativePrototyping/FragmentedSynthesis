@@ -2,7 +2,7 @@
 import {ref, computed, watch, nextTick, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { NodeProps, Edge } from '@vue-flow/core'
-import type { ParagraphElement, SectionElement, FigureElement, DocElement } from '../api/docstruct'
+import type { ParagraphElement, SectionElement, FigureElement, DocElement, LatexElement } from '../api/docstruct'
 import '../styles/NodeDesign.css'
 import {NodeToolbar} from "@vue-flow/node-toolbar";
 
@@ -79,24 +79,51 @@ function asFigure(edge?: Edge): FigureElement | undefined {
 }
 
 
+function asLatex(edge?: Edge): LatexElement | undefined {
+  if (!edge) return undefined
+
+  const sourceNode = nodes.value.find(n => n.id === edge.source)
+  if (!sourceNode?.data) return undefined
+
+  if (sourceNode.type !== 'magicLatex') return undefined
+
+  const payload = sourceNode.data as Record<string, unknown>
+  const latex = payload.latex as string | undefined
+
+  if (!latex?.trim()) return undefined
+
+  return {
+    id: sourceNode.id,
+    kind: 'latex',
+    structureType: payload.structureType as string | undefined,
+    latex,
+  }
+}
 
 
-// Paragraphen sammeln
-const childParagraphs = computed(() =>
-    incomingEdges.value
-        .map(edge => asParagraph(edge))
-        .filter((p): p is ParagraphElement => !!p)
-)
 
 const childElements = computed<DocElement[]>(() => {
   const elements: DocElement[] = []
 
   for (const edge of incomingEdges.value) {
     const para = asParagraph(edge)
-    if (para) elements.push(para)
+    if (para) {
+      elements.push(para)
+      continue
+    }
+
     const fig = asFigure(edge)
-    if (fig) elements.push(fig)
+    if (fig) {
+      elements.push(fig)
+      continue
+    }
+
+    const latex = asLatex(edge)
+    if (latex) {
+      elements.push(latex)
+    }
   }
+
 
   return elements
 })
@@ -132,7 +159,7 @@ interface HandleRow {
   handleId: string
   connected: boolean
   preview: string
-  type: 'paragraph' | 'figure'
+  type: 'paragraph' | 'figure' | 'latex'
 }
 
 const handleRows = computed<HandleRow[]>(() => {
@@ -141,6 +168,8 @@ const handleRows = computed<HandleRow[]>(() => {
   incomingEdges.value.forEach((edge, index) => {
     const paragraph = asParagraph(edge)
     const figure = asFigure(edge)
+    const latex = asLatex(edge)
+
 
     if (paragraph) {
       rows.push({
@@ -155,6 +184,14 @@ const handleRows = computed<HandleRow[]>(() => {
         connected: true,
         preview: figure.latexLabel ?? '',
         type: 'figure',
+      })
+    }
+    else if (latex) {
+      rows.push({
+        handleId: `child-${index}`,
+        connected: true,
+        preview: latex.structureType ?? 'LaTeX',
+        type: 'latex',
       })
     }
   })
@@ -259,6 +296,10 @@ function deleteNode() {
           <span v-else-if="row.type === 'figure'">
             🖼️ {{row.preview || 'Connect figure...' }}
           </span>
+          <span v-else-if="row.type === 'latex'">
+            ∑ {{ row.preview }}
+          </span>
+
         </div>
         <Handle
           :id="row.handleId"

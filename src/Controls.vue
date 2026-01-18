@@ -33,7 +33,6 @@ let chaosClickTimer: number | undefined
 let discoTimeout: number | undefined
 
 
-
 const {
   createSnapshot,
   restoreSnapshot,
@@ -64,7 +63,11 @@ const {startDemo, skipDemo, nextStep} = useDemo({
   dimensions
 })
 
-const {saveToFile, restoreFromFile} = useLoadAndSave()
+const {saveToFile,
+  restoreFromFile
+} = useLoadAndSave()
+
+
 
 function registerChaosClick() {
   if (designMode.value === 'disco') return
@@ -83,22 +86,15 @@ function registerChaosClick() {
 }
 
 
-
 function triggerDiscoMode() {
   if (designMode.value === 'disco') return
-
   console.log('🪩 Disco Mode unlocked')
-
   designMode.value = 'disco'
-
   clearTimeout(discoTimeout)
   discoTimeout = window.setTimeout(() => {
     designMode.value = 'standard'
   }, 5000)
 }
-
-
-
 
 
 function onDragStart(type: string, event: DragEvent) {
@@ -107,6 +103,7 @@ function onDragStart(type: string, event: DragEvent) {
   event.dataTransfer.effectAllowed = 'move'
 }
 
+
 function onDeleteSelected() {
   const remainingEdges = edges.value.filter(edge => !edge.selected)
   setEdges(remainingEdges)
@@ -114,13 +111,12 @@ function onDeleteSelected() {
   setNodes(remainingNodes)
 }
 
+
 function onAutoLayout() {
   const newNodes = applyDagreLayout(nodes.value, edges.value, 'LR')
   setNodes(newNodes)
-
-  // 🪩 Easter Egg Logik
+  // Easter Egg Logic
   registerChaosClick()
-
 }
 
 function toggleLanguage() {
@@ -138,7 +134,6 @@ function togglePanel(panel: '📚 bibliography' | '🖼️ figures' | '✏️ st
 function reloadApp() {
   window.location.reload()
 }
-
 
 
 let autosaveInterval: number | undefined
@@ -164,12 +159,8 @@ onUnmounted(() => {
 <template>
 
 
-  <StartupPanelContent
-      @import-latex="({ nodes, edges }) => {
-    setNodes(nodes)
-    setEdges(edges)
-  }"
-  />
+  <StartupPanelContent/>
+
 
   <Panel
       v-if="llmBusy"
@@ -177,7 +168,6 @@ onUnmounted(() => {
       class="llm-queue-panel"
   >
     <LlmQueuePanelContent />
-
   </Panel>
 
   <!-- Main Control Interface (Left Side) -->

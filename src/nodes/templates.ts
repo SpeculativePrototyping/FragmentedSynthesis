@@ -115,6 +115,19 @@ export const nodeTemplates: NodeTemplate[] = [
     },
   },
   {
+    type: 'magicLatex',
+    label: 'Magic LaTeX',
+    category: 'llm',
+    data: {
+      label: 'Magic LaTeX',
+      latex: '',
+      prompt: '',
+      structureType: '',
+      status: 'idle',
+      error: null,
+    },
+  },
+  {
     type: 'tourGuide',
     label: 'Tour Guide',
     category: 'disabled',

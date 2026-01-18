@@ -3,8 +3,6 @@ import { ref, inject, type Ref } from 'vue'
 import type {StyleTemplate} from "@/App.vue";
 
 
-
-// Inject global templates
 const templates = inject<Ref<StyleTemplate[]>>('styleTemplates')!
 const setTemplates = inject<(newList: StyleTemplate[]) => void>('setStyleTemplates')!
 

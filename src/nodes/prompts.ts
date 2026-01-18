@@ -217,4 +217,90 @@ export const reviewPrompts: Record<'en' | 'de', ReviewPrompts> = {
     }
 }
 
+export interface MagicLatexPrompts {
+    systemPrompt: string
+    userPromptAdd: string
+    userPromptModify: string
+    responseFormat: object
+}
+
+
+export const magicLatexPrompts: Record<'en' | 'de', MagicLatexPrompts> = {
+    en: {
+        systemPrompt:
+            "You are a LaTeX expert for academic documents. " +
+            "You generate or modify valid LaTeX code. " +
+            "You NEVER explain anything. " +
+            "You NEVER include markdown. " +
+            "You NEVER wrap the output in \\begin{document}. " +
+            "You output ONLY raw LaTeX code. " +
+            "The result must be syntactically correct and ready to paste into a LaTeX document.",
+
+        userPromptAdd:
+            "Generate a LaTeX structure based on the following request. " +
+            "The output should be a complete LaTeX environment or structure that the user can fill in:\n\n" +
+            "{{request}}",
+
+        userPromptModify:
+            "Modify the following LaTeX code according to the instruction below. " +
+            "Preserve as much of the original structure as possible.\n\n" +
+            "LaTeX code:\n{{latex}}\n\n" +
+            "Instruction:\n{{request}}",
+
+        responseFormat: {
+            type: "json_schema",
+            json_schema: {
+                name: "magic_latex_response",
+                schema: {
+                    type: "object",
+                    properties: {
+                        latex: { type: "string" }
+                    },
+                    required: ["latex"],
+                    additionalProperties: false
+                }
+            }
+        }
+    },
+
+    de: {
+        systemPrompt:
+            "Du bist ein LaTeX-Experte für akademische Dokumente. " +
+            "Du erzeugst oder modifizierst gültigen LaTeX-Code. " +
+            "Du erklärst NIEMALS etwas. " +
+            "Du verwendest KEIN Markdown. " +
+            "Du fügst KEIN \\begin{document} hinzu. " +
+            "Du gibst AUSSCHLIESSLICH reinen LaTeX-Code aus. " +
+            "Das Ergebnis muss syntaktisch korrekt und direkt verwendbar sein.",
+
+        userPromptAdd:
+            "Erzeuge eine LaTeX-Struktur basierend auf der folgenden Anforderung. " +
+            "Die Ausgabe soll eine vollständige LaTeX-Umgebung oder Struktur sein, die der Benutzer ausfüllen kann:\n\n" +
+            "{{request}}",
+
+        userPromptModify:
+            "Modifiziere den folgenden LaTeX-Code gemäß der untenstehenden Anweisung. " +
+            "Erhalte die bestehende Struktur so weit wie möglich.\n\n" +
+            "LaTeX-Code:\n{{latex}}\n\n" +
+            "Anweisung:\n{{request}}",
+
+        responseFormat: {
+            type: "json_schema",
+            json_schema: {
+                name: "magic_latex_response",
+                schema: {
+                    type: "object",
+                    properties: {
+                        latex: { type: "string" }
+                    },
+                    required: ["latex"],
+                    additionalProperties: false
+                }
+            }
+        }
+    }
+}
+
+
+
 

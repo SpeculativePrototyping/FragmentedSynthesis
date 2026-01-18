@@ -21,6 +21,7 @@ import GrammarNode from './components/GrammarNode.vue'
 import StickyNote from "@/components/StickyNote.vue";
 import FigureNode from "@/components/FigureNode.vue";
 import TourGuideNode from './components/TourGuideNode.vue'
+import MagicLatexNode from "@/components/MagicLatexNode.vue";
 
 //Interfaces for globally provided data:
 
@@ -60,7 +61,7 @@ export interface ZipFileEntry {
 }
 
 
-interface EdgeMouseEvent {
+export interface EdgeMouseEvent {
   edge: Edge
   event: MouseEvent
 }
@@ -79,12 +80,12 @@ const edges = ref<Edge[]>([])
 provide('nodes', nodes)
 provide('edges', edges)
 
-const bibliography = ref<BibEntry[]>([])  // <- global bibliography
+const bibliography = ref<BibEntry[]>([])
 provide('bibliography', bibliography)
 const updateBibliography = (newBib: BibEntry[]) => {bibliography.value = newBib}
 provide('updateBibliography', updateBibliography)
 
-const TLDR = ref(false) // <- for shrinking some nodes
+const TLDR = ref(false)
 provide('TLDR', TLDR)
 
 const demoActive = ref(false)
@@ -336,10 +337,6 @@ function stopDiscoEdges() {
 
 
 
-
-
-
-
 watch(nodes, (newNodes) => {
   const usedRefLabels = new Set(newNodes
       .filter(n => n.type === 'figure')  // nur Figure Nodes
@@ -373,21 +370,15 @@ onUnmounted(() => {
 })
 
 
-
 </script>
 
 <template>
 
-
-
   <div style="width: 100%; height: 100vh"   class="app-root" :class="{ 'disco-mode': designMode === 'disco' }">
-
-
 
     <ul v-if="designMode === 'disco'" class="strand">
       <li v-for="i in 100" :key="i"></li>
     </ul>
-
 
     <div v-if="designMode === 'disco'" class="disco-reflections">
   <span
@@ -400,8 +391,6 @@ onUnmounted(() => {
     }"
   />
     </div>
-
-
 
 
     <div
@@ -434,8 +423,9 @@ onUnmounted(() => {
         @edge-click="onEdgeClick"
         @pane-click="closeEdgeMenu"
     >
-      <SaveRestoreControls />
 
+      <!-- Including Controls.Vue (Main Control Panel)  -->
+      <SaveRestoreControls />
 
 
       <template #node-textArea="textAreaProps">
@@ -467,6 +457,9 @@ onUnmounted(() => {
       </template>
       <template #node-tourGuide="tourGuideProps">
         <TourGuideNode v-bind="tourGuideProps" />
+      </template>
+      <template #node-magicLatex="magicLatexProps">
+        <MagicLatexNode v-bind="magicLatexProps" />
       </template>
 
 

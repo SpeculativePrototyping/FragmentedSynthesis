@@ -12,10 +12,7 @@ const {
   restoreSnapshot,
   deleteSnapshot,
   createAutosaveSnapshot,
-  snapshotInProgress,
 } = useSnapshots()
-
-
 
 
 const showAutosaves = ref(true)

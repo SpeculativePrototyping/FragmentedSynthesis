@@ -2,7 +2,7 @@
 import {computed, nextTick, watch, watchEffect, inject, type Ref, ref, onMounted, onBeforeUnmount} from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import type { Edge, NodeProps } from '@vue-flow/core'
-import type { DocElement, ParagraphElement, FigureElement, SectionElement } from '../api/docstruct'
+import type { DocElement, ParagraphElement, FigureElement, SectionElement, LatexElement } from '../api/docstruct'
 import { renderToLatex } from '../api/docstruct'
 import '../styles/NodeDesign.css'
 import type {BibEntry} from "@/App.vue";
@@ -185,11 +185,14 @@ function describeDoc(doc?: DocElement): string {
       return doc.body?.trim()?.split(/\s+/).slice(0, 10).join(' ') || 'Paragraph'
     case 'figure':
       return doc.latexLabel ?? 'Figure'
+    case 'latex':
+      return `∑ ${doc.structureType ?? 'LaTeX'}`   // 👈 NEU
     default:
       const _exhaustiveCheck: never = doc
       return _exhaustiveCheck
   }
 }
+
 
 
 function buildOutline(doc: DocElement, currentSectionLevel: number, acc: OutlineItem[]): void {
@@ -242,6 +245,16 @@ function buildOutline(doc: DocElement, currentSectionLevel: number, acc: Outline
 
     return
   }
+  if (doc.kind === 'latex') {
+    acc.push({
+      id: doc.id,
+      label: doc.structureType ?? 'LaTeX',
+      depth: Math.max(0, currentSectionLevel),
+      type: 'latex',
+    })
+    return
+  }
+
 }
 
 
@@ -578,6 +591,7 @@ function deleteNode() {
             'doc-output__item--nested': item.depth > 0,
             'doc-output__item--reference': item.type === 'reference',
             'doc-output__item--figure': item.type === 'figure',
+            'doc-output__item--latex': item.type === 'latex',
           }"
             :style="{ '--outline-depth': item.depth }"
             role="treeitem"
@@ -595,7 +609,10 @@ function deleteNode() {
                           ? 'Bibliography'
                           : item.type === 'reference'
                               ? 'Reference'
-                              : '' }}
+                              : item.type === 'latex'
+                                  ? 'LaTeX'
+
+                                  : '' }}
           </span>
           <span class="doc-output__label" :class="{ 'doc-output__label--muted': item.type === 'paragraph' && item.depth === 1 }">
             {{ item.label }}
@@ -713,6 +730,11 @@ function deleteNode() {
 .doc-output__item--figure .doc-output__marker {
   background-color: #1e3a8a; /* dunkelblau */
 }
+
+.doc-output__item--latex .doc-output__marker {
+  background-color: #e48650;
+}
+
 
 .doc-output__label {
   flex: 1 1 auto;

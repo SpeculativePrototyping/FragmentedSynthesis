@@ -3,8 +3,6 @@ import { ref, inject, type Ref } from 'vue'
 import type {BibEntry} from "@/App.vue";
 
 
-
-// inject die bestehende Bibliography
 const bibliography = inject<Ref<BibEntry[]>>('bibliography', ref([]))!
 const updateBibliography = inject<(newBib: BibEntry[]) => void>('updateBibliography')!
 

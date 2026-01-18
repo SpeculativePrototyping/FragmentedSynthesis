@@ -3,9 +3,6 @@ import {inject, ref, type Ref} from 'vue'
 import type {ImageCache} from "@/App.vue";
 
 
-
-
-// Inject den bestehenden imageCache
 const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))!
 
 </script>
@@ -72,7 +69,7 @@ const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))!
 .figure-info {
   font-size: 0.85rem;
   display: flex;
-  flex-direction: column;   /* untereinander */
+  flex-direction: column;
   gap: 2px;
   width: 100%;
   max-width: 100%;
@@ -90,10 +87,6 @@ const imageCache = inject<Ref<ImageCache>>('imageCache', ref({}))!
   white-space: nowrap;
   color: #ffffff;
 }
-
-
-
-
 
 
 </style>

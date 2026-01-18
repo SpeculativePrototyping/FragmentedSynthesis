@@ -17,8 +17,6 @@ export function useSnapshots() {
 
     async function createSnapshot() {
         snapshotInProgress.value = true
-
-        // 👇 DAS IST DER WICHTIGE TEIL
         await nextTick()
         await new Promise(r => requestAnimationFrame(r))
 
@@ -30,7 +28,6 @@ export function useSnapshots() {
             templates: templates.value,
         }
 
-        // 🔑 BILDER IN DIE NODES EINBETTEN
         exportData.nodes.forEach((node: any) => {
             if (node.data?.imageName && imageCache.value[node.data.imageName]) {
                 node.data.image = imageCache.value[node.data.imageName].base64
@@ -85,7 +82,6 @@ export function useSnapshots() {
             templates.value = snap.data.templates
             bibliography.value = snap.data.bibliography
 
-            // ⚠️ TLDR bewusst zuletzt
             nextTick(() => {
                 TLDR.value = snap.data.TLDR
             })

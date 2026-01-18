@@ -56,8 +56,6 @@ const {startDemo, skipDemo, nextStep} = useDemo({
 const {saveToFile, restoreFromFile} = useLoadAndSave()
 
 
-
-
 async function onLatexZipUpload(file: File) {
   if (!file || !file.name.endsWith('.zip')) return
 

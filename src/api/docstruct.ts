@@ -26,55 +26,20 @@ export type FigureElement = BaseElement & {
   citations?: string[];    // optional
   refLabel?: string;
 };
-export type DocElement = SectionElement | ParagraphElement | FigureElement;
 
-
-//Thi is not 100 correct but it is a start. A paragraph can have a paragraph as a child. while for sections we need to ensure only lower level dependencies like heading 2 can be a child of heading 1
-const PARENT_TO_CHILD: Record<string, string[]> = {
-  section: ['section', 'paragraph', 'figure'],
-  paragraph: ['paragraph','figure'], // paragraphs cannot have children
-  figure: [],    // figures cannot have children
+export type LatexElement = {
+  kind: 'latex';
+  id: NodeID;
+  latex: string;              // roher LaTeX-Code
+  structureType?: string;     // z.B. table, itemize, equation
 };
 
 
-/** Builders keep node creation uniform and JSON-safe. */
-export const mkSection = (
-  id: NodeID,
-  level: SectionElement['level'],
-  init: Partial<BaseElement> = {},
-): SectionElement => ({
-  kind: 'section',
-  id,
-  level,
-  title: init.title,
-  body: init.body,
-  children: init.children ?? [],
-});
-
-export const mkParagraph = (id: NodeID, init: Partial<BaseElement> = {}): ParagraphElement => ({
-  kind: 'paragraph',
-  id,
-  title: init.title,
-  body: init.body,
-  children: init.children ?? [],
-});
-
-export const mkFigure = (
-    id: NodeID,
-    imageName = '',
-    latexLabel = '',
-    init: Partial<BaseElement> = {},
-): FigureElement => ({
-  kind: 'figure',
-  id,
-  imageName,
-  latexLabel,
-  citations: [],
-  title: init.title,
-  body: init.body,
-  children: [], // Figures haben keine Kinder
-});
-
+export type DocElement =
+    | SectionElement
+    | ParagraphElement
+    | FigureElement
+    | LatexElement;
 
 
 type Render = (n: DocElement, ctx: Ctx) => string;
@@ -86,7 +51,9 @@ type Renderer = {
   section(n: SectionElement, ctx: Ctx): string;
   paragraph(n: ParagraphElement, ctx: Ctx): string;
   figure(n: FigureElement, ctx: Ctx): string;
+  latex(n: LatexElement, ctx: Ctx): string;
 };
+
 
 export function render(n: DocElement, r: Renderer): string {
   const ctx: Ctx = { render: (m) => render(m, r) };
@@ -97,6 +64,8 @@ export function render(n: DocElement, r: Renderer): string {
       return r.paragraph(n, ctx);
     case "figure":
       return r.figure(n, ctx);
+    case "latex":
+      return r.latex(n, ctx);
     default: {
       const _x: never = n;
       return _x;
@@ -132,13 +101,6 @@ const escLaTeXPreserveCites = (s = "") => {
       }
   );
 };
-
-
-
-export interface LatexRenderOptions {
-  includeDocument?: boolean;
-  bibliography?: BibEntry[];
-}
 
 
 export interface LatexRenderOptions {
@@ -190,6 +152,10 @@ export function renderToLatex(
       lines.push("\\end{figure}");
       return lines.join("\n");
     },
+    latex(latex: LatexElement) {
+      return latex.latex.trim();
+    },
+
   };
 
   const body = nodes.map((node) => render(node, renderer)).filter(Boolean).join("\n\n");
