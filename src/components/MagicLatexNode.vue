@@ -344,10 +344,10 @@ watch(latex, (v) => {
 
       <!-- Actions -->
       <div class="magic-actions">
-        <button class="fullsize-btn half" @click="onAdd" v-if="showPrompt">
+        <button class="fullsize-btn half" @click="onAdd" v-if="showPrompt" :disabled="status==='processing' || !prompt.trim()">
           Add
         </button>
-        <button class="fullsize-btn half" @click="onModify" v-if="showPrompt">
+        <button class="fullsize-btn half" @click="onModify" v-if="showPrompt" :disabled="status==='processing' || !prompt.trim()">
           Modify
         </button>
       </div>

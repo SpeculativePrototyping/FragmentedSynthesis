@@ -110,7 +110,7 @@ Please create:
 • a Figure node
 • a Compose node
 
-You don’t need to connect them yet. Put some content in them and also place a reference in the bibliography side-panel.
+You don’t need to connect them yet. Put some content in them and also place a reference in the bibliography side-panel. Maybe try the "Magic LaTeX" feature!
 I’ll continue once all are present 🙂`
             )
         },
