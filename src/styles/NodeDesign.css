@@ -93,6 +93,7 @@
 
 .fullsize-btn:disabled {
   background-color: rgba(112, 110, 110, 0.1);
+  color: rgba(112, 110, 110, 0.5);
 }
 
 .align-btn {
@@ -116,6 +117,7 @@
 
 .align-btn:disabled {
   background-color: rgba(112, 110, 110, 0.1);
+  color: rgba(112, 110, 110, 0.5);
 }
 
 .fullsize-select {

@@ -1,5 +1,5 @@
 import type { Node } from '@vue-flow/core'
-import type { BibEntry } from '@/App.vue'   // Pfad anpassen
+import type { BibEntry } from '@/App.vue'
 
 
 //describes the structure of a node template that can be dragged from the control panel
