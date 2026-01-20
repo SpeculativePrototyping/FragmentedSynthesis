@@ -577,7 +577,7 @@ function deleteNode() {
 
       <div class="doc-output__outline" role="tree" @wheel.stop>
         <div v-if="!outlineItems.length && !bibliographyItems.length" class="doc-output__empty">
-          Attach sections or paragraphs to get a preview of your document and take a look at the outline.
+          Attach sections to get a preview of your document and take a look at the outline.
         </div>
 
         <div

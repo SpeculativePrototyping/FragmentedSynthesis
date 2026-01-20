@@ -91,9 +91,12 @@
   background: rgba(99, 102, 241, 0.4);
 }
 
+.fullsize-btn:disabled {
+  background-color: rgba(112, 110, 110, 0.1);
+}
+
 .align-btn {
   align-self: flex-end;
-
   border: none;
   border-radius: 6px;
   padding: 8px 12px;
@@ -109,6 +112,10 @@
 .align-btn:hover {
   background: rgba(99, 102, 241, 0.4);
 
+}
+
+.align-btn:disabled {
+  background-color: rgba(112, 110, 110, 0.1);
 }
 
 .fullsize-select {
