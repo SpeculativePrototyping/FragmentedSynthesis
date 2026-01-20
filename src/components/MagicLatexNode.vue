@@ -199,8 +199,6 @@ function detectStructureType(latex: string): string {
     [/\\begin\{enumerate\}/, 'enumerate'],
     [/\\begin\{equation\}/, 'equation'],
     [/\\begin\{align\}/, 'align'],
-    [/\\section\{/, 'section'],
-    [/\\subsection\{/, 'subsection'],
   ]
 
   for (const [regex, type] of patterns) {
