@@ -201,6 +201,11 @@
   border-color: #374151;
 }
 
+.toolbar-mini-btn:disabled {
+  background-color: rgba(112, 110, 110, 0.1);
+  color: rgba(112, 110, 110, 0.5);
+}
+
 .delete-node-btn {
   padding: 4px 8px;
   border-radius: 8px;
