@@ -275,24 +275,6 @@ onUnmounted(() => {
           {{ template.label }}
         </div>
 
-        <!-- Utility Nodes -->
-
-        <h4
-            class="drag-category"
-        >
-          Utility Nodes
-        </h4>
-        <div
-            v-for="template in availableTemplates.filter(t => t.category === 'utility')"
-            :key="template.type"
-            class="draggable-node utility-node"
-            draggable="true"
-            title="Drag and drop nodes you would like to add over to the canvas"
-            @dragstart="onDragStart(template.type, $event)"
-        >
-          {{ template.label }}
-        </div>
-
         <!-- LLM Nodes -->
 
         <h4
@@ -304,6 +286,26 @@ onUnmounted(() => {
             v-for="template in availableTemplates.filter(t => t.category === 'llm')"
             :key="template.type"
             class="draggable-node llm-node"
+            draggable="true"
+            title="Drag and drop nodes you would like to add over to the canvas"
+            @dragstart="onDragStart(template.type, $event)"
+        >
+          {{ template.label }}
+        </div>
+
+
+
+        <!-- Utility Nodes -->
+
+        <h4
+            class="drag-category"
+        >
+          Utility Nodes
+        </h4>
+        <div
+            v-for="template in availableTemplates.filter(t => t.category === 'utility')"
+            :key="template.type"
+            class="draggable-node utility-node"
             draggable="true"
             title="Drag and drop nodes you would like to add over to the canvas"
             @dragstart="onDragStart(template.type, $event)"
