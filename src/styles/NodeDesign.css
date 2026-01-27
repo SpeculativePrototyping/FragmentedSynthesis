@@ -1,0 +1,431 @@
+/*  GENERAL NODE DESIGN */
+
+.doc-node {
+  --doc-node-header-height: 18px;
+  --doc-node-padding: 12px;
+  --doc-node-row-gap: 6px;
+  --doc-node-min-width: 220px;
+
+  background-color: #ffffff;
+  border: 1px solid rgba(32, 44, 71, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  min-width: var(--doc-node-min-width);
+  overflow: visible;
+}
+
+.doc-node__header {
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /*height: var(--doc-node-header-height);*/
+  height: 100%;
+  justify-content: center;
+  padding: 10px 14px;
+}
+
+.doc-node__hint {
+  color: rgba(15, 23, 42, 0.65);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.doc-node__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--doc-node-row-gap);
+  padding: var(--doc-node-padding);
+}
+
+.doc-node__row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 100% 1fr;
+  padding: 4px 12px 4px 4px;
+  position: relative;
+
+}
+
+.doc-node__row--connected {
+  background-color: rgba(39, 23, 186, 0.08);
+  border-radius: 12px;
+}
+
+.doc-node__header-warning {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-bottom-color: rgba(220, 38, 38, 0.35);
+}
+
+.doc-node__preview {
+  color: rgba(57, 57, 57, 0.8);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  display: block;
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+
+.fullsize-btn {
+  border: none;
+  border-radius: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #000000;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.fullsize-btn:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+.fullsize-btn:disabled {
+  background-color: rgba(112, 110, 110, 0.1);
+  color: rgba(112, 110, 110, 0.5);
+}
+
+.align-btn {
+  align-self: flex-end;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #000000;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+
+
+}
+
+.align-btn:hover {
+  background: rgba(99, 102, 241, 0.4);
+
+}
+
+.align-btn:disabled {
+  background-color: rgba(112, 110, 110, 0.1);
+  color: rgba(112, 110, 110, 0.5);
+}
+
+.fullsize-select {
+
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(99, 102, 241, 0.1);
+  color: #000000;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+          linear-gradient(45deg, transparent 50%, rgba(0,0,0,0.6) 50%),
+          linear-gradient(135deg, rgba(0,0,0,0.6) 50%, transparent 50%);
+  background-position:
+          calc(100% - 18px) 50%,
+          calc(100% - 12px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+
+
+}
+
+.fullsize-select:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+.fullsize-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+
+/*  NODE TOOLBAR DESIGN, BUTTONS AND SLIDER */
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  /* Header-Stil übernehmen */
+  background-color: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 10px 14px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+}
+
+.toolbar-mini-btn {
+  padding: 4px 8px;
+  height:30px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, .15);
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-mini-btn:hover {
+  background: #e5e7eb;
+}
+
+.toolbar-mini-btn.active {
+  background: #374151; /* dunkelgrau */
+  color: white;
+  border-color: #374151;
+}
+
+.toolbar-mini-btn:disabled {
+  background-color: rgba(112, 110, 110, 0.1);
+  color: rgba(112, 110, 110, 0.5);
+}
+
+.delete-node-btn {
+  padding: 4px 8px;
+  border-radius: 8px;
+  height:30px;
+  border: 1px solid rgba(15, 23, 42, .15);
+  background-color: #f87171; /* hellrot */
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.delete-node-btn:hover {
+  background-color: #dc2626; /* dunkleres Rot bei Hover */
+}
+
+.mini-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+}
+
+.mini-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mini-toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 12px;
+  transition: 0.2s;
+}
+
+.mini-toggle-switch .slider::before {
+  content: "";
+  position: absolute;
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.mini-toggle-switch input:checked + .slider {
+  background-color: #22ff00;
+}
+
+.mini-toggle-switch input:checked + .slider::before {
+  transform: translateX(12px);
+}
+
+.mini-toggle-label {
+  font-size: 1rem;
+  color: #000;
+}
+
+/*  NODE CITATION AND REFERENCE UI DESIGN */
+
+
+.citation-item input {
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, .15);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  width: 100%;
+}
+
+.citation-item input:focus {
+  outline: 2px solid rgba(99, 102, 241, .45);
+  border-color: rgba(99, 102, 241, .45);
+}
+
+.citation-item button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, .15);
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+.citation-item button:hover {
+  background: #eee;
+}
+
+.citations-ui {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.selected-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  max-width: 350px;
+}
+
+.citation-tag {
+  background: #e0e7ff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.citation-unknown {
+  background-color: #fca5a5; /* Hellrot */
+  border: 1px solid #f87171;
+}
+
+.citation-tag button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+
+.citation-search-input {
+  width: 100%;
+  height: 35px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, .15);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.citation-search-list {
+  max-height: 160px;
+  min-height: 35px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .15);
+  border-radius: 6px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.citation-search-list li {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  width: 100%;
+  cursor: pointer;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.citation-search-list li:hover {
+  background: #eee;
+}
+
+.citation-search-list li span.key {
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.citation-search-list li span.title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figure-tag {
+  background: #facc15;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.figure-search-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+
+.citations-ui,
+.figures-ui {
+  gap: 8px;
+}
+
+.figures-ui {
+  display: flex;
+  flex-direction: column;
+}
+
+
